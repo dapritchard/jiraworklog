@@ -11,6 +11,8 @@ def fetch_worklogs(jira, issue_nms, path):
     with open(path, "w") as file:
         worklogs_dict = fetch_worklogs_remotedata(jira, issue_nms)
         json.dump(worklogs_dict, file, indent=4)
+        file.write("\n")
+    return worklogs_dict
 
 # Why does `jira.worklogs` require a network call? It seems like the issue
 # already contains all of the data
