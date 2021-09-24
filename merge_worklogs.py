@@ -2,7 +2,7 @@
 
 import json
 
-def merge_worklogs(path_worktree, path_head, path_remote):
+def sync_worklogs(path_worktree, path_head, path_remote):
 
     with open(path_worktree) as file: issues_worktree = json.load(file)
     try:
@@ -15,10 +15,10 @@ def merge_worklogs(path_worktree, path_head, path_remote):
     # TODO: get keys from path_worktree and create `issues_remote` using a
     # temporary file (or use `fetch_issues_remotedata`?)
 
-    merge_worklogs_impl(issues_worktree, issues_head, issues_remote)
+    sync_worklogs_impl(issues_worktree, issues_head, issues_remote)
 
 
-def merge_worklogs_impl(issues_worktree, issues_head, issues_remote):
+def sync_worklogs_impl(issues_worktree, issues_head, issues_remote):
 
     def setdiff(list1, list2):
         return [i for i in list1 + list2 if i not in list2]
