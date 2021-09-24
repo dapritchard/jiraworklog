@@ -22,7 +22,7 @@ def sync_worklogs(path_worktree, path_head, path_remote, jira):
         head = {k: [] for k in worktree.keys()}
 
     # Get the remote issues
-    issue_keys = extract_issue_keys(worktree)
+    issue_ids = extract_issue_ids(worktree)
     remote = fetch_worklogs_remotedata(jira, issue_keys)
 
     # sync_worklogs_impl(worktree, head, remote)
@@ -31,17 +31,20 @@ def sync_worklogs(path_worktree, path_head, path_remote, jira):
 
 def sync_worklogs_impl(worktree, head, remote):
 
+    # At this point we assume that `worktree` and `remote` contain the same
+    # issues, however `head`'s issues may totally differ
+
     def setdiff(list1, list2):
         return [i for i in list1 + list2 if i not in list2]
 
     def add_issues(worklogs, issue_namekeys):
         return None
 
-    issue_keys_worktree = extract_issue_keys(worktree)
-    issue_keys_head = extract_issue_keys(head)
+    issue_keys_worktree = extract_issue_ids(worktree)
+    issue_keys_head = extract_issue_ids(head)
     issue_namekeys_added = setdiff(issue_keys_worktree, issue_keys_head)
     issue_namekeys_removed = setdiff(issue_keys_head, issue_keys_worktree)
 
 
-def extract_issue_keys(worklogs):
+def extract_issue_ids(worklogs):
     return [x.split('@')[-1] for x in worklogs.keys()]
