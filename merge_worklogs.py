@@ -4,24 +4,33 @@ import json
 
 def merge_worklogs(path_worktree, path_head, path_remote):
 
-    with open(path_worktree) as file: worklogs_worktree = json.load(file)
-    with open(path_remote) as file: worklogs_remote = json.load(file)
+    with open(path_worktree) as file: issues_worktree = json.load(file)
     try:
-        with open(path_head) as file: worklogs_local = json.load(file)
+        with open(path_head) as file: issues_local = json.load(file)
     except:
         # TODO: check with the user
         with open(path_head, "w") as file:
-            json.dump(worklogs_worktree, file, indent=4)
+            json.dump(issues_worktree, file, indent=4)
             file.write("\n")
+    # TODO: get keys from path_worktree and create `issues_remote` using a
+    # temporary file (or use `fetch_issues_remotedata`?)
 
-    merge_worklogs_impl(worklogs_worktree, worklogs_head, worklogs_remote)
+    merge_worklogs_impl(issues_worktree, issues_head, issues_remote)
 
 
-def merge_worklogs_impl(worklogs_worktree, worklogs_local, worklogs_remote):
+def merge_worklogs_impl(issues_worktree, issues_head, issues_remote):
 
-    return None
+    def setdiff(list1, list2):
+        return [i for i in list1 + list2 if i not in list2]
+
+    def add_issues(worklogs, issue_namekeys):
+        return None
+
+    issue_keys_worktree = extract_issue_keys(issues_worktree)
+    issue_keys_head = extract_issue_keys(issues_head)
+    issue_namekeys_added = setdiff(issue_keys_worktree, issue_keys_head)
+    issue_namekeys_removed = setdiff(issue_keys_head, issue_keys_worktree)
 
 
 def extract_issue_keys(worklogs):
-    issue_namekeys = worklogs.keys()
-    return [x.split('@')[-1] for x in issue_namekeys]
+    return [x.split('@')[-1] for x in worklogs.keys()]
