@@ -59,8 +59,6 @@ w.updated
 :rtype: Worklog
 """
 
-jira.add_worklog(issue_p0053_04, timeSpent='1m', comment='Sent from Python')
-
 jira.add_worklog(
     issue_p0053_04,
     timeSpent='1m',
