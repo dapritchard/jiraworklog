@@ -72,8 +72,43 @@ def sync_worklogs_impl(worktree, head, remote):
 # are assumed to be equal) are no longer needed and are therefore removed.
 def align_issue_keys(worktree, head, remote):
 
+    # Check if the remote issue ID string corresponds to the local issue ID
+    # string. `remote_str` is of the form `"name@key"`, while `"local_str"` may
+    # either be of the form `"name"` or `"name@key"`. In the former case compare
+    # the `"name"` portions against each other, while in the latter case compare
+    # the `"key"` portions against each other.
+    def check_match(remote_str, local_str):
+        remote_split_str = remote_str.split("@")
+        local_split_str = local_str.split("@")
+        has_local_key = (len(local_split_str) >= 1)
+        return (remote_split_str[1] == local_split_str[1]
+                if has_local_key
+                else remote_split_str[0] == local_str)
 
-    return 1
+    # Return the dict key in `remote_dictkeys` corresponding to `id_str`. It is
+    # assumed that there will always be a match, so an exception thrown here
+    # (which would occur if no match was found) would indicate a flaw in the
+    # program logic
+    def find_dictkey(id_str, remote_dictkeys):
+        return next(x for x in remote_dictkeys if not check_match(x, id_str))
+
+    # Create a new dict with elements populated by the issues in `issues`
+    # corresponding to the dict keys in `dictkeys`. Note that this has two
+    # effects: (i) updating the keys in `issues`, and (ii) dropping any issues
+    # that don't correspond to a key in `dictkeys`
+    #
+    # There's surely a more efficient algorithm that can be used to
+    # perform this, but it may be the case that for the sizes of data we expect
+    # to encounter that this will be fast enough
+    def update_dictkeys(issues, dictkeys):
+        return {
+            k: issues[find_dictkey(k, dictkeys)] for k in dictkeys
+        }
+
+    remote_dictkeys = remote.keys()
+    worktree_newdictkeys = update_dictkeys(worktree, remote_dictkeys)
+    head_newdictkeys = update_dictkeys(head, remote_dictkeys)
+    return [worktree_newdictkeys, head_newdictkeys]
 
 
 # It is assumed that the keys in `worklogs` are each either of the form `'name'`
