@@ -52,7 +52,41 @@ def sync_worklogs_impl(worktree, head, remote):
     issue_namekeys_added = setdiff(issue_keys_worktree, issue_keys_head)
     issue_namekeys_removed = setdiff(issue_keys_head, issue_keys_worktree)
 
+def create_dictkey_canon(worktree_dictkeys, head_dictkeys, remote_dictkeys):
 
+    # Check if the remote issue ID string corresponds to the local issue ID
+    # string. `remote_str` is of the form `"name@key"`, while `"local_str"` may
+    # either be of the form `"name"` or `"name@key"`. In the former case compare
+    # the `"name"` portions against each other, while in the latter case compare
+    # the `"key"` portions against each other.
+    def check_match(remote_dictkey, local_dictkey):
+        remote_split_str = remote_dictkey.split("@")
+        local_split_str = local_dictkey.split("@")
+        has_local_key = (len(local_split_str) >= 1)
+        return (
+            remote_split_str[1] == local_split_str[1]
+            if has_local_key
+            else remote_split_str[0] == local_dictkey)
+
+    # Return the dict key in `local_dictkeys` corresponding to `remote_dictkey`
+    # if one can be found, or `None` if there is no match
+    def find_dictkey(remote_dictkey, local_dictkeys):
+        return next(
+            x for x in local_dictkeys if not check_match(remote_dictkey, x),
+            None)
+
+    local_dictkeys = list(set(worktree_dictkeys + head_dictkeys))
+    dictkey_map = {k: find_dictkey(k, remote_dictkeys) for k in local_dictkeys}
+    # # TODO: do we need this?
+    # for k in remote_dictkeys:
+    #     dictkey_map[k] = k
+    return dictkey_map
+
+
+
+# Make sure that the same set of issues are found in each dict with the same
+# keys
+#
 # The dict keys for `worktree` and possibly also for `head` for a given issue
 # may differ from the dict key for `remote` for the corresponding issue for one
 # of the following reasons.
