@@ -36,7 +36,7 @@ def sync_worklogs_impl(worktree, head, remote):
     # issue has the same key for each of the dicts (unless the issue is absent
     # from 1 or 2 of the dicts). See the documentation for `align_issue_keys`
     # for details on why the keys might be out of sync
-    worktree_newkeys, head_newkeys = align_issue_keys(worktree, head, remote)
+    worktree_aligned, head_aligned = align_issue_keys(worktree, head, remote)
 
     # At this point we assume that `worktree` and `remote` contain the same
     # issues, however `head`'s issues may totally differ
@@ -65,11 +65,16 @@ def sync_worklogs_impl(worktree, head, remote):
 #
 # The issues in `remote` are assumed to be the full set of issues that we care
 # about since we grabbed them based on what issues are in `worktree`, and
-# furthermore the issue names and keys in the remote are the source of truth, so
+# furthermore the issue names and keys in the remote are the source of truth so
 # we simply need to make the keys for any corresponding issues in `worktree` and
-# `head` align with those. Any issues in `head` that are no longer in `remote`
-# (and by extension in `worktree` since the set of issues for those two objects
-# are assumed to be equal) are no longer needed and are therefore removed.
+# `head` align with those.
+#
+# `head` might (i) have issues that aren't in `remote`, and it might also (ii)
+# be missing issues that are in remote. Any issues in `head` that are no longer
+# in `remote` (and by extension in `worktree` since the set of issues for those
+# two objects are assumed to be equal) are no longer needed and are therefore
+# removed. If we are missing issues in `head` that are in remote then we add
+# them with an empty worklog list.
 def align_issue_keys(worktree, head, remote):
 
     # Check if the remote issue ID string corresponds to the local issue ID
@@ -81,16 +86,17 @@ def align_issue_keys(worktree, head, remote):
         remote_split_str = remote_str.split("@")
         local_split_str = local_str.split("@")
         has_local_key = (len(local_split_str) >= 1)
-        return (remote_split_str[1] == local_split_str[1]
-                if has_local_key
-                else remote_split_str[0] == local_str)
+        return (
+            remote_split_str[1] == local_split_str[1]
+            if has_local_key
+            else remote_split_str[0] == local_str)
 
-    # Return the dict key in `remote_dictkeys` corresponding to `id_str`. It is
-    # assumed that there will always be a match, so an exception thrown here
-    # (which would occur if no match was found) would indicate a flaw in the
-    # program logic
-    def find_dictkey(id_str, remote_dictkeys):
-        return next(x for x in remote_dictkeys if not check_match(x, id_str))
+    # Return the dict key in `local_dictkeys` corresponding to `remote_dictkey`
+    # if one can be found, or `None` if there is no match
+    def find_dictkey(remote_dictkey, local_dictkeys):
+        return next(
+            x for x in local_dictkeys if not check_match(remote_dictkey, x),
+            None)
 
     # Create a new dict with elements populated by the issues in `issues`
     # corresponding to the dict keys in `dictkeys`. Note that this has two
@@ -102,8 +108,7 @@ def align_issue_keys(worktree, head, remote):
     # to encounter that this will be fast enough
     def update_dictkeys(issues, dictkeys):
         return {
-            k: issues[find_dictkey(k, dictkeys)] for k in dictkeys
-        }
+            k: issues.get(find_dictkey(k, dictkeys), []) for k in dictkeys}
 
     remote_dictkeys = remote.keys()
     worktree_newdictkeys = update_dictkeys(worktree, remote_dictkeys)
