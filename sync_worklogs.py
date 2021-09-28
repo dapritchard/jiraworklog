@@ -59,11 +59,26 @@ def sync_worklogs_impl(worktree, head, remote):
     issue_namekeys_added = setdiff(issue_keys_worktree, issue_keys_head)
     issue_namekeys_removed = setdiff(issue_keys_head, issue_keys_worktree)
 
+    # (i) Rename the dict keys from `"name@key"` form to `"key"` form in both
+    # `worktree` and `head`, and (ii) for `head` add empty issues and remove
+    # existing issues as necessary to match the issue set fourd in `worktree`
     worktree_nrm = {extract_issue_key(k): v for (k, v) in worktree.items()}
     head_nrm = normalize_head(head, issue_keys_worktree)
 
-    # for issue_key in issue_keys_worktree:
-    #     None
+
+def worklogs_to_dictrepr(worklogs):
+
+    def create_core_tuple(worklog):
+        keys = ['comment', 'started', 'timeSpentSeconds']
+        return tuple(worklog[k] for k in keys)
+
+    def create_metadata_dict(worklog):
+        keys = ['author', 'created', 'id', 'issueId', 'timeSpent',
+                'updateAuthor', 'updated']
+        return {k: worklog[k] for k in keys}
+
+    return {create_core_tuple(w): create_metadata_dict(w) for w in worklogs}
+
 
 
 
