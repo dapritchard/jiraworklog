@@ -22,9 +22,10 @@ def sync_worklogs(path_worktree, path_head, path_remote, jira):
         # missing the HEAD file
         head = {k: [] for k in worktree.keys()}
 
-    # Get the remote issues
-    issue_ids = extract_issue_ids(worktree)
-    remote = fetch_worklogs_remotedata(jira, issue_ids)
+    # Get the remote issues. Throw an error if one of the issue keys was deleted
+    # or was incorrectly specified (never existed)
+    issue_keys_worktree = [extract_issue_key(k) for k in worktree.keys()]
+    remote = fetch_worklogs_remotedata(jira, issue_keys_worktree)
 
     # sync_worklogs_impl(worktree, head, remote)
     return [worktree, head, remote]
@@ -32,25 +33,43 @@ def sync_worklogs(path_worktree, path_head, path_remote, jira):
 
 def sync_worklogs_impl(worktree, head, remote):
 
-    # Update the dict keys for `worktree` and `head` to make sure that given
-    # issue has the same key for each of the dicts (unless the issue is absent
-    # from 1 or 2 of the dicts). See the documentation for `align_issue_keys`
-    # for details on why the keys might be out of sync
-    worktree_aligned, head_aligned = align_issue_keys(worktree, head, remote)
-
-    # At this point we assume that `worktree` and `remote` contain the same
-    # issues, however `head`'s issues may totally differ
-
     def setdiff(list1, list2):
         return [i for i in list1 + list2 if i not in list2]
 
-    def add_issues(worklogs, issue_namekeys):
-        return None
+    def normalize_head(head, issue_keys_worktree):
+        head_nrm = {extract_issue_key(k): v
+                    for (k, v) in head.items()
+                    if k in issue_keys_worktree}
+        curr_keys = head_nrm.keys()
+        for k in issue_keys_worktree:
+            if k not in curr_keys:
+                head_nrm[k] = []
+        return head_nrm
 
-    issue_keys_worktree = extract_issue_ids(worktree)
-    issue_keys_head = extract_issue_ids(head)
+    # def add_issues(worklogs, issue_namekeys):
+    #     return None
+
+    # # align the issues in `worktree` and `head` to match those in `remote`
+    # worktree_aligned, head_aligned = align_issues(worktree, head, remote)
+
+    issue_keys_worktree = extract_issue_keys(worktree)
+    issue_keys_head = extract_issue_keys(head)
+    worktree_dictkeys_map = {extract_issue_key(k): k for k in worktree.keys()}
+
     issue_namekeys_added = setdiff(issue_keys_worktree, issue_keys_head)
     issue_namekeys_removed = setdiff(issue_keys_head, issue_keys_worktree)
+
+    worktree_nrm = {extract_issue_key(k): v for (k, v) in worktree.items()}
+    head_nrm = normalize_head(head, issue_keys_worktree)
+
+    # for issue_key in issue_keys_worktree:
+    #     None
+
+
+
+
+
+
 
 def create_dictkey_canon(worktree_dictkeys, head_dictkeys, remote_dictkeys):
 
@@ -71,6 +90,7 @@ def create_dictkey_canon(worktree_dictkeys, head_dictkeys, remote_dictkeys):
     # Return the dict key in `local_dictkeys` corresponding to `remote_dictkey`
     # if one can be found, or `None` if there is no match
     def find_dictkey(remote_dictkey, local_dictkeys):
+        # https://stackoverflow.com/a/9868665/5518304
         return next(
             x for x in local_dictkeys if not check_match(remote_dictkey, x),
             None)
@@ -109,7 +129,7 @@ def create_dictkey_canon(worktree_dictkeys, head_dictkeys, remote_dictkeys):
 # two objects are assumed to be equal) are no longer needed and are therefore
 # removed. If we are missing issues in `head` that are in remote then we add
 # them with an empty worklog list.
-def align_issue_keys(worktree, head, remote):
+def align_issues(worktree, head, remote):
 
     # Check if the remote issue ID string corresponds to the local issue ID
     # string. `remote_str` is of the form `"name@key"`, while `"local_str"` may
@@ -128,6 +148,7 @@ def align_issue_keys(worktree, head, remote):
     # Return the dict key in `local_dictkeys` corresponding to `remote_dictkey`
     # if one can be found, or `None` if there is no match
     def find_dictkey(remote_dictkey, local_dictkeys):
+        # https://stackoverflow.com/a/9868665/5518304
         return next(
             x for x in local_dictkeys if not check_match(remote_dictkey, x),
             None)
@@ -150,8 +171,7 @@ def align_issue_keys(worktree, head, remote):
     return [worktree_newdictkeys, head_newdictkeys]
 
 
-# It is assumed that the keys in `worklogs` are each either of the form `'name'`
-# or of the form `'name@key'`. This function returns `"name"` in the former
-# case, and `"key"` in the latter case.
-def extract_issue_ids(worklogs):
-    return [x.split('@')[-1] for x in worklogs.keys()]
+# It is assumed that the dict keys in `worklogs` are of the form `'name@key'`,
+# so this function returns a list of the `"key"` portion of each dict key string
+def extract_issue_key(dictkey):
+    return dictkey.split('@')[-1]
