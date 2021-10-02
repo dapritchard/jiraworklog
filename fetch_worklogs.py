@@ -32,6 +32,7 @@ def extract_worklog_fields(worklog):
         'created': raw['created'],
         'id': raw['id'],
         'issueId': raw['issueId'],
+        'started': worklog.started,
         'timeSpent': raw['timeSpent'],
         'timeSpentSeconds': raw['timeSpentSeconds'],
         'updateAuthor': raw['updateAuthor']['displayName'],
