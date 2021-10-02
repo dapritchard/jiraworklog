@@ -23,7 +23,7 @@ def sync_worklogs(path_worktree, path_head, path_remote, jira):
         head = {k: [] for k in worktree.keys()}
 
     # Get the remote issues. Throw an error if one of the issue keys was deleted
-    # or was incorrectly specified (never existed)
+    # or never existed (i.e. was incorrectly specified)
     issue_keys_worktree = [extract_issue_key(k) for k in worktree.keys()]
     remote = fetch_worklogs_remotedata(jira, issue_keys_worktree)
 
@@ -54,7 +54,7 @@ def sync_worklogs_impl(worktree, head, remote):
 
     issue_keys_worktree = extract_issue_keys(worktree)
     issue_keys_head = extract_issue_keys(head)
-    worktree_dictkeys_map = {extract_issue_key(k): k for k in worktree.keys()}
+    dictkeys_map = {extract_issue_key(k): k for k in worktree.keys()}
 
     issue_namekeys_added = setdiff(issue_keys_worktree, issue_keys_head)
     issue_namekeys_removed = setdiff(issue_keys_head, issue_keys_worktree)
@@ -64,20 +64,27 @@ def sync_worklogs_impl(worktree, head, remote):
     # existing issues as necessary to match the issue set fourd in `worktree`
     worktree_nrm = {extract_issue_key(k): v for (k, v) in worktree.items()}
     head_nrm = normalize_head(head, issue_keys_worktree)
+    remote_nrm = {extract_issue_key(k): v for (k, v) in remote.items()}
+
+    altrep_worktree = issues_to_altrep(worktree_nrm)
+    altrep_head = issues_to_altrep(head_nrm)
+    altrep_remote = issues_to_altrep(remote_nrm)
+
+def issues_to_altrep(issues):
+    def worklogs_to_dictrepr(worklogs):
+        return {create_core_tuple(w): create_metadata_dict(w) for w in worklogs}
+    {k: worklogs_to_dictrepr(v) for (k, v) in issues.items()}
 
 
-def worklogs_to_dictrepr(worklogs):
+def create_core_tuple(worklog):
+    keys = ['comment', 'started', 'timeSpentSeconds']
+    return tuple(worklog[k] for k in keys)
 
-    def create_core_tuple(worklog):
-        keys = ['comment', 'started', 'timeSpentSeconds']
-        return tuple(worklog[k] for k in keys)
 
-    def create_metadata_dict(worklog):
-        keys = ['author', 'created', 'id', 'issueId', 'timeSpent',
-                'updateAuthor', 'updated']
-        return {k: worklog[k] for k in keys}
-
-    return {create_core_tuple(w): create_metadata_dict(w) for w in worklogs}
+def create_metadata_dict(worklog):
+    keys = ['author', 'created', 'id', 'issueId', 'timeSpent',
+            'updateAuthor', 'updated']
+    return {k: worklog[k] for k in keys}
 
 
 
