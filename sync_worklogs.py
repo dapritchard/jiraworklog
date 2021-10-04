@@ -76,19 +76,23 @@ def sync_worklogs_impl(worktree, head, remote):
                      + list(altrep_remote.keys()))
     unique_altissue_keys = list(set(altissue_keys))
 
-    # TODO: not this simple b/c have to think about what to do if data is in an
-    # inconsistent state (i.e. something changed on the remote not reflected in
-    # head or worktree)
-    altrep_merged = {}
-    for k in unique_altissue_keys:
-        altrep_merged[k] = create_merged_entries(
-            altrep_worktree.get(k, []),
-            altrep_head.get(k, []),
-            altrep_remote.get(k, [])
+    action_maybe_list = []
+    for key in unique_altissue_keys:
+        action_maybe = create_merged_maybe_entry(
+            altrep_worktree.get(key, []),
+            altrep_head.get(key, []),
+            altrep_remote.get(key, [])
         )
+        action_maybe_list.append(action_maybe)
 
-    # return [worktree_nrm, head_nrm, remote_nrm]
-    return [altrep_worktree, altrep_head, altrep_remote]
+    error_list = [x['value'] for x in action_maybe_list if x['is_error']]
+    if len(error_list) > 0:
+        raise RuntimeError('Something went wrong')
+
+    action_list = [x['value'] for x in action_maybe_list if not x['is_error']]
+    return action_list
+
+
 
 
 def extract_issue_keys(issues):
