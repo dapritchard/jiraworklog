@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 
 def check_remote_changes(altrep_head, altrep_remote):
+    pass
 
-    # Return True if any elements of `look_for` are in `look_in`, and return
-    # False otherwise
-    def check_in(look_for, look_in):
-        for obj in look_for:
-            if obj in look_in:
-                return True
-        return False
+
+def create_modifrep(altrep_head, altrep_remote):
 
     idrep_head = create_idrep(altrep_head)
     idrep_remote = create_idrep(altrep_remote)
@@ -20,34 +16,47 @@ def check_remote_changes(altrep_head, altrep_remote):
     #
     # Note that for the `not idrep_head[id] == idrep_remote[id]` case we can
     # assume that the worklog is in both head and remote
-    modifications = {'added': [], 'updated': [], 'removed': []}
+    modifrep = {'added': [], 'updated': [], 'removed': []}
     for id in ids:
         in_head = id in idrep_head.keys()
         in_remote = id in idrep_remote.keys()
         if in_head and not in_remote:
-            modifications['removed'].append([idrep_head[id]])
+            modifrep['removed'].append([idrep_head[id]])
         elif not in_head and in_remote:
-            modifications['added'].append([idrep_head[id]])
+            modifrep['added'].append([idrep_head[id]])
         elif not idrep_head[id] == idrep_remote[id]:
-            modifications['updated'].append([idrep_head[id], idrep_remote[id]])
+            modifrep['updated'].append([idrep_head[id], idrep_remote[id]])
 
-    subgraphs = {}
+    return modifrep
+
+
+def create_modifgraphs(modifrep):
+
+    # Return True if any elements of `look_for` are in `look_in`, and return
+    # False otherwise
+    def check_in(look_for, look_in):
+        for obj in look_for:
+            if obj in look_in:
+                return True
+        return False
+
+    modifgraphs = {}
     for modkey in ['added', 'updated', 'removed']:
-        for altkeys in modifications[modkey]:
-            subgraph_keys = subgraphs.keys()
+        for altkeys in modifrep[modkey]:
+            subgraph_keys = modifgraphs.keys()
             membersof = [k for k in subgraph_keys if check_in(altkeys, k)]
             if len(membersof) == 0:
-                subgraphs[tuple(altkeys)] = {
+                modifgraphs[tuple(altkeys)] = {
                     'added': [],
                     'updated': [],
                     'removed': []
                 }
-                subgraphs[tuple(altkeys)][modkey].append(altkeys)
+                modifgraphs[tuple(altkeys)][modkey].append(altkeys)
             elif len(altkeys) == 1:
-                subgraphs[membersof[0]][modkey].append(altkeys)
+                modifgraphs[membersof[0]][modkey].append(altkeys)
             elif len(membersof) == 2:
-                subgraph_0 = subgraphs[membersof[0]]
-                subgraph_1 = subgraphs[membersof[1]]
+                subgraph_0 = modifgraphs[membersof[0]]
+                subgraph_1 = modifgraphs[membersof[1]]
                 newkey = (*membersof[0], *membersof[1])
                 newval = {
                     'added': subgraph_0['added'] ++ subgraph_1['added'],
@@ -55,11 +64,11 @@ def check_remote_changes(altrep_head, altrep_remote):
                     'removed': subgraph_0['removed'] ++ subgraph_1['removed']
                 }
                 newval[modkey].append(altkeys)
-                del subgraphs[membersof[0]]
-                del subgraphs[membersof[1]]
-                subgraphs[newkey] = newval
+                del modifgraphs[membersof[0]]
+                del modifgraphs[membersof[1]]
+                modifgraphs[newkey] = newval
             elif altkeys[0] in membersof[0] and altkeys[1] in membersof[0]:
-                subgraphs[membersof[0]][modkey].append(altkeys)
+                modifgraphs[membersof[0]][modkey].append(altkeys)
             # Case:  either the 'from' or 'to' worklogs are already present
             # in a subgraph, but not both
             else:
@@ -67,9 +76,11 @@ def check_remote_changes(altrep_head, altrep_remote):
                                 if altkeys[0] in membersof[0]
                                 else altkeys[1])
                 newkey = (*membersof[0], newkey_elem)
-                newvalue = subgraphs[membersof[0]][modkey].append(altkeys)
-                del subgraphs[membersof[0]]
-                subgraphs[newkey] = newvalue
+                newvalue = modifgraphs[membersof[0]][modkey].append(altkeys)
+                del modifgraphs[membersof[0]]
+                modifgraphs[newkey] = newvalue
+
+    return modifgraphs
 
 
 # Create a dict with keys the worklog ID and values the "altrep" representation
