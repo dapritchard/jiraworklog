@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 
 def check_remote_changes(altrep_head, altrep_remote):
-    pass
+    modifrep = create_modifrep(altrep_head, altrep_remote)
+    modifgraphs = create_modifgraphs(modifrep)
+    for graph in modifgraphs:
+        pass
 
 
 def create_modifrep(altrep_head, altrep_remote):
+
+    # Create a dict with keys the worklog ID and values the "altrep"
+    # representation of the worklogs
+    def create_idrep(altrep):
+        return {v['id']:k for (k, v) in altrep.values()}
 
     idrep_head = create_idrep(altrep_head)
     idrep_remote = create_idrep(altrep_remote)
@@ -81,9 +89,3 @@ def create_modifgraphs(modifrep):
                 modifgraphs[newkey] = newvalue
 
     return modifgraphs
-
-
-# Create a dict with keys the worklog ID and values the "altrep" representation
-# of the worklogs
-def create_idrep(altrep):
-    return {v['id']:k for (k, v) in altrep.values()}
