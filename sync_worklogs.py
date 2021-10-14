@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+from jira.client import JIRA
 from fetch_worklogs import fetch_worklogs_remotedata
 import json
 
 
-def sync_worklogs(path_worktree, path_head, path_remote, jira):
+def sync_worklogs_import_data(path_worktree, path_head, path_remote, jira):
 
     # Get the working tree issues. The issues contained therein determines which
     # issues are considered in HEAD and remote
@@ -27,11 +28,21 @@ def sync_worklogs(path_worktree, path_head, path_remote, jira):
     issue_keys_worktree = [extract_issue_key(k) for k in worktree.keys()]
     remote = fetch_worklogs_remotedata(jira, issue_keys_worktree)
 
-    # sync_worklogs_impl(worktree, head, remote)
+    # TODO: step to normalize the worktree keys
+
     return [worktree, head, remote]
 
 
-def sync_worklogs_impl(worktree, head, remote):
+def sync_worklogs_create_altrep(worktree, head, remote):
+    # head_filteredissues =
+    return [
+        issues_to_altrep(worktree, False),
+        issues_to_altrep(head, True),
+        issues_to_altrep(remote, True),
+    ]
+
+
+def sync_worklogs_construct_actions(worktree, head, remote):
 
     def setdiff(list1, list2):
         return [i for i in list1 + list2 if i not in list2]
@@ -45,13 +56,6 @@ def sync_worklogs_impl(worktree, head, remote):
             if k not in curr_keys:
                 head_nrm[k] = []
         return head_nrm
-
-
-    # def add_issues(worklogs, issue_namekeys):
-    #     return None
-
-    # # align the issues in `worktree` and `head` to match those in `remote`
-    # worktree_aligned, head_aligned = align_issues(worktree, head, remote)
 
     issue_keys_worktree = extract_issue_keys(worktree)
     issue_keys_head = extract_issue_keys(head)
@@ -93,6 +97,85 @@ def sync_worklogs_impl(worktree, head, remote):
     return action_list
 
 
+class RemoteUpdateAdd:
+
+    def __init__(self, existing, n_add, issueId, timeSpent, started, comment):
+        self.existing = existing
+        self.n_add = n_add
+        self.issueId = issueId
+        self.timeSpent = timeSpent
+        self.started = started
+        self.comment = comment
+
+    def update(self, jira, issues, worklogs):
+        del worklogs
+        for _ in range(self.n_add):
+            issue = jira.add_worklog(
+                issue=issues['self.issueId'],
+                timeSpent=self.timeSpent,
+                started=self.started,
+                comment=self.comment
+            )
+            self.existing.append(issue)
+        return self.existing
+
+
+class RemoteUpdateRemove:
+
+    def __init__(self, existing, n_remove):
+        self.existing = existing
+        self.n_remove = n_remove
+
+    def update(self, jira, issues, worklogs):
+        del jira, issues
+        for _ in range(self.n_remove):
+            worklog_fields = self.existing.pop()
+            worklog = worklogs[worklog_fields['id']]
+            worklog.delete()
+        return self.existing
+
+def create_merged_maybe_entry(altrep_worktree, altrep_head, altrep_remote):
+
+    n_worktree = len(altrep_worktree)
+    n_head = len(altrep_head)
+    n_remote = len(altrep_remote)
+
+    # Enuerate all possible relationships
+    if n_worktree == n_head == n_remote:
+        None
+    elif n_worktree == n_head < n_remote:
+        None
+    elif n_worktree == n_head > n_remote:
+        None
+    elif n_worktree < n_head == n_remote:
+        None
+    elif n_worktree < n_head < n_remote:
+        None
+    elif n_worktree < n_head > n_remote:
+        None
+    elif n_worktree > n_head == n_remote:
+        None
+    elif n_worktree > n_head < n_remote:
+        None
+    elif n_worktree > n_head > n_remote:
+        None
+
+
+def remote_entries_remove(worklogs, ids_to_remove):
+    out = []
+    for id in ids_to_remove:
+        worklog = worklogs[id]
+        out.append(worklog.delete())
+    return out
+
+def remote_entry_add(jira, issues, worklog_fields):
+    worklog = jira.add_worklog(
+        issue=issues[worklog_fields['issueId']],
+        timeSpent=worklog_fields['timeSpent'],
+        started=worklog_fields['started'],
+        comment=worklog_fields['comment']
+    )
+    return worklog
 
 
 def extract_issue_keys(issues):
@@ -108,8 +191,8 @@ def extract_issue_key(dictkey):
 
 def issues_to_altrep(issues, has_metadata):
     create_value = create_metadata_dict if has_metadata else lambda _: {}
-    def worklogs_to_dictrepr(worklogs):
-        return {create_core_tuple(w): create_value(w) for w in worklogs}
+    # def worklogs_to_dictrepr(worklogs):
+    #     return {create_core_tuple(w): create_value(w) for w in worklogs}
     altrep = {}
     for (key, worklogs) in issues.items():
         for worklog in worklogs:
