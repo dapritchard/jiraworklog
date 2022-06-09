@@ -12,7 +12,7 @@ def create_modifrep(altrep_head, altrep_remote):
     # Create a dict with keys the worklog ID and values the "altrep"
     # representation of the worklogs
     def create_idrep(altrep):
-        return {v['id']:k for (k, v) in altrep.values()}
+        return {w['id']:k for (k, v) in altrep.items() for w in v}
 
     idrep_head = create_idrep(altrep_head)
     idrep_remote = create_idrep(altrep_remote)
