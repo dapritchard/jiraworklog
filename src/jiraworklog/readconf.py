@@ -19,27 +19,29 @@ def read_worklogs_local():
     # labels that are specified exist.
     return entries
 
-def nrml_worklogs_local(worklogs_raw, conf):
-    tags_key = conf['tags']
-    # comment_key = conf['parse_delimited']['cols_map']['description']
+def nrml_worklogs_local(entries, conf):
+    tags_key = conf['parse_delimited']['col_labels']['tags']
     delimiter2 = conf['parse_delimited']['delimiter2']
-    issues = set(conf['tags'].keys())
+    issues_map = conf['issues_map']
+    global_tags_set = set(issues_map.keys())
+    worklog_parser = create_worklog_parser(conf)
     worklogs = {}
-    for w in worklogs_raw:
-        tags_str = w[tags_key]
-        tags = set(tags_str.split(delimiter2))
-        tags_intersect = tags & issues
+    for entry in entries:
+        entry_tags_set = set(entry[tags_key].split(delimiter2))
+        tags_intersect = global_tags_set & entry_tags_set
         n_intersect = len(tags_intersect)
         if n_intersect == 0:
             pass
         elif n_intersect == 1:
-            id = list(tags_intersect)[0]
-            # entry = {
-            #     comment =
-            # }
-            if id in worklogs:
-                worklogs[id].append()
-        # if w['']
+            id = issues_map[list(tags_intersect)[0]]
+            value = worklog_parser(entry)
+            if id not in worklogs:
+                worklogs[id] = []
+            worklogs[id].append(value)
+        else:
+            # TODO: let's track these and throw an error after the loop
+            raise RuntimeError('More than one tag matched')
+    return worklogs
 
 def create_worklog_parser(conf):
     col_labels = conf['parse_delimited']['col_labels']
@@ -64,12 +66,21 @@ def create_worklog_parser_startend(conf):
     start_fmt = col_formats['start']
     end_key = col_labels['end']
     end_fmt = col_formats['end']
-    def f_start_end(worklog):
-        start = datetime.strptime(worklog[start_key], start_fmt)
-        end = datetime.strptime(worklog[end_key], end_fmt)
-        duration = end - start
-        return int(duration.total_seconds())
-    return f_start_end
+    description_key = col_labels['description']
+    def worklog_parser(entry):
+        start = datetime.strptime(entry[start_key], start_fmt)
+        end = datetime.strptime(entry[end_key], end_fmt)
+        duration_timedelta = end - start
+        # TODO: can Jira accept floating point durations? Do we need to truncate
+        # to an integer?
+        duration_seconds = int(duration_timedelta.total_seconds())
+        worklog = {
+            'comment': entry[description_key],
+            'started': "todo",
+            'timeSpentSeconds': duration_seconds
+        }
+        return worklog
+    return worklog_parser
 
 def nrl_worklog_entry(worklog, conf):
     cols_map = conf['parse_delimited']
