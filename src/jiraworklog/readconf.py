@@ -4,12 +4,18 @@ import csv
 from datetime import datetime
 import yaml
 
+def read_local_worklogs():
+    conf = read_conf()
+    worklogs_native = read_worklogs_native()
+    worklogs = normalize_worklogs_local(worklogs_native, conf)
+    return worklogs
+
 def read_conf():
-    with open('../config.yaml', 'r') as yaml_file:
+    with open('worklogs-config.yaml', 'r') as yaml_file:
         contents = yaml.safe_load(yaml_file.read())
     return contents
 
-def read_worklogs_local():
+def read_worklogs_native():
     with open('../worklogs/test-worklog.csv', mode='r') as csv_file:
         entries = []
         reader = csv.DictReader(csv_file)
@@ -19,7 +25,7 @@ def read_worklogs_local():
     # labels that are specified exist.
     return entries
 
-def nrml_worklogs_local(entries, conf):
+def normalize_worklogs_local(entries, conf):
     tags_key = conf['parse_delimited']['col_labels']['tags']
     delimiter2 = conf['parse_delimited']['delimiter2']
     issues_map = conf['issues_map']
@@ -81,6 +87,3 @@ def create_worklog_parser_startend(conf):
         }
         return worklog
     return worklog_parser
-
-def nrl_worklog_entry(worklog, conf):
-    cols_map = conf['parse_delimited']
