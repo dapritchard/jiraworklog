@@ -82,7 +82,7 @@ def create_worklog_parser_startend(conf):
         duration_seconds = int(duration_timedelta.total_seconds())
         worklog = {
             'comment': entry[description_key],
-            'started': "todo",
+            'started': start,
             'timeSpentSeconds': duration_seconds
         }
         return worklog
