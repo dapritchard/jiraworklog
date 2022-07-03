@@ -2,21 +2,22 @@
 
 import csv
 from datetime import datetime
+import os.path
 import yaml
 
-def read_local_worklogs():
+def read_local_worklogs(worklogs_path):
     conf = read_conf()
-    worklogs_native = read_worklogs_native()
+    worklogs_native = read_worklogs_native(worklogs_path)
     worklogs = normalize_worklogs_local(worklogs_native, conf)
     return worklogs
 
 def read_conf():
-    with open('worklogs-config.yaml', 'r') as yaml_file:
+    with open(os.path.expanduser('~/.jwconfig.yaml'), 'r') as yaml_file:
         contents = yaml.safe_load(yaml_file.read())
     return contents
 
-def read_worklogs_native():
-    with open('../worklogs/test-worklog.csv', mode='r') as csv_file:
+def read_worklogs_native(worklogs_path):
+    with open(worklogs_path, mode='r') as csv_file:
         entries = []
         reader = csv.DictReader(csv_file)
         for row in reader:
