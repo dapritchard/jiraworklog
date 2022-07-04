@@ -2,6 +2,7 @@
 
 import csv
 from datetime import datetime
+from jiraworklog.configuration import read_conf
 
 def read_local_worklogs(worklogs_path):
     conf = read_conf()
