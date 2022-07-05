@@ -2,6 +2,7 @@
 
 import json
 import os.path
+from jiraworklog.configuration import *
 
 def read_checkedin_worklogs(conf):
     if 'checked_in_path' in conf and not conf['checked_in_path'] is None:
@@ -22,4 +23,18 @@ def read_checkedin_worklogs(conf):
         # TODO: query user whether we should start a new file. For now we just
         # unconditionally do so
         worklogs = {}
+    nrm_worklogs = align_checkedin_with_conf(worklogs, conf)
+    return nrm_worklogs
+
+def align_checkedin_with_conf(worklogs, conf):
+    conf_nms = set(conf_jira_issue_nms(conf))
+    checkedin_nms = set(worklogs.keys())
+    added_nms = conf_nms - checkedin_nms
+    removed_nms = checkedin_nms - conf_nms
+    for nm in added_nms:
+        worklogs[nm] = []
+    if len(removed_nms) >= 1:
+        # TODO: query user before removing
+        for nm in added_nms:
+            del worklogs[nm]
     return worklogs
