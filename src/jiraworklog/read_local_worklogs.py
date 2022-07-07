@@ -3,6 +3,8 @@
 import csv
 from datetime import datetime
 from jiraworklog.configuration import read_conf
+import pytz
+import re
 
 def read_local_worklogs(worklogs_path):
     conf = read_conf()
@@ -74,7 +76,7 @@ def create_worklog_parser_startend(conf):
         duration_timedelta = end - start
         # TODO: can Jira accept floating point durations? Do we need to truncate
         # to an integer?
-        duration_seconds = int(duration_timedelta.total_seconds())
+        duration_seconds = str(int(duration_timedelta.total_seconds()))
         worklog = {
             'comment': entry[description_key],
             'started': start,
@@ -82,3 +84,34 @@ def create_worklog_parser_startend(conf):
         }
         return worklog
     return worklog_parser
+
+def make_fmt_time(conf):
+    if 'timezone' in conf:
+        specified_tz = True
+        tz = pytz.timezone(conf['timezone'])
+    else:
+        specified_tz = False
+    def fmt_time(time_str, fmt):
+        dt_init = datetime.strptime(time_str, fmt)
+        has_tz = not check_tz_naive(dt_init)
+        if not specified_tz and not has_tz:
+            # TODO: throw error
+            pass
+        if specified_tz and not has_tz:
+            # TODO: have to add time zone
+            dt_aware = tz.localize(dt_init)
+        else:
+            dt_aware = dt_init
+        out_init = dt_aware.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+        # TODO: change 6-digit %f
+        out_mung = out_init
+        return out_mung
+    return fmt_time
+
+# https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive
+def check_tz_naive(dt):
+    return dt.tzinfo == None or dt.tzinfo.utcoffset(dt) == None
+
+def micro_to_milli(time_str):
+    out = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3})\d{3}(-\d{4})', "\\1\\2", time_str)
+    return out
