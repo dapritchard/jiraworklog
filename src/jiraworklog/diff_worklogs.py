@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 def diff_local_worklogs(local, checkedin):
-    pass
+    # TODO: assert that they keys are identical for the two?
+    return {k: diff_issue_worklogs(local[k], checkedin[k])
+            for k
+            in local.keys()}
 
 # The efficiency of this algorithm could likely by improved. However, note that
 # we have to handle the possibility of duplicate worklog entries which precludes
@@ -18,11 +21,14 @@ def diff_issue_worklogs(issue_local, issue_checkedin):
                     in issue_checkedin]
     added = []
     for wkl_local in issue_local:
+        found_match = False
         for i, wkl_augchk in enumerate(issue_augchk):
             if wkl_local == wkl_augchk['minimal']:
                 issue_augchk.pop(i)
+                found_match = True
                 continue
-        added.append(wkl_local)
+        if not found_match:
+            added.append(wkl_local)
     return {
         'added': added,
         'removed': issue_augchk
