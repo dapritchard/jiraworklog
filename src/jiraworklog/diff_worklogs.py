@@ -7,18 +7,22 @@ def diff_worklogs_local(local, checkedin):
     )
     return diff_worklogs(local, checkedin)
 
-
-def diff_worklogs_jira(local, checkedin):
+def diff_worklogs_jira(remote, checkedin):
     diff_worklogs = make_diff_worklogs(
         create_augiss_jira,
         create_augiss_jira
     )
-    return diff_worklogs(local, checkedin)
+    return diff_worklogs(remote, checkedin)
 
-# The efficiency of this algorithm could likely by improved. However, note that
-# we have to handle the possibility of duplicate worklog entries which precludes
-# us from doing certain things like using sets
 def make_diff_worklogs(create_augiss_checkedin, create_augiss_other):
+    def diff_worklogs(dictof_issue_1, dictof_issue_2):
+        # TODO: assert that they keys are identical for the two?
+        return {k: diff_issue_worklogs(dictof_issue_1[k], dictof_issue_2[k])
+                for k
+                in dictof_issue_1.keys()}
+    # The efficiency of this algorithm could likely by improved. However, note
+    # that we have to handle the possibility of duplicate worklog entries which
+    # precludes us from doing certain things like using sets
     def diff_issue_worklogs(issue_checkedin, issue_other):
         augiss_checkedin = create_augiss_checkedin(issue_checkedin)
         augiss_other = create_augiss_other(issue_other)
@@ -36,11 +40,6 @@ def make_diff_worklogs(create_augiss_checkedin, create_augiss_other):
             'added': added,
             'removed': augiss_checkedin
         }
-    def diff_worklogs(dictof_issue_1, dictof_issue_2):
-        # TODO: assert that they keys are identical for the two?
-        return {k: diff_issue_worklogs(dictof_issue_1[k], dictof_issue_2[k])
-                for k
-                in dictof_issue_1.keys()}
     return diff_worklogs
 
 def create_augiss_jira(issue_local):

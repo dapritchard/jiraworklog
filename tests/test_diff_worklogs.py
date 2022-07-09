@@ -19,7 +19,7 @@ localiss = {
 localiss_0to2 = {'P9992-3': localiss['P9992-3'][0:2]}
 localiss_0to1 = {'P9992-3': localiss['P9992-3'][0:1]}
 localiss_0to0 = {'P9992-3': []}
-localiss_1to3 = {'P9992-3': localiss['P9992-3'][2:]}
+localiss_1to3 = {'P9992-3': localiss['P9992-3'][1:]}
 localiss_2to3 = {'P9992-3': localiss['P9992-3'][2:]}
 
 chkiss_3 = {
