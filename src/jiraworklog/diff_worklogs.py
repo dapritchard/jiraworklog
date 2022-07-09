@@ -12,9 +12,11 @@ def diff_worklogs_jira(remote, checkedin):
         create_augiss_jira,
         create_augiss_jira
     )
+    # TODO: consider adding a step that updates the "extraneous" information in
+    # a checked-in entry?
     return diff_worklogs(remote, checkedin)
 
-def make_diff_worklogs(create_augiss_checkedin, create_augiss_other):
+def make_diff_worklogs(create_augiss_other, create_augiss_checkedin):
     def diff_worklogs(dictof_issue_1, dictof_issue_2):
         # TODO: assert that they keys are identical for the two?
         return {k: diff_issue_worklogs(dictof_issue_1[k], dictof_issue_2[k])
@@ -23,9 +25,9 @@ def make_diff_worklogs(create_augiss_checkedin, create_augiss_other):
     # The efficiency of this algorithm could likely by improved. However, note
     # that we have to handle the possibility of duplicate worklog entries which
     # precludes us from doing certain things like using sets
-    def diff_issue_worklogs(issue_checkedin, issue_other):
-        augiss_checkedin = create_augiss_checkedin(issue_checkedin)
+    def diff_issue_worklogs(issue_other, issue_checkedin):
         augiss_other = create_augiss_other(issue_other)
+        augiss_checkedin = create_augiss_checkedin(issue_checkedin)
         added = []
         for wkl_other in augiss_other:
             found_match = False
