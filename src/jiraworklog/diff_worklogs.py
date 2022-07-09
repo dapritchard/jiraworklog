@@ -29,15 +29,15 @@ def make_diff_worklogs(create_augiss_other, create_augiss_checkedin):
         augiss_other = create_augiss_other(issue_other)
         augiss_checkedin = create_augiss_checkedin(issue_checkedin)
         added = []
-        for wkl_other in augiss_other:
+        for augwkl_other in augiss_other:
             found_match = False
-            for i, wkl_checkedin in enumerate(augiss_checkedin):
-                if wkl_checkedin['canon'] == wkl_other['canon']:
-                    augiss_checkedin.pop(i)
+            for i, augwkl_checkedin in enumerate(augiss_checkedin):
+                if augwkl_checkedin['canon'] == augwkl_other['canon']:
                     found_match = True
+                    augiss_checkedin.pop(i)
                     continue
             if not found_match:
-                added.append(wkl_other)
+                added.append(augwkl_other)
         return {
             'added': added,
             'removed': augiss_checkedin
