@@ -1,25 +1,44 @@
 #!/usr/bin/env python3
 
-def create_actions_instructions(diff_local, diff_remote, iss_checkedin):
-    updated_diffs = reconcile_external(diff_local, diff_remote)
-    flat_diffs = create_flat_diffs(updated_diffs)
-    return flat_diffs
+def update_worklogs(jira, checkedin, diff_local, diff_remote):
+    # Note that `checkedin` is modified in the call to `perform_update_actions`
+    update_instrs = create_update_instructions(diff_local, diff_remote)
+    perform_update_actions(jira, checkedin, update_instrs)
+    return checkedin
 
-def make_update_worklog(jira, checkedin, instructions):
+def create_update_instructions(diff_local, diff_remote):
+    nested_update_instrs = reconcile_external_changes(diff_local, diff_remote)
+    update_instrs = flatten_update_instructions(nested_update_instrs)
+    return update_instrs
+
+def perform_update_actions(jira, checkedin, instructions):
     for instruction in instructions:
-        is_remote = instruction.pop('remote')
-        if is_remote:
+        if instruction.pop('remote'):
             update_remote(jira, **instruction)
         update_checkedin(checkedin, **instruction)
     return checkedin
 
-def update_checkedin(checkedin, action, issue, worklog):
+def update_checkedin(checkedin, action, issue, augwkl):
+    assert action in ['added', 'removed']
+    if action == 'added':
+        checkedin[issue].append(augwkl['full'])
+    else:
+        found_match = False
+        for i, augwkl_checkedin in enumerate(checkedin):
+            if augwkl_checkedin['canon'] == augwkl['canon']:
+                found_match = True
+                checkedin.pop(i)
+                continue
+        if not found_match:
+            raise RuntimeError('Internal logic error. Please file a bug report')
+
+def update_remote(jira, action, issue, augwkl):
     pass
 
-def update_remote(jira, action, issue, worklog):
+def update_remote_single(jira, action, issue, worklog):
     pass
 
-def create_flat_diffs(diffs):
+def flatten_update_instructions(diffs):
     flattened = []
     for k_where, v_where in diffs.items():
         for k_action, v_action in v_where.items():
@@ -29,14 +48,10 @@ def create_flat_diffs(diffs):
                         'remote': True if k_where == 'local' else False,
                         'action': k_action,
                         'issue': k_issue,
-                        'worklog': augwkl
+                        'augwkl': augwkl
                     }
                     flattened.append(entry)
     return flattened
-
-# def update_checkedin(iss_checkedin, args):
-#     def update_checkedin_impl(iss_checkedin, update_fcn, iss_key, augwkl_local):
-
 
 def add_checkedin(iss_checkedin, iss_key, augwkl_local):
     found_match = False
@@ -47,9 +62,8 @@ def add_checkedin(iss_checkedin, iss_key, augwkl_local):
             continue
     if not found_match:
         raise RuntimeError('Internal logic error. Please file a bug report')
-    return None
 
-def reconcile_external(diff_local, diff_remote):
+def reconcile_external_changes(diff_local, diff_remote):
     added = find_aligned(diff_local['added'], diff_remote['added'])
     removed = find_aligned(diff_local['removed'], diff_remote['removed'])
     return {
