@@ -30,22 +30,30 @@ def fetch_worklogs_remotedata(jira, issue_nms):
 def read_jira_worklogs(jira, conf):
     issues = {nm: jira.issue(nm) for nm in conf_jira_issue_nms(conf)}
     worklogs = {k: jira.worklogs(v) for (k, v) in issues.items()}
-    nrm_worklogs = {k: [extract_worklog_fields(x) for x in v]
-                    for (k, v)
-                    in worklogs.items()}
-    return nrm_worklogs
+    # nrm_worklogs = {k: [extract_worklog_fields(x) for x in v]
+    #                 for (k, v)
+    #                 in worklogs.items()}
+    # return nrm_worklogs
+    return worklogs
 
-def extract_worklog_fields(worklog):
-    raw = worklog.raw
+def extract_worklog_fields(worklog_jira):
+    raw = worklog_jira.raw
     return {
         'author': raw['author']['displayName'],
         'comment': raw['comment'],
         'created': raw['created'],
         'id': raw['id'],
         'issueId': raw['issueId'],
-        'started': worklog.started,
+        'started': worklog_jira.started,
         'timeSpent': raw['timeSpent'],
         'timeSpentSeconds': raw['timeSpentSeconds'],
         'updateAuthor': raw['updateAuthor']['displayName'],
         'updated': raw['updated'],
+    }
+
+def worklog_full_to_canon(worklog_full):
+    return {
+        'comment': worklog_full['comment'],
+        'started': worklog_full['started'],
+        'timeSpentSeconds': worklog_full['timeSpentSeconds']
     }

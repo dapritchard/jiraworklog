@@ -35,13 +35,15 @@ def update_remote(jira, action, issue, augwkl):
     wkl = augwkl['canon']
     assert action in ['added', 'removed']
     if action == 'added':
-        jira.add_worklog(
+        out_augwkl = jira.add_worklog(
             issue=issue,
             timeSpent=wkl['timeSpent'],
             comment=wkl['comment']
         )
     else:
         delete_worklog(jira=jira, issue=issue)
+        out_augwkl = augwkl
+    return out_augwkl
 
 # def add_checkedin(iss_checkedin, iss_key, augwkl_local):
 #     found_match = False

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from jiraworklog.read_jira_worklogs import extract_worklog_fields, worklog_full_to_canon
+
 def diff_worklogs_local(local, checkedin):
     diff_worklogs = make_diff_worklogs(
         create_augiss_local,
@@ -45,19 +47,23 @@ def make_diff_worklogs(create_augiss_other, create_augiss_checkedin):
     return diff_worklogs
 
 def create_augiss_jira(issue_local):
-    def to_canon(w):
-        return {
-            'comment': w['comment'],
-            'started': w['started'],
-            'timeSpentSeconds': w['timeSpentSeconds']
-        }
-    augiss_jira = [{'canon': to_canon(wkl), 'full': wkl}
-                    for wkl
-                    in issue_local]
+    augiss_jira = [create_augwkl_jira(wkl) for wkl in issue_local]
     return augiss_jira
+
+def create_augwkl_jira(worklog_jira):
+    full = extract_worklog_fields(worklog_jira)
+    canon = worklog_full_to_canon(full)
+    return {
+        'canon': canon,
+        'full': full,
+        'jira': worklog_jira
+    }
 
 def create_augiss_local(issue_local):
     augiss_local = [{'canon': wkl}
                     for wkl
                     in issue_local]
     return augiss_local
+
+# def map_worklogs(f, issues):
+#     {k: f(v) for k, v in issues}
