@@ -59,11 +59,32 @@ def create_augwkl_jira(worklog_jira):
         'jira': worklog_jira
     }
 
+def create_augwkl_checkedin(worklog_checkedin):
+    canon = worklog_full_to_canon(worklog_checkedin)
+    return {
+        'canon': canon,
+        'full': worklog_checkedin
+    }
+
+def create_augwkl_local(worklog_local):
+    return {
+        'canon': worklog_local
+    }
+
 def create_augiss_local(issue_local):
     augiss_local = [{'canon': wkl}
                     for wkl
                     in issue_local]
     return augiss_local
 
-# def map_worklogs(f, issues):
-#     {k: f(v) for k, v in issues}
+def augm_wkls_jira(jira_issues):
+    map_worklogs(create_augwkl_jira, jira_issues)
+
+def augm_wkls_checkedin(checkedin_issues):
+    map_worklogs(create_augwkl_checkedin, checkedin_issues)
+
+def augm_wkls_local(local_issues):
+    map_worklogs(create_augwkl_local, local_issues)
+
+def map_worklogs(f, issues):
+    {k: map(f, v) for k, v in issues}
