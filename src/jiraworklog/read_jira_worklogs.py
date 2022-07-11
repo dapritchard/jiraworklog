@@ -27,7 +27,7 @@ def fetch_worklogs_remotedata(jira, issue_nms):
     worklogs = {(x.key + "@" + x.id): jira.worklogs(x) for x in issues}
     return {k: [extract_worklog_fields(x) for x in v] for (k, v) in worklogs.items()}
 
-def read_jira_worklogs(jira, conf):
+def read_wkls_jira(jira, conf):
     issues = {nm: jira.issue(nm) for nm in conf_jira_issue_nms(conf)}
     worklogs = {k: jira.worklogs(v) for (k, v) in issues.items()}
     # nrm_worklogs = {k: [extract_worklog_fields(x) for x in v]
