@@ -3,13 +3,13 @@
 from jiraworklog.delete_worklog import delete_worklog
 from jiraworklog.reconcile_external import create_update_instructions
 
-def update_worklogs(jira, checkedin, diff_local, diff_remote):
-    # Note that `checkedin` is modified in the call to `perform_update_actions`
-    update_instrs = create_update_instructions(diff_local, diff_remote)
-    perform_update_actions(jira, checkedin, update_instrs)
-    return checkedin
+# def update_worklogs(jira, checkedin, diff_local, diff_remote):
+#     # Note that `checkedin` is modified in the call to `perform_update_actions`
+#     update_instrs = create_update_instructions(diff_local, diff_remote)
+#     perform_update_actions(jira, checkedin, update_instrs)
+#     return checkedin
 
-def perform_update_actions(jira, checkedin, instructions):
+def push_worklogs(jira, checkedin, instructions):
     for instruction in instructions:
         if instruction.pop('remote'):
             update_remote(jira, **instruction)
