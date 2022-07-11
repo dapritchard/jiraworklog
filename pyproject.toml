@@ -8,6 +8,7 @@ authors = ["David Pritchard <david.al.pritchard@gmail.com>"]
 python = "^3.9"
 PyYAML = "^6.0"
 pytz = "^2022.1"
+jira = "^3.3.0"
 
 [tool.poetry.dev-dependencies]
 
