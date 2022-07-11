@@ -10,9 +10,9 @@ from jiraworklog.push_worklogs import push_worklogs
 
 def sync_worklogs(jira, worklogs_path):
     conf = read_conf()
-    local_worklogs = augm_wkls_local(read_wkls_local(worklogs_path))
-    checkedin_worklogs = augm_wkls_checkedin(read_wkls_checkedin(conf))
-    remote_worklogs = augm_wkls_jira(read_wkls_jira(jira, conf))
+    local_worklogs = read_wkls_local(worklogs_path)
+    checkedin_worklogs = read_wkls_checkedin(conf)
+    remote_worklogs = read_wkls_jira(jira, conf)
     update_instrs = sync_worklogs_pure(
         local_worklogs,
         checkedin_worklogs,
@@ -26,7 +26,10 @@ def sync_worklogs(jira, worklogs_path):
         pass
 
 def sync_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs):
-    diffs_local = diff_worklogs_local(local_worklogs, checkedin_worklogs)
-    diffs_remote = diff_worklogs_jira(remote_worklogs, checkedin_worklogs)
+    local_augwkls = augm_wkls_local(local_worklogs)
+    checkedin_augwkls = augm_wkls_checkedin(checkedin_worklogs)
+    remote_augwkls = augm_wkls_jira(remote_worklogs)
+    diffs_local = diff_worklogs_local(local_augwkls, checkedin_augwkls)
+    diffs_remote = diff_worklogs_jira(remote_augwkls, checkedin_augwkls)
     update_instrs = create_update_instructions(diffs_local, diffs_remote)
     return update_instrs

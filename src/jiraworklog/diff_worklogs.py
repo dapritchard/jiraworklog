@@ -18,33 +18,58 @@ def diff_worklogs_jira(remote, checkedin):
     # a checked-in entry?
     return diff_worklogs(remote, checkedin)
 
-def make_diff_worklogs(create_augiss_other, create_augiss_checkedin):
-    def diff_worklogs(dictof_issue_1, dictof_issue_2):
-        # TODO: assert that they keys are identical for the two?
-        return {k: diff_issue_worklogs(dictof_issue_1[k], dictof_issue_2[k])
-                for k
-                in dictof_issue_1.keys()}
-    # The efficiency of this algorithm could likely by improved. However, note
-    # that we have to handle the possibility of duplicate worklog entries which
-    # precludes us from doing certain things like using sets
-    def diff_issue_worklogs(issue_other, issue_checkedin):
-        augiss_other = create_augiss_other(issue_other)
-        augiss_checkedin = create_augiss_checkedin(issue_checkedin)
-        added = []
-        for augwkl_other in augiss_other:
-            found_match = False
-            for i, augwkl_checkedin in enumerate(augiss_checkedin):
-                if augwkl_checkedin['canon'] == augwkl_other['canon']:
-                    found_match = True
-                    augiss_checkedin.pop(i)
-                    continue
-            if not found_match:
-                added.append(augwkl_other)
-        return {
-            'added': added,
-            'removed': augiss_checkedin
-        }
-    return diff_worklogs
+def diff_worklogs(wkls_other, wkls_checkedin):
+    # TODO: assert that they keys are identical for the two?
+    return {k: diff_worklogs_singleissue(wkls_other[k], wkls_checkedin[k])
+            for k
+            in wkls_other.keys()}
+
+# The efficiency of this algorithm could likely by improved. However, note
+# that we have to handle the possibility of duplicate worklog entries which
+# precludes us from doing certain things like using sets
+def diff_worklogs_singleissue(iss_other, iss_checkedin):
+    added = []
+    for augwkl_other in iss_other:
+        found_match = False
+        for i, augwkl_checkedin in enumerate(iss_checkedin):
+            if augwkl_checkedin['canon'] == augwkl_other['canon']:
+                found_match = True
+                iss_checkedin.pop(i)
+                continue
+        if not found_match:
+            added.append(augwkl_other)
+    return {
+        'added': added,
+        'removed': iss_checkedin
+    }
+
+# def make_diff_worklogs(create_augiss_other, create_augiss_checkedin):
+#     def diff_worklogs(dictof_issue_1, dictof_issue_2):
+#         # TODO: assert that they keys are identical for the two?
+#         return {k: diff_issue_worklogs(dictof_issue_1[k], dictof_issue_2[k])
+#                 for k
+#                 in dictof_issue_1.keys()}
+#     # The efficiency of this algorithm could likely by improved. However, note
+#     # that we have to handle the possibility of duplicate worklog entries which
+#     # precludes us from doing certain things like using sets
+#     def diff_issue_worklogs(issue_other, issue_checkedin):
+#         augiss_other = create_augiss_other(issue_other)
+#         augiss_checkedin = create_augiss_checkedin(issue_checkedin)
+#         added = []
+#         for augwkl_other in augiss_other:
+#             found_match = False
+#             for i, augwkl_checkedin in enumerate(augiss_checkedin):
+#                 if augwkl_checkedin['canon'] == augwkl_other['canon']:
+#                     found_match = True
+#                     augiss_checkedin.pop(i)
+#                     continue
+#             if not found_match:
+#                 added.append(augwkl_other)
+#         return {
+#             'added': added,
+#             'removed': augiss_checkedin
+#         }
+#     return diff_worklogs
 
 def create_augiss_jira(issue_local):
     augiss_jira = [create_augwkl_jira(wkl) for wkl in issue_local]
