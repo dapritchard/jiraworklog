@@ -6,7 +6,7 @@ from jiraworklog.configuration import read_conf
 import pytz
 import re
 
-def read_wkls_local(worklogs_path):
+def read_local_worklogs(worklogs_path):
     conf = read_conf()
     worklogs_native = read_worklogs_native(worklogs_path)
     worklogs = normalize_worklogs_local(worklogs_native, conf)
