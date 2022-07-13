@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from jiraworklog.read_jira_worklogs import extract_worklog_fields, worklog_full_to_canon
+from jiraworklog.read_remote_worklogs import extract_worklog_fields, worklog_full_to_canon
 
 def diff_worklogs_local(local, checkedin):
     diff_worklogs = make_diff_worklogs(
@@ -103,13 +103,13 @@ def create_augiss_local(issue_local):
     return augiss_local
 
 def augm_wkls_jira(jira_issues):
-    map_worklogs(create_augwkl_jira, jira_issues)
+    return map_worklogs(create_augwkl_jira, jira_issues)
 
 def augm_wkls_checkedin(checkedin_issues):
-    map_worklogs(create_augwkl_checkedin, checkedin_issues)
+    return map_worklogs(create_augwkl_checkedin, checkedin_issues)
 
 def augm_wkls_local(local_issues):
-    map_worklogs(create_augwkl_local, local_issues)
+    return map_worklogs(create_augwkl_local, local_issues)
 
 def map_worklogs(f, issues):
-    {k: map(f, v) for k, v in issues}
+    return {k: list(map(f, v)) for k, v in issues.items()}

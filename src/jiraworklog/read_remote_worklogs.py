@@ -44,7 +44,7 @@ def extract_worklog_fields(worklog_jira):
         'created': raw['created'],
         'id': raw['id'],
         'issueId': raw['issueId'],
-        'started': worklog_jira.started,
+        'started': raw['started'],
         'timeSpent': raw['timeSpent'],
         'timeSpentSeconds': raw['timeSpentSeconds'],
         'updateAuthor': raw['updateAuthor']['displayName'],
