@@ -30,10 +30,6 @@ def fetch_worklogs_remotedata(jira, issue_nms):
 def read_remote_worklogs(jira, conf):
     issues = {nm: jira.issue(nm) for nm in conf_jira_issue_nms(conf)}
     worklogs = {k: jira.worklogs(v) for (k, v) in issues.items()}
-    # nrm_worklogs = {k: [extract_worklog_fields(x) for x in v]
-    #                 for (k, v)
-    #                 in worklogs.items()}
-    # return nrm_worklogs
     return worklogs
 
 def extract_worklog_fields(worklog_jira):
@@ -46,9 +42,9 @@ def extract_worklog_fields(worklog_jira):
         'issueId': raw['issueId'],
         'started': raw['started'],
         'timeSpent': raw['timeSpent'],
-        'timeSpentSeconds': raw['timeSpentSeconds'],
+        'timeSpentSeconds': str(raw['timeSpentSeconds']),
         'updateAuthor': raw['updateAuthor']['displayName'],
-        'updated': raw['updated'],
+        'updated': raw['updated']
     }
 
 def worklog_full_to_canon(worklog_full):
