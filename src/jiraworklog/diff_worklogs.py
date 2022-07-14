@@ -2,21 +2,21 @@
 
 from jiraworklog.read_remote_worklogs import extract_worklog_fields, worklog_full_to_canon
 
-def diff_worklogs_local(local, checkedin):
-    diff_worklogs = make_diff_worklogs(
-        create_augiss_local,
-        create_augiss_jira
-    )
-    return diff_worklogs(local, checkedin)
+# def diff_worklogs_local(local, checkedin):
+#     diff_worklogs = make_diff_worklogs(
+#         create_augiss_local,
+#         create_augiss_jira
+#     )
+#     return diff_worklogs(local, checkedin)
 
-def diff_worklogs_jira(remote, checkedin):
-    diff_worklogs = make_diff_worklogs(
-        create_augiss_jira,
-        create_augiss_jira
-    )
-    # TODO: consider adding a step that updates the "extraneous" information in
-    # a checked-in entry?
-    return diff_worklogs(remote, checkedin)
+# def diff_worklogs_jira(remote, checkedin):
+#     diff_worklogs = make_diff_worklogs(
+#         create_augiss_jira,
+#         create_augiss_jira
+#     )
+#     # TODO: consider adding a step that updates the "extraneous" information in
+#     # a checked-in entry?
+#     return diff_worklogs(remote, checkedin)
 
 def diff_worklogs(wkls_other, wkls_checkedin):
     # TODO: assert that they keys are identical for the two?
@@ -29,18 +29,19 @@ def diff_worklogs(wkls_other, wkls_checkedin):
 # precludes us from doing certain things like using sets
 def diff_worklogs_singleissue(iss_other, iss_checkedin):
     added = []
+    remaining_checkedin = iss_checkedin.copy()
     for augwkl_other in iss_other:
         found_match = False
-        for i, augwkl_checkedin in enumerate(iss_checkedin):
+        for i, augwkl_checkedin in enumerate(remaining_checkedin):
             if augwkl_checkedin['canon'] == augwkl_other['canon']:
                 found_match = True
-                iss_checkedin.pop(i)
+                remaining_checkedin.pop(i)
                 continue
         if not found_match:
             added.append(augwkl_other)
     return {
         'added': added,
-        'removed': iss_checkedin
+        'removed': remaining_checkedin
     }
 
 # def make_diff_worklogs(create_augiss_other, create_augiss_checkedin):

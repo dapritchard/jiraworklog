@@ -4,9 +4,7 @@ from jiraworklog.diff_worklogs import (
     augm_wkls_local,
     augm_wkls_checkedin,
     augm_wkls_jira,
-    diff_worklogs,
-    diff_worklogs_local,
-    diff_worklogs_jira
+    diff_worklogs
 )
 from jiraworklog.reconcile_external import create_update_instructions
 
