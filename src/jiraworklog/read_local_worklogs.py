@@ -75,10 +75,8 @@ def create_worklog_parser_startend(conf):
         start = datetime.strptime(entry[start_key], start_fmt)
         end = datetime.strptime(entry[end_key], end_fmt)
         duration_timedelta = end - start
-        # TODO: can Jira accept floating point durations? Do we need to truncate
-        # to an integer?
         duration_str = str(int(duration_timedelta.total_seconds()))
-        start_str = fmt_time(start, fmt_time)
+        start_str = fmt_time(start)
         worklog = {
             'comment': entry[description_key],
             'started': start_str,
@@ -93,7 +91,7 @@ def make_fmt_time(conf):
         tz = pytz.timezone(conf['timezone'])
     else:
         specified_tz = False
-    def fmt_time(dt, fmt):
+    def fmt_time(dt):
         has_tz = not check_tz_naive(dt)
         if not specified_tz and not has_tz:
             # TODO: throw error
@@ -104,8 +102,7 @@ def make_fmt_time(conf):
         else:
             dt_aware = dt
         out_init = dt_aware.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
-        # TODO: change 6-digit %f
-        out_mung = out_init
+        out_mung = micro_to_milli(out_init)
         return out_mung
     return fmt_time
 
