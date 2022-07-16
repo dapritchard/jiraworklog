@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from jiraworklog.configuration import read_conf
-from jiraworklog.diff_worklogs import augm_wkls_jira, augm_wkls_checkedin, augm_wkls_local, diff_worklogs_jira, diff_worklogs_local
+from jiraworklog.diff_worklogs import augm_wkls_jira, augm_wkls_checkedin, augm_wkls_local, diff_worklogs
 from jiraworklog.read_local_worklogs import read_local_worklogs
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
@@ -37,7 +37,7 @@ def process_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs):
     # local and the remote views that isn't in the checked-in view), and create
     # a data structure of "instructions" regarding what needs to be updated in
     # the checked-in worklogs file and the remote Jira worklogs.
-    diffs_local = diff_worklogs_local(local_augwkls, checkedin_augwkls)
-    diffs_remote = diff_worklogs_jira(remote_augwkls, checkedin_augwkls)
+    diffs_local = diff_worklogs(local_augwkls, checkedin_augwkls)
+    diffs_remote = diff_worklogs(remote_augwkls, checkedin_augwkls)
     update_instrs = create_update_instructions(diffs_local, diffs_remote)
     return update_instrs

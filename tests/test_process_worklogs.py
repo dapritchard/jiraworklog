@@ -7,6 +7,7 @@ from jiraworklog.diff_worklogs import (
     diff_worklogs
 )
 from jiraworklog.reconcile_external import create_update_instructions
+from jiraworklog.sync_worklogs import process_worklogs_pure
 
 
 # Create mock JIRA class -------------------------------------------------------
@@ -143,3 +144,9 @@ remote_augwkls = augm_wkls_jira(remote_worklogs)
 diffs_local = diff_worklogs(local_augwkls, checkedin_augwkls)
 diffs_remote = diff_worklogs(remote_augwkls, checkedin_augwkls)
 update_instrs = create_update_instructions(diffs_local, diffs_remote)
+
+update_instructions = process_worklogs_pure(
+    local_worklogs,
+    checkedin_worklogs,
+    remote_worklogs
+)
