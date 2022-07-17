@@ -4,10 +4,14 @@ from jiraworklog.diff_worklogs import (
     augm_wkls_local,
     augm_wkls_checkedin,
     augm_wkls_jira,
-    diff_worklogs
+    create_augwkl_jira,
+    diff_worklogs,
+    map_worklogs
 )
+from jiraworklog.push_worklogs import push_worklogs, update_remote
+from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_external import create_update_instructions
-from jiraworklog.sync_worklogs import process_worklogs_pure
+from jiraworklog.sync_worklogs import process_worklogs_pure, strptime_ptl, sync_worklogs
 
 
 # Create mock JIRA class -------------------------------------------------------
@@ -46,6 +50,39 @@ class JIRAMock:
 
     def __repr__(self) -> str:
         return f"<JIRAMock Worklog: id='{self.raw['id']}'>"
+
+
+# ------------------------------------------------------------------------------
+
+def delete_remote_worklog(worklog):
+    try:
+        worklog.delete()
+    except:
+        # TODO: make a better error message
+        raise RuntimeError('Failed to delete Jira worklog')
+
+def upload_remote_worklog(jira, mock_remote_augwkl):
+    full = mock_remote_augwkl['full']
+    jira_wkl = jira.add_worklog(
+        issue=full['issueId'],
+        timeSpent=full['timeSpent'],
+        started=strptime_ptl(full['started']),
+        comment=full['comment']
+    )
+    return jira_wkl
+
+def sync_testdata_to_remote(jira, mock_remote_worklogs):
+    def upload_remote_worklog_ptl(mock_remote_augwkl):
+        jira_wkl = upload_remote_worklog(jira, mock_remote_augwkl)
+        return create_augwkl_jira(jira_wkl)
+    remote_keys = mock_remote_worklogs.keys()
+    mock_conf = {
+        'issues_map': {i : v for i, v in enumerate(remote_keys)}
+    }
+    remote_worklogs = read_remote_worklogs(jira, mock_conf)
+    map_worklogs(delete_remote_worklog, remote_worklogs)
+    return map_worklogs(upload_remote_worklog_ptl, mock_remote_worklogs)
+
 
 
 # Create test data -------------------------------------------------------------
@@ -139,14 +176,18 @@ remote_worklogs = {
 
 local_augwkls = augm_wkls_local(local_worklogs)
 checkedin_augwkls = augm_wkls_checkedin(checkedin_worklogs)
-remote_augwkls = augm_wkls_jira(remote_worklogs)
+# remote_augwkls = augm_wkls_jira(remote_worklogs)
+remote_augwkls = sync_testdata_to_remote(jira, augm_wkls_jira(remote_worklogs))
 
 diffs_local = diff_worklogs(local_augwkls, checkedin_augwkls)
 diffs_remote = diff_worklogs(remote_augwkls, checkedin_augwkls)
 update_instrs = create_update_instructions(diffs_local, diffs_remote)
 
-update_instructions = process_worklogs_pure(
+update_instrs = process_worklogs_pure(
     local_worklogs,
     checkedin_worklogs,
     remote_worklogs
 )
+
+
+push_worklogs(jira, checkedin_augwkls.copy(), [x.copy() for x in update_instrs])
