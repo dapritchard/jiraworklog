@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 from jiraworklog.configuration import read_conf
 from jiraworklog.diff_worklogs import augm_wkls_jira, augm_wkls_checkedin, augm_wkls_local, diff_worklogs
 from jiraworklog.read_local_worklogs import read_local_worklogs
@@ -41,3 +42,6 @@ def process_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs):
     diffs_remote = diff_worklogs(remote_augwkls, checkedin_augwkls)
     update_instrs = create_update_instructions(diffs_local, diffs_remote)
     return update_instrs
+
+def strptime_ptl(datetime_str: str):
+    return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
