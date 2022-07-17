@@ -14,13 +14,13 @@ def sync_worklogs(jira, worklogs_path):
     local_worklogs = read_local_worklogs(worklogs_path)
     checkedin_worklogs = read_checkedin_worklogs(conf)
     remote_worklogs = read_remote_worklogs(jira, conf)
-    update_instrs = process_worklogs_pure(
+    checkedin_augwkls, update_instrs = process_worklogs_pure(
         local_worklogs,
         checkedin_worklogs,
         remote_worklogs
     )
     try:
-        push_worklogs(jira, checkedin_worklogs, update_instrs)
+        push_worklogs(jira, checkedin_augwkls, update_instrs)
     finally:
         # TODO: update checked-in worklogs on disk. This construction depends on
         # the partially updated version of `checkedin_worklogs` being available
@@ -41,7 +41,7 @@ def process_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs):
     diffs_local = diff_worklogs(local_augwkls, checkedin_augwkls)
     diffs_remote = diff_worklogs(remote_augwkls, checkedin_augwkls)
     update_instrs = create_update_instructions(diffs_local, diffs_remote)
-    return update_instrs
+    return [checkedin_augwkls, update_instrs]
 
 def strptime_ptl(datetime_str: str):
     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')

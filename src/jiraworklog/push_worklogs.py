@@ -21,13 +21,13 @@ def update_checkedin(checkedin, action, issue, augwkl):
     assert action in ['added', 'removed']
     if action == 'added':
         # TODO: consider sorting by start time?
-        checkedin[issue].append(augwkl['full'])
+        checkedin[issue].append(augwkl)
     else:
         found_match = False
-        for i, augwkl_checkedin in enumerate(checkedin):
+        for i, augwkl_checkedin in enumerate(checkedin[issue]):
             if augwkl_checkedin['canon'] == augwkl['canon']:
                 found_match = True
-                checkedin.pop(i)
+                del checkedin[issue][i]
                 continue
         if not found_match:
             raise RuntimeError('Internal logic error. Please file a bug report')
