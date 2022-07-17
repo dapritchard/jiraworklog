@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from jiraworklog.delete_worklog import delete_worklog
-from jiraworklog.reconcile_external import create_update_instructions
+from jiraworklog.diff_worklogs import create_augwkl_jira
 
 # def update_worklogs(jira, checkedin, diff_local, diff_remote):
 #     # Note that `checkedin` is modified in the call to `perform_update_actions`
@@ -9,12 +9,13 @@ from jiraworklog.reconcile_external import create_update_instructions
 #     perform_update_actions(jira, checkedin, update_instrs)
 #     return checkedin
 
-def push_worklogs(jira, checkedin, instructions):
-    for instruction in instructions:
-        if instruction.pop('remote'):
-            update_remote(jira, **instruction)
-        update_checkedin(checkedin, **instruction)
-    return checkedin
+def push_worklogs(jira, checkedin, update_instrs):
+    for instr in update_instrs:
+        if instr.pop('remote'):
+            maybe_jira_wkl = update_remote(jira, **instr)
+            if maybe_jira_wkl is not None:
+                instr['augwkl'] = create_augwkl_jira(maybe_jira_wkl)
+        update_checkedin(checkedin, **instr)
 
 def update_checkedin(checkedin, action, issue, augwkl):
     assert action in ['added', 'removed']
@@ -32,18 +33,19 @@ def update_checkedin(checkedin, action, issue, augwkl):
             raise RuntimeError('Internal logic error. Please file a bug report')
 
 def update_remote(jira, action, issue, augwkl):
-    wkl = augwkl['canon']
     assert action in ['added', 'removed']
     if action == 'added':
-        out_augwkl = jira.add_worklog(
+        canon = augwkl['canon']
+        maybe_jira_wkl = jira.add_worklog(
             issue=issue,
-            timeSpent=wkl['timeSpent'],
-            comment=wkl['comment']
+            timeSpentSeconds=canon['timeSpentSeconds'],
+            comment=canon['comment']
         )
     else:
-        delete_worklog(jira=jira, issue=issue)
-        out_augwkl = augwkl
-    return out_augwkl
+        full = augwkl['full']
+        jira_wkl = jira.worklog(full['issueId'], full['id'])
+        maybe_jira_wkl = jira_wkl.delete()
+    return maybe_jira_wkl
 
 # def add_checkedin(iss_checkedin, iss_key, augwkl_local):
 #     found_match = False
