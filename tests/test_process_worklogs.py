@@ -8,7 +8,7 @@ from jiraworklog.diff_worklogs import (
     diff_worklogs,
     map_worklogs
 )
-from jiraworklog.push_worklogs import push_worklogs, update_remote
+from jiraworklog.push_worklogs import push_worklogs, update_checkedin, update_remote
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_external import create_update_instructions
 from jiraworklog.sync_worklogs import process_worklogs_pure, strptime_ptl, sync_worklogs
@@ -97,7 +97,7 @@ local_worklogs = {
         {
             'comment': 'Biweekly fracture CE meeting',
             'started': '2021-02-09T12:52:00.000-0500',
-            'timeSpentSeconds': '1860'
+            'timeSpentSeconds': '1800'
         }
     ]
 }
@@ -172,22 +172,36 @@ remote_worklogs = {
 }
 
 
+def update_checkedin_wklids(remote_augwkls, checkedin_augwkls):
+    # TODO: assert that they keys are identical for the two?
+    {k: update_checkedin_wklids_singleiss(remote_augwkls[k], checkedin_augwkls[k])
+     for k
+     in remote_augwkls.keys()}
+
+def update_checkedin_wklids_singleiss(iss_remote, iss_checkedin):
+    for augwkl_remote in iss_remote:
+        for i, augwkl_checkedin in enumerate(iss_checkedin):
+            if augwkl_checkedin['canon'] == augwkl_remote['canon']:
+                iss_checkedin[i]['full'] = augwkl_remote['full']
+                continue
+
+
 # Test routines ----------------------------------------------------------------
 
+# # Non-Jira testing
+# local_augwkls = augm_wkls_local(local_worklogs)
+# checkedin_augwkls = augm_wkls_checkedin(checkedin_worklogs)
+# remote_augwkls = sync_testdata_to_remote(jira, augm_wkls_jira(remote_worklogs))
+
+# Jira testing
 local_augwkls = augm_wkls_local(local_worklogs)
 checkedin_augwkls = augm_wkls_checkedin(checkedin_worklogs)
-# remote_augwkls = augm_wkls_jira(remote_worklogs)
 remote_augwkls = sync_testdata_to_remote(jira, augm_wkls_jira(remote_worklogs))
+update_checkedin_wklids(remote_augwkls, checkedin_augwkls)
 
+# Basically running `update_instrs` manually
 diffs_local = diff_worklogs(local_augwkls, checkedin_augwkls)
 diffs_remote = diff_worklogs(remote_augwkls, checkedin_augwkls)
 update_instrs = create_update_instructions(diffs_local, diffs_remote)
-
-update_instrs = process_worklogs_pure(
-    local_worklogs,
-    checkedin_worklogs,
-    remote_worklogs
-)
-
 
 push_worklogs(jira, checkedin_augwkls.copy(), [x.copy() for x in update_instrs])
