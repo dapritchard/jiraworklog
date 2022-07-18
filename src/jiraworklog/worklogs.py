@@ -6,19 +6,13 @@ import jira.resources
 
 class WorklogCanon:
 
-    def __init__(
-        self,
-        canon: Dict[str, str]
-    ):
+    def __init__(self, canon: Dict[str, str]):
         self.canon = canon
 
 
 class WorklogCheckedin(WorklogCanon):
 
-    def __init__(
-        self,
-        full: Dict[str, str]
-    ):
+    def __init__(self, full: Dict[str, str]):
         canon = {
             'comment': full['comment'],
             'started': full['started'],
@@ -30,10 +24,7 @@ class WorklogCheckedin(WorklogCanon):
 
 class WorklogJira(WorklogCheckedin):
 
-    def __init__(
-        self,
-        jira_wkl: jira.resources.Worklog
-    ):
+    def __init__(self, jira_wkl: jira.resources.Worklog):
         full = jira_to_full(jira_wkl)
         super().__init__(full)
         self.jira = jira_wkl

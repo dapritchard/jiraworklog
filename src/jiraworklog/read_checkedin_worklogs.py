@@ -2,7 +2,7 @@
 
 import json
 import os.path
-from jiraworklog.configuration import *
+from jiraworklog.configuration import Configuration
 
 def read_checkedin_worklogs(conf):
     if 'checked_in_path' in conf and not conf['checked_in_path'] is None:
@@ -26,8 +26,8 @@ def read_checkedin_worklogs(conf):
     nrm_worklogs = align_checkedin_with_conf(worklogs, conf)
     return nrm_worklogs
 
-def align_checkedin_with_conf(worklogs, conf):
-    conf_nms = set(conf_jira_issue_nms(conf))
+def align_checkedin_with_conf(worklogs, conf: Configuration):
+    conf_nms = set(conf.issue_nms)
     checkedin_nms = set(worklogs.keys())
     added_nms = conf_nms - checkedin_nms
     removed_nms = checkedin_nms - conf_nms
