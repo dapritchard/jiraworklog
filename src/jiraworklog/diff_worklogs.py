@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
-from jiraworklog.read_remote_worklogs import extract_worklog_fields, worklog_full_to_canon
+from jiraworklog.worklogs import (
+    WorklogCanon,
+    WorklogCheckedin,
+    full_to_canon,
+    jira_to_full
+)
+from typing import Dict, List
 
 # def diff_worklogs_local(local, checkedin):
 #     diff_worklogs = make_diff_worklogs(
@@ -18,7 +24,11 @@ from jiraworklog.read_remote_worklogs import extract_worklog_fields, worklog_ful
 #     # a checked-in entry?
 #     return diff_worklogs(remote, checkedin)
 
-def diff_worklogs(wkls_other, wkls_checkedin):
+# TODO: return type
+def diff_worklogs(
+    wkls_other: Dict[str, List[WorklogCanon]],
+    wkls_checkedin: Dict[str, List[WorklogCheckedin]]
+):
     # TODO: assert that they keys are identical for the two?
     return {k: diff_worklogs_singleissue(wkls_other[k], wkls_checkedin[k])
             for k
@@ -27,13 +37,16 @@ def diff_worklogs(wkls_other, wkls_checkedin):
 # The efficiency of this algorithm could likely by improved. However, note
 # that we have to handle the possibility of duplicate worklog entries which
 # precludes us from doing certain things like using sets
-def diff_worklogs_singleissue(iss_other, iss_checkedin):
+def diff_worklogs_singleissue(
+    iss_other: List[WorklogCanon],
+    iss_checkedin: List[WorklogCanon]
+):
     added = []
     remaining_checkedin = iss_checkedin.copy()
     for augwkl_other in iss_other:
         found_match = False
         for i, augwkl_checkedin in enumerate(remaining_checkedin):
-            if augwkl_checkedin['canon'] == augwkl_other['canon']:
+            if augwkl_checkedin.canon == augwkl_other.canon:
                 found_match = True
                 remaining_checkedin.pop(i)
                 continue
@@ -77,8 +90,8 @@ def create_augiss_jira(issue_local):
     return augiss_jira
 
 def create_augwkl_jira(worklog_jira):
-    full = extract_worklog_fields(worklog_jira)
-    canon = worklog_full_to_canon(full)
+    full = jira_to_full(worklog_jira)
+    canon = full_to_canon(full)
     return {
         'canon': canon,
         'full': full,
@@ -86,7 +99,7 @@ def create_augwkl_jira(worklog_jira):
     }
 
 def create_augwkl_checkedin(worklog_checkedin):
-    canon = worklog_full_to_canon(worklog_checkedin)
+    canon = full_to_canon(worklog_checkedin)
     return {
         'canon': canon,
         'full': worklog_checkedin
