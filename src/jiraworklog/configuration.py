@@ -21,13 +21,15 @@ class Configuration:
 
         self.parse_type = raw['parse_type']
 
-        self.parse_delimited = raw.get('parse_delimited')
+        # self.parse_delimited = raw.get('parse_delimited')
+        self.parse_delimited = raw['parse_delimited']
 
 
-def read_conf():
+def read_conf() -> Configuration:
     with open(os.path.expanduser('~/.jwconfig.yaml'), 'r') as yaml_file:
         contents = yaml.safe_load(yaml_file.read())
-    return contents
+    conf = Configuration(contents)
+    return conf
 
 # # Jira issues can be identified by either ID or by key. IDs are immutable but
 # # keys can change, for example when an issue moves to another project. See
