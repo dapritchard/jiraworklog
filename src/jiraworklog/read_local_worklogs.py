@@ -2,17 +2,24 @@
 
 import csv
 from datetime import datetime
-from jiraworklog.configuration import read_conf
+from jiraworklog.configuration import Configuration, read_conf
+from jiraworklog.diff_worklogs import map_worklogs
+from jiraworklog.worklogs import WorklogCanon
 import pytz
 import re
+from typing import Any, Callable, Dict, List
 
-def read_local_worklogs(worklogs_path):
+
+def read_local_worklogs(worklogs_path: str) -> Dict[str, List[WorklogCanon]]:
     conf = read_conf()
     worklogs_native = read_worklogs_native(worklogs_path)
-    worklogs = normalize_worklogs_local(worklogs_native, conf)
+    worklogs_parsed = normalize_worklogs_local(worklogs_native, conf)
+    worklogs = map_worklogs(WorklogCanon, worklogs_parsed)
     return worklogs
 
-def read_worklogs_native(worklogs_path):
+
+def read_worklogs_native(worklogs_path: str) -> List[Dict[str, Any]]:
+    # TODO: is error handling needed? E.g. wrong number of columns
     with open(worklogs_path, mode='r') as csv_file:
         entries = []
         reader = csv.DictReader(csv_file)
@@ -22,11 +29,15 @@ def read_worklogs_native(worklogs_path):
     # labels that are specified exist.
     return entries
 
-def normalize_worklogs_local(entries, conf):
-    tags_key = conf['parse_delimited']['col_labels']['tags']
-    delimiter2 = conf['parse_delimited']['delimiter2']
-    issues_map = conf['issues_map']
-    global_tags_set = set(issues_map.keys())
+
+def normalize_worklogs_local(
+    entries: List[Dict[str, Any]],
+    conf: Configuration
+) -> Dict['str', Any]:
+    tags_key = conf.parse_delimited['col_labels']['tags']
+    delimiter2 = conf.parse_delimited['delimiter2']
+    # TODO: make this a field in Configuration?
+    global_tags_set = set(conf.issues_map.keys())
     worklog_parser = create_worklog_parser(conf)
     worklogs = {}
     for entry in entries:
@@ -36,7 +47,7 @@ def normalize_worklogs_local(entries, conf):
         if n_intersect == 0:
             pass
         elif n_intersect == 1:
-            id = issues_map[list(tags_intersect)[0]]
+            id = conf.issues_map[list(tags_intersect)[0]]
             value = worklog_parser(entry)
             if id not in worklogs:
                 worklogs[id] = []
@@ -46,8 +57,11 @@ def normalize_worklogs_local(entries, conf):
             raise RuntimeError('More than one tag matched')
     return worklogs
 
-def create_worklog_parser(conf):
-    col_labels = conf['parse_delimited']['col_labels']
+
+def create_worklog_parser(
+    conf: Configuration
+) -> Callable[[Dict[str, Any]], Dict[str, str]]:
+    col_labels = conf.parse_delimited['col_labels']
     has_start = col_labels.get("start") is not None
     has_end = col_labels.get("end") is not None
     has_duration = col_labels.get("duration") is not None
@@ -62,16 +76,19 @@ def create_worklog_parser(conf):
         raise RuntimeError('Need at least two out of three: start time, end time, or duration')
     return retval
 
-def create_worklog_parser_startend(conf):
-    col_labels = conf['parse_delimited']['col_labels']
-    col_formats = conf['parse_delimited']['col_formats']
+
+def create_worklog_parser_startend(
+    conf: Configuration
+) -> Callable[[Dict[str, Any]], Dict[str, str]]:
+    col_labels = conf.parse_delimited['col_labels']
+    col_formats = conf.parse_delimited['col_formats']
     start_key = col_labels['start']
     end_key = col_labels['end']
     start_fmt = col_formats['start']
     end_fmt = col_formats['end']
     description_key = col_labels['description']
     fmt_time = make_fmt_time(conf)
-    def worklog_parser(entry):
+    def worklog_parser(entry: Dict[str, Any]) -> Dict[str, str]:
         start = datetime.strptime(entry[start_key], start_fmt)
         end = datetime.strptime(entry[end_key], end_fmt)
         duration_timedelta = end - start
@@ -85,13 +102,14 @@ def create_worklog_parser_startend(conf):
         return worklog
     return worklog_parser
 
-def make_fmt_time(conf):
-    if 'timezone' in conf:
-        specified_tz = True
-        tz = pytz.timezone(conf['timezone'])
-    else:
+
+def make_fmt_time(conf: Configuration) -> Callable[[datetime], str]:
+    if conf.timezone is None:
         specified_tz = False
-    def fmt_time(dt):
+    else:
+        specified_tz = True
+        tz = pytz.timezone(conf.timezone)
+    def fmt_time(dt: datetime) -> str:
         has_tz = not check_tz_naive(dt)
         if not specified_tz and not has_tz:
             # TODO: throw error
@@ -106,10 +124,13 @@ def make_fmt_time(conf):
         return out_mung
     return fmt_time
 
+
 # https://docs.python.org/3/library/datetime.html#determining-if-an-object-is-aware-or-naive
-def check_tz_naive(dt):
+def check_tz_naive(dt: datetime) -> bool:
     return dt.tzinfo == None or dt.tzinfo.utcoffset(dt) == None
 
-def micro_to_milli(time_str):
-    out = re.sub(r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3})\d{3}(-\d{4})', "\\1\\2", time_str)
+
+def micro_to_milli(time_str: str) -> str:
+    pattern = r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3})\d{3}(-\d{4})'
+    out = re.sub(pattern, "\\1\\2", time_str)
     return out
