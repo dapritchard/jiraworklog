@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+from jira import JIRA
 from jiraworklog.configuration import read_conf
-from jiraworklog.diff_worklogs import augm_wkls_jira, augm_wkls_checkedin, augm_wkls_local, diff_worklogs
+from jiraworklog.diff_worklogs import (
+    augm_wkls_jira,
+    augm_wkls_checkedin,
+    augm_wkls_local,
+    diff_worklogs
+)
 from jiraworklog.read_local_worklogs import read_local_worklogs
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_external import create_update_instructions
 from jiraworklog.push_worklogs import push_worklogs
 
-def sync_worklogs(jira, worklogs_path):
+def sync_worklogs(jira: JIRA, worklogs_path: str) -> None:
     conf = read_conf()
     local_worklogs = read_local_worklogs(worklogs_path)
     checkedin_worklogs = read_checkedin_worklogs(conf)
@@ -27,6 +33,8 @@ def sync_worklogs(jira, worklogs_path):
         pass
 
 def process_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs):
+# def process_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs
+# ) -> list[dict[str, list[WorklogCheckedin] | TODO]]:
 
     # Worklogs preprocessing
     local_augwkls = augm_wkls_local(local_worklogs)
@@ -43,5 +51,5 @@ def process_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs):
     update_instrs = create_update_instructions(diffs_local, diffs_remote)
     return [checkedin_augwkls, update_instrs]
 
-def strptime_ptl(datetime_str: str):
+def strptime_ptl(datetime_str: str) -> datetime:
     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
