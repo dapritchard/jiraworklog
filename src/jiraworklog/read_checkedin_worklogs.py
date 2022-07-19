@@ -5,11 +5,11 @@ from jiraworklog.configuration import Configuration
 from jiraworklog.diff_worklogs import map_worklogs
 from jiraworklog.worklogs import WorklogCheckedin
 import os.path
-from typing import Any, Dict, List
+from typing import Any
 
 def read_checkedin_worklogs(
     conf: Configuration
-) -> Dict[str, List[WorklogCheckedin]]:
+) -> dict[str, list[WorklogCheckedin]]:
     if conf.checked_in_path is None:
         is_default_path = True
         raw_path = ''
@@ -33,9 +33,9 @@ def read_checkedin_worklogs(
     return worklogs
 
 def align_checkedin_with_conf(
-    worklogs: Dict[str, Any],
+    worklogs: dict[str, Any],
     conf: Configuration
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     conf_nms = set(conf.issue_nms)
     checkedin_nms = set(worklogs.keys())
     added_nms = conf_nms - checkedin_nms

@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
-from typing import (Dict)
 import jira.resources
 
 
 class WorklogCanon:
 
-    def __init__(self, canon: Dict[str, str]):
+    def __init__(self, canon: dict[str, str]):
         self.canon = canon
 
 
 class WorklogCheckedin(WorklogCanon):
 
-    def __init__(self, full: Dict[str, str]):
+    def __init__(self, full: dict[str, str]):
         canon = {
             'comment': full['comment'],
             'started': full['started'],
@@ -30,7 +29,7 @@ class WorklogJira(WorklogCheckedin):
         self.jira = jira_wkl
 
 
-def jira_to_full(jira_wkl: jira.resources.Worklog) -> Dict[str, str]:
+def jira_to_full(jira_wkl: jira.resources.Worklog) -> dict[str, str]:
     raw = jira_wkl.raw
     full = {
         'author': raw['author']['displayName'],
@@ -47,7 +46,7 @@ def jira_to_full(jira_wkl: jira.resources.Worklog) -> Dict[str, str]:
     return full
 
 
-def full_to_canon(full_wkl: Dict[str, str]) -> Dict[str, str]:
+def full_to_canon(full_wkl: dict[str, str]) -> dict[str, str]:
     canon = {
         'comment': full_wkl['comment'],
         'started': full_wkl['started'],

@@ -7,10 +7,10 @@ from jiraworklog.diff_worklogs import map_worklogs
 from jiraworklog.worklogs import WorklogCanon
 import pytz
 import re
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 
-def read_local_worklogs(worklogs_path: str) -> Dict[str, List[WorklogCanon]]:
+def read_local_worklogs(worklogs_path: str) -> dict[str, list[WorklogCanon]]:
     conf = read_conf()
     worklogs_native = read_worklogs_native(worklogs_path)
     worklogs_parsed = normalize_worklogs_local(worklogs_native, conf)
@@ -18,7 +18,7 @@ def read_local_worklogs(worklogs_path: str) -> Dict[str, List[WorklogCanon]]:
     return worklogs
 
 
-def read_worklogs_native(worklogs_path: str) -> List[Dict[str, Any]]:
+def read_worklogs_native(worklogs_path: str) -> list[dict[str, Any]]:
     # TODO: is error handling needed? E.g. wrong number of columns
     with open(worklogs_path, mode='r') as csv_file:
         entries = []
@@ -31,9 +31,9 @@ def read_worklogs_native(worklogs_path: str) -> List[Dict[str, Any]]:
 
 
 def normalize_worklogs_local(
-    entries: List[Dict[str, Any]],
+    entries: list[dict[str, Any]],
     conf: Configuration
-) -> Dict['str', Any]:
+) -> dict['str', Any]:
     tags_key = conf.parse_delimited['col_labels']['tags']
     delimiter2 = conf.parse_delimited['delimiter2']
     # TODO: make this a field in Configuration?
@@ -60,7 +60,7 @@ def normalize_worklogs_local(
 
 def create_worklog_parser(
     conf: Configuration
-) -> Callable[[Dict[str, Any]], Dict[str, str]]:
+) -> Callable[[dict[str, Any]], dict[str, str]]:
     col_labels = conf.parse_delimited['col_labels']
     has_start = col_labels.get("start") is not None
     has_end = col_labels.get("end") is not None
@@ -79,7 +79,7 @@ def create_worklog_parser(
 
 def create_worklog_parser_startend(
     conf: Configuration
-) -> Callable[[Dict[str, Any]], Dict[str, str]]:
+) -> Callable[[dict[str, Any]], dict[str, str]]:
     col_labels = conf.parse_delimited['col_labels']
     col_formats = conf.parse_delimited['col_formats']
     start_key = col_labels['start']
@@ -88,7 +88,7 @@ def create_worklog_parser_startend(
     end_fmt = col_formats['end']
     description_key = col_labels['description']
     fmt_time = make_fmt_time(conf)
-    def worklog_parser(entry: Dict[str, Any]) -> Dict[str, str]:
+    def worklog_parser(entry: dict[str, Any]) -> dict[str, str]:
         start = datetime.strptime(entry[start_key], start_fmt)
         end = datetime.strptime(entry[end_key], end_fmt)
         duration_timedelta = end - start

@@ -6,7 +6,6 @@ from jiraworklog.worklogs import (
     full_to_canon,
     jira_to_full
 )
-from typing import Dict, List
 
 # def diff_worklogs_local(local, checkedin):
 #     diff_worklogs = make_diff_worklogs(
@@ -26,8 +25,8 @@ from typing import Dict, List
 
 # TODO: return type
 def diff_worklogs(
-    wkls_other: Dict[str, List[WorklogCanon]],
-    wkls_checkedin: Dict[str, List[WorklogCheckedin]]
+    wkls_other: dict[str, list[WorklogCanon]],
+    wkls_checkedin: dict[str, list[WorklogCheckedin]]
 ):
     # TODO: assert that they keys are identical for the two?
     return {k: diff_worklogs_singleissue(wkls_other[k], wkls_checkedin[k])
@@ -38,8 +37,8 @@ def diff_worklogs(
 # that we have to handle the possibility of duplicate worklog entries which
 # precludes us from doing certain things like using sets
 def diff_worklogs_singleissue(
-    iss_other: List[WorklogCanon],
-    iss_checkedin: List[WorklogCanon]
+    iss_other: list[WorklogCanon],
+    iss_checkedin: list[WorklogCanon]
 ):
     added = []
     remaining_checkedin = iss_checkedin.copy()

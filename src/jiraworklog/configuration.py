@@ -3,11 +3,11 @@
 import os.path
 import yaml
 
-from typing import (Any, Dict)
+from typing import Any
 
 class Configuration:
 
-    def __init__(self, raw: Dict[str, Any]):
+    def __init__(self, raw: dict[str, Any]):
 
         self.author = raw['author']
 
