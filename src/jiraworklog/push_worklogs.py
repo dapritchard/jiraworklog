@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from jira import JIRA
-from jiraworklog.delete_worklog import delete_worklog
+# from jiraworklog.delete_worklog import delete_worklog
 from jiraworklog.diff_worklogs import create_augwkl_jira
 from jiraworklog.sync_worklogs import strptime_ptl
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
-from functools import reduce
+from functools import partial, reduce
 from typing import Any
 
 # def update_worklogs(jira, checkedin, diff_local, diff_remote):
@@ -15,30 +15,64 @@ from typing import Any
 #     return checkedin
 
 
-class PushWorklogs:
+class UpdateInstrs:
 
-    checkedin: dict[str, list[WorklogCheckedin]]
-    instr_checkedin_add: Any
-    instr_checkedin_remove: Any
-    instr_remote_add: Any
-    instr_remote_remove: Any
-    jira: JIRA
+    chk_add_listwkl: list[WorklogJira]
+    chk_remove_listwkl: list[WorklogJira]
+    rmt_add_listwkl: list[WorklogCanon]
+    rmt_remove_listwkl: list[WorklogJira]
+    # jira: JIRA
 
     def __init__(
         self,
-        checkedin: dict[str, list[WorklogCheckedin]],
-        instr_checkedin_add: Any,
-        instr_checkedin_remove: Any,
-        instr_remote_add: Any,
-        instr_remote_remove: Any,
-        jira: JIRA
+        chk_add_listwkl: list[WorklogJira],
+        chk_remove_listwkl: list[WorklogJira],
+        rmt_add_listwkl: list[WorklogCanon],
+        rmt_remove_listwkl: list[WorklogJira]# ,
+        # jira: JIRA
     ) -> None:
-        checkedin = checkedin,
-        instr_checkedin_add = instr_checkedin_add,
-        instr_checkedin_remove = instr_checkedin_remove,
-        instr_remote_add = instr_remote_add,
-        instr_remote_remove = instr_remote_remove,
-        jira = jira
+        self.chk_add_listwkl = chk_add_listwkl
+        self.chk_remove_listwkl = chk_remove_listwkl
+        self.rmt_add_listwkl = rmt_add_listwkl
+        self.rmt_remove_listwkl = rmt_remove_listwkl
+        # self.jira = jira
+
+    def push_worklogs_v2(
+        self,
+        jira: JIRA,
+        checkedin_wkls: dict[str, list[WorklogCheckedin]]
+    ) -> dict[str, list[WorklogCheckedin]]:
+        self.checkedin_add(checkedin_wkls)
+        self.checkedin_remove(checkedin_wkls)
+        self.remote_add(checkedin_wkls, jira)
+        self.remote_remove(checkedin_wkls)
+        return checkedin_wkls
+
+    def checkedin_add(
+        self,
+        checkedin_wkls: dict[str, list[WorklogCheckedin]]
+    ) -> dict[str, list[WorklogCheckedin]]:
+        return reduce(update_checkedin_add, self.chk_add_listwkl, checkedin_wkls)
+
+    def checkedin_remove(
+        self,
+        checkedin_wkls: dict[str, list[WorklogCheckedin]]
+    ) -> dict[str, list[WorklogCheckedin]]:
+        return reduce(update_checkedin_add, self.chk_remove_listwkl, checkedin_wkls)
+
+    def remote_add(
+        self,
+        checkedin_wkls: dict[str, list[WorklogCheckedin]],
+        jira: JIRA
+    ) -> dict[str, list[WorklogCheckedin]]:
+        push_worklog_add_ptl = partial(push_worklog_add, jira = jira)
+        return reduce(push_worklog_add_ptl, self.rmt_add_listwkl, checkedin_wkls)
+
+    def remote_remove(
+        self,
+        checkedin_wkls: dict[str, list[WorklogCheckedin]]
+    ) -> dict[str, list[WorklogCheckedin]]:
+        return reduce(update_checkedin_add, self.rmt_remove_listwkl, checkedin_wkls)
 
 
 # TODO: is this better than what we had with the flat form?
@@ -84,15 +118,15 @@ def push_worklog_remove(
     return updated_wkls
 
 # TODO: is this better than what we had with the flat form?
-def push_worklogs_v2(
+def push_worklogs_NEW(
     jira: JIRA,
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
-    update_instrs: PushWorklogs
+    update_instrs: UpdateInstrs
 ):
-    chk_1 = reduce(update_checkedin_add, update_instrs.instr_checkedin_add, checkedin_wkls)
-    chk_2 = reduce(update_checkedin_remove, update_instrs.instr_checkedin_remove, chk_1)
-    chk_3 = reduce(lambda x,y: push_worklog_add(x, y, jira), update_instrs.instr_remote_add, chk_2)
-    chk_4 = reduce(push_worklog_remove, update_instrs.instr_remote_remove, chk_3)
+    chk_1 = reduce(update_checkedin_add, update_instrs.checkedin_add, checkedin_wkls)
+    chk_2 = reduce(update_checkedin_remove, update_instrs.checkedin_remove, chk_1)
+    chk_3 = reduce(lambda x,y: push_worklog_add(x, y, jira), update_instrs.remote_add, chk_2)
+    chk_4 = reduce(push_worklog_remove, update_instrs.remote_remove, chk_3)
     return chk_4
 
 def push_worklogs(jira, checkedin, update_instrs):
