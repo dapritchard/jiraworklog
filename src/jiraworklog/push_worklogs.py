@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
+from jira import JIRA
 from jiraworklog.delete_worklog import delete_worklog
 from jiraworklog.diff_worklogs import create_augwkl_jira
+from jiraworklog.sync_worklogs import strptime_ptl
+from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
+from functools import reduce
+from typing import Any
 
 # def update_worklogs(jira, checkedin, diff_local, diff_remote):
 #     # Note that `checkedin` is modified in the call to `perform_update_actions`
 #     update_instrs = create_update_instructions(diff_local, diff_remote)
 #     perform_update_actions(jira, checkedin, update_instrs)
 #     return checkedin
+
 
 class PushWorklogs:
 
@@ -34,6 +40,60 @@ class PushWorklogs:
         instr_remote_remove = instr_remote_remove,
         jira = jira
 
+
+# TODO: is this better than what we had with the flat form?
+def update_checkedin_add(
+    checkedin_wkls: dict[str, list[WorklogCheckedin]],
+    jira_wkl: WorklogJira
+) -> dict[str, list[WorklogCheckedin]]:
+    checkedin_wkls[jira_wkl.issueId].append(jira_wkl.to_checkedin())
+    return checkedin_wkls
+
+# TODO: is this better than what we had with the flat form?
+def update_checkedin_remove(
+    checkedin_wkls: dict[str, list[WorklogCheckedin]],
+    jira_wkl: WorklogJira
+) -> dict[str, list[WorklogCheckedin]]:
+    checkedin_wkls[jira_wkl.issueId].remove(jira_wkl)
+    return checkedin_wkls
+
+# TODO: is this better than what we had with the flat form?
+def push_worklog_add(
+    checkedin_wkls: dict[str, list[WorklogCheckedin]],
+    canon_wkl: WorklogCanon,
+    jira: JIRA
+) -> dict[str, list[WorklogCheckedin]]:
+    # TODO: add error handling?
+    raw_jira_wkl = jira.add_worklog(
+        issue=canon_wkl.issueId,
+        timeSpentSeconds=canon_wkl.canon['timeSpentSeconds'],
+        comment=canon_wkl.canon['comment'],
+        started=strptime_ptl(canon_wkl.canon['comment'])
+    )
+    jira_wkl = WorklogJira(raw_jira_wkl)
+    updated_wkls = update_checkedin_add(checkedin_wkls, jira_wkl)
+    return updated_wkls
+
+# TODO: is this better than what we had with the flat form?
+def push_worklog_remove(
+    checkedin_wkls: dict[str, list[WorklogCheckedin]],
+    jira_wkl: WorklogJira
+) -> dict[str, list[WorklogCheckedin]]:
+    jira_wkl.jira.delete()
+    updated_wkls = update_checkedin_remove(checkedin_wkls, jira_wkl)
+    return updated_wkls
+
+# TODO: is this better than what we had with the flat form?
+def push_worklogs_v2(
+    jira: JIRA,
+    checkedin_wkls: dict[str, list[WorklogCheckedin]],
+    update_instrs: PushWorklogs
+):
+    chk_1 = reduce(update_checkedin_add, update_instrs.instr_checkedin_add, checkedin_wkls)
+    chk_2 = reduce(update_checkedin_remove, update_instrs.instr_checkedin_remove, chk_1)
+    chk_3 = reduce(lambda x,y: push_worklog_add(x, y, jira), update_instrs.instr_remote_add, chk_2)
+    chk_4 = reduce(push_worklog_remove, update_instrs.instr_remote_remove, chk_3)
+    return chk_4
 
 def push_worklogs(jira, checkedin, update_instrs):
     for instr in update_instrs:
