@@ -41,62 +41,63 @@ class UpdateInstrs:
         self,
         jira: JIRA,
         checkedin_wkls: dict[str, list[WorklogCheckedin]]
-    ) -> dict[str, list[WorklogCheckedin]]:
+    ) -> None:
         self.checkedin_add(checkedin_wkls)
         self.checkedin_remove(checkedin_wkls)
         self.remote_add(checkedin_wkls, jira)
         self.remote_remove(checkedin_wkls)
-        return checkedin_wkls
 
     def checkedin_add(
         self,
         checkedin_wkls: dict[str, list[WorklogCheckedin]]
-    ) -> dict[str, list[WorklogCheckedin]]:
-        return reduce(update_checkedin_add, self.chk_add_listwkl, checkedin_wkls)
+    ) -> None:
+        for wkl in self.chk_add_listwkl:
+            update_checkedin_add(checkedin_wkls, wkl)
 
     def checkedin_remove(
         self,
         checkedin_wkls: dict[str, list[WorklogCheckedin]]
-    ) -> dict[str, list[WorklogCheckedin]]:
-        return reduce(update_checkedin_add, self.chk_remove_listwkl, checkedin_wkls)
+    ) -> None:
+        # return reduce(update_checkedin_add, self.chk_remove_listwkl, checkedin_wkls)
+        for wkl in self.chk_remove_listwkl:
+            update_checkedin_remove(checkedin_wkls, wkl)
 
     def remote_add(
         self,
         checkedin_wkls: dict[str, list[WorklogCheckedin]],
         jira: JIRA
-    ) -> dict[str, list[WorklogCheckedin]]:
-        push_worklog_add_ptl = partial(push_worklog_add, jira = jira)
-        return reduce(push_worklog_add_ptl, self.rmt_add_listwkl, checkedin_wkls)
+    ) -> None:
+        for wkl in self.rmt_add_listwkl:
+            push_worklog_add(checkedin_wkls, wkl, jira)
 
     def remote_remove(
         self,
         checkedin_wkls: dict[str, list[WorklogCheckedin]]
-    ) -> dict[str, list[WorklogCheckedin]]:
-        return reduce(update_checkedin_add, self.rmt_remove_listwkl, checkedin_wkls)
+    ) -> None:
+        for wkl in self.rmt_remove_listwkl:
+            push_worklog_remove(checkedin_wkls, wkl)
 
 
 # TODO: is this better than what we had with the flat form?
 def update_checkedin_add(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     jira_wkl: WorklogJira
-) -> dict[str, list[WorklogCheckedin]]:
+) -> None:
     checkedin_wkls[jira_wkl.issueId].append(jira_wkl.to_checkedin())
-    return checkedin_wkls
 
 # TODO: is this better than what we had with the flat form?
 def update_checkedin_remove(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     jira_wkl: WorklogJira
-) -> dict[str, list[WorklogCheckedin]]:
+) -> None:
     checkedin_wkls[jira_wkl.issueId].remove(jira_wkl)
-    return checkedin_wkls
 
 # TODO: is this better than what we had with the flat form?
 def push_worklog_add(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     canon_wkl: WorklogCanon,
     jira: JIRA
-) -> dict[str, list[WorklogCheckedin]]:
+) -> None:
     # TODO: add error handling?
     raw_jira_wkl = jira.add_worklog(
         issue=canon_wkl.issueId,
@@ -105,17 +106,15 @@ def push_worklog_add(
         started=strptime_ptl(canon_wkl.canon['comment'])
     )
     jira_wkl = WorklogJira(raw_jira_wkl)
-    updated_wkls = update_checkedin_add(checkedin_wkls, jira_wkl)
-    return updated_wkls
+    update_checkedin_add(checkedin_wkls, jira_wkl)
 
 # TODO: is this better than what we had with the flat form?
 def push_worklog_remove(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     jira_wkl: WorklogJira
-) -> dict[str, list[WorklogCheckedin]]:
+) -> None:
     jira_wkl.jira.delete()
-    updated_wkls = update_checkedin_remove(checkedin_wkls, jira_wkl)
-    return updated_wkls
+    update_checkedin_remove(checkedin_wkls, jira_wkl)
 
 # TODO: is this better than what we had with the flat form?
 def push_worklogs_NEW(
