@@ -9,6 +9,32 @@ from jiraworklog.diff_worklogs import create_augwkl_jira
 #     perform_update_actions(jira, checkedin, update_instrs)
 #     return checkedin
 
+class PushWorklogs:
+
+    checkedin: dict[str, list[WorklogCheckedin]]
+    instr_checkedin_add: Any
+    instr_checkedin_remove: Any
+    instr_remote_add: Any
+    instr_remote_remove: Any
+    jira: JIRA
+
+    def __init__(
+        self,
+        checkedin: dict[str, list[WorklogCheckedin]],
+        instr_checkedin_add: Any,
+        instr_checkedin_remove: Any,
+        instr_remote_add: Any,
+        instr_remote_remove: Any,
+        jira: JIRA
+    ) -> None:
+        checkedin = checkedin,
+        instr_checkedin_add = instr_checkedin_add,
+        instr_checkedin_remove = instr_checkedin_remove,
+        instr_remote_add = instr_remote_add,
+        instr_remote_remove = instr_remote_remove,
+        jira = jira
+
+
 def push_worklogs(jira, checkedin, update_instrs):
     for instr in update_instrs:
         if instr.pop('remote'):
