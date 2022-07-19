@@ -1,32 +1,49 @@
 #!/usr/bin/env python3
 
-import jira.resources
+from jira.resources import Worklog
+from typing import Any
 
 
 class WorklogCanon:
 
-    def __init__(self, canon: dict[str, str]):
-        self.canon = canon
+    canon: dict[str, str]
+    issueId: str
 
+    def __init__(self, canon: dict[str, str], issueId: str):
+        self.canon = canon
+        self.issueId = issueId
+
+    def __eq__(self, obj: Any) -> bool:
+        return (
+            isinstance(obj, WorklogCanon)
+            and (self.canon == obj.canon)
+            and (self.issueId == obj.issueId)
+        )
+
+    def __ne__(self, obj: Any) -> bool:
+        return not self == obj
 
 class WorklogCheckedin(WorklogCanon):
 
+    full: dict[str, str]
+
     def __init__(self, full: dict[str, str]):
-        canon = {
-            'comment': full['comment'],
-            'started': full['started'],
-            'timeSpentSeconds': full['timeSpentSeconds']
-        }
-        super().__init__(canon)
+        canon = full_to_canon(full)
+        super().__init__(canon, full['issueId'])
         self.full = full
 
 
 class WorklogJira(WorklogCheckedin):
 
-    def __init__(self, jira_wkl: jira.resources.Worklog):
+    jira: Worklog
+
+    def __init__(self, jira_wkl: Worklog):
         full = jira_to_full(jira_wkl)
         super().__init__(full)
         self.jira = jira_wkl
+
+    def to_checkedin(self) -> WorklogCheckedin:
+        return WorklogCheckedin(self.full)
 
 
 def jira_to_full(jira_wkl: jira.resources.Worklog) -> dict[str, str]:
