@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from jira.resources import Worklog
+import jira.resources as j
 from typing import Any
 
 
@@ -35,9 +35,9 @@ class WorklogCheckedin(WorklogCanon):
 
 class WorklogJira(WorklogCheckedin):
 
-    jira: Worklog
+    jira: j.Worklog
 
-    def __init__(self, jira_wkl: Worklog):
+    def __init__(self, jira_wkl: j.Worklog):
         full = jira_to_full(jira_wkl)
         super().__init__(full)
         self.jira = jira_wkl
@@ -46,7 +46,7 @@ class WorklogJira(WorklogCheckedin):
         return WorklogCheckedin(self.full)
 
 
-def jira_to_full(jira_wkl: jira.resources.Worklog) -> dict[str, str]:
+def jira_to_full(jira_wkl: j.Worklog) -> dict[str, str]:
     raw = jira_wkl.raw
     full = {
         'author': raw['author']['displayName'],
