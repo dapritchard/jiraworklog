@@ -3,24 +3,27 @@
 import os.path
 import yaml
 
-from typing import Any
+from typing import Any, Optional
 
 class Configuration:
+
+    author: str
+    issues_map: dict[str, str]
+    issue_nms: list[str]
+    timezone: str
+    # checked_in_path: Optional[]  # TODO: try to convert this to timezone here
+    # checked_in_path: Optional[] # TODO
+    parse_type: # TODO: this should be an enum
+    # parse_delimited: # TODO: this should be an optional?
 
     def __init__(self, raw: dict[str, Any]):
 
         self.author = raw['author']
-
         self.issues_map = raw['issues_map']
-
         self.issue_nms = self.issues_map.values()
-
         self.timezone = raw.get('timezone')
-
         self.checked_in_path = raw.get('checked_in_path')
-
         self.parse_type = raw['parse_type']
-
         # self.parse_delimited = raw.get('parse_delimited')
         self.parse_delimited = raw['parse_delimited']
 
