@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from jiraworklog.configuration import Configuration
+from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 from jiraworklog.diff_worklogs import (
     augm_wkls_local,
     augm_wkls_checkedin,
@@ -8,7 +10,7 @@ from jiraworklog.diff_worklogs import (
     diff_worklogs,
     map_worklogs
 )
-from jiraworklog.push_worklogs import push_worklogs, update_checkedin, update_remote
+# from jiraworklog.push_worklogs import UpdateInstrs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_external import create_update_instructions
 from jiraworklog.sync_worklogs import process_worklogs_pure, strptime_ptl, sync_worklogs
@@ -56,13 +58,13 @@ class JIRAMock:
 
 def delete_remote_worklog(worklog):
     try:
-        worklog.delete()
+        worklog.jira.delete()
     except:
         # TODO: make a better error message
         raise RuntimeError('Failed to delete Jira worklog')
 
 def upload_remote_worklog(jira, mock_remote_augwkl):
-    full = mock_remote_augwkl['full']
+    full = mock_remote_augwkl.full
     jira_wkl = jira.add_worklog(
         issue=full['issueId'],
         timeSpent=full['timeSpent'],
@@ -71,23 +73,45 @@ def upload_remote_worklog(jira, mock_remote_augwkl):
     )
     return jira_wkl
 
-def sync_testdata_to_remote(jira, mock_remote_worklogs):
-    def upload_remote_worklog_ptl(mock_remote_augwkl):
-        jira_wkl = upload_remote_worklog(jira, mock_remote_augwkl)
+def sync_testdata_to_remote(jira, mock_remote_wkls):
+    def upload_remote_worklog_ptl(mock_remote_wkl):
+        jira_wkl = upload_remote_worklog(jira, mock_remote_wkl)
         return create_augwkl_jira(jira_wkl)
-    remote_keys = mock_remote_worklogs.keys()
-    mock_conf = {
-        'issues_map': {i : v for i, v in enumerate(remote_keys)}
-    }
-    remote_worklogs = read_remote_worklogs(jira, mock_conf)
+    conf = create_conf(list(mock_remote_wkls.keys()))
+    remote_worklogs = read_remote_worklogs(jira, conf)
     map_worklogs(delete_remote_worklog, remote_worklogs)
-    return map_worklogs(upload_remote_worklog_ptl, mock_remote_worklogs)
+    return map_worklogs(upload_remote_worklog_ptl, mock_remote_wkls)
 
+
+def create_conf(issue_nms: list[str]) -> Configuration:
+    issues_map = {str(i):v for i, v in enumerate(issue_nms)}  # create dummy issue keys to go with real issue names
+    raw = {
+        'author': '',
+        'issues_map': issues_map,
+        'parse_type': 'csv',
+        'parse_delimited': {
+            'delimiter2': ':',
+            'col_labels': {
+                'description': 'task',
+                'start': 'start',
+                'end': 'end',
+                'duration': None,
+                'tags': 'tags'
+            },
+            'col_formats': {
+                'start': '%Y-%m-%d %H:%M',
+                'end': '%Y-%m-%d %H:%M',
+                'duration': None
+            }
+        }
+    }
+    conf = Configuration(raw)
+    return conf
 
 
 # Create test data -------------------------------------------------------------
 
-local_worklogs = {
+raw_local_worklogs = {
     'P9992-3': [
         {
             'comment': 'Fracture negative control',
@@ -101,8 +125,13 @@ local_worklogs = {
         }
     ]
 }
+local_worklogs = {
+    k: [WorklogCanon(w, k) for w in v]
+    for k, v
+    in raw_local_worklogs.items()
+}
 
-checkedin_worklogs = {
+raw_checkedin_worklogs = {
     'P9992-3': [
         {
             'author': 'Daffy Duck',
@@ -130,6 +159,8 @@ checkedin_worklogs = {
         }
     ]
 }
+checkedin_worklogs = map_worklogs(WorklogCheckedin, raw_checkedin_worklogs)
+
 
 jira_99923_15601 = JIRAMock(
     author='Daffy Duck',
@@ -167,23 +198,32 @@ jira_99923_15679 = JIRAMock(
     updateAuthor='Daffy Duck',
     updated='2021-10-03T17:22:21.438-0400'
 )
-remote_worklogs = {
+raw_remote_worklogs = {
     'P9992-3': [jira_99923_15601, jira_99923_15636, jira_99923_15679]
 }
+remote_worklogs = map_worklogs(WorklogJira, raw_remote_worklogs)
+
+conf = create_conf(remote_worklogs.keys())
 
 
-def update_checkedin_wklids(remote_augwkls, checkedin_augwkls):
+def update_checkedin_ids_wkls(remote_wkls, checkedin_wkls):
     # TODO: assert that they keys are identical for the two?
-    {k: update_checkedin_wklids_singleiss(remote_augwkls[k], checkedin_augwkls[k])
-     for k
-     in remote_augwkls.keys()}
+    wkls = {
+        k: update_checkedin_ids_wkls_singleiss(remote_wkls[k], checkedin_wkls[k])
+        for k
+        in remote_wkls.keys()
+    }
+    return wkls
 
-def update_checkedin_wklids_singleiss(iss_remote, iss_checkedin):
-    for augwkl_remote in iss_remote:
-        for i, augwkl_checkedin in enumerate(iss_checkedin):
-            if augwkl_checkedin['canon'] == augwkl_remote['canon']:
-                iss_checkedin[i]['full'] = augwkl_remote['full']
+def update_checkedin_ids_wkls_singleiss(remote_listwkls, checkedin_listwkls):
+    chk_copy_listwkls = checkedin_listwkls.copy()
+    for remote_wkl in remote_listwkls:
+        for i, checkedin_wkl in enumerate(chk_copy_listwkls):
+            if checkedin_wkl == remote_wkl:
+                chk_copy_listwkls[i] = remote_wkl
                 continue
+    return chk_copy_listwkls
+
 
 
 # Test routines ----------------------------------------------------------------
@@ -194,10 +234,8 @@ def update_checkedin_wklids_singleiss(iss_remote, iss_checkedin):
 # remote_augwkls = sync_testdata_to_remote(jira, augm_wkls_jira(remote_worklogs))
 
 # Jira testing
-local_augwkls = augm_wkls_local(local_worklogs)
-checkedin_augwkls = augm_wkls_checkedin(checkedin_worklogs)
-remote_augwkls = sync_testdata_to_remote(jira, augm_wkls_jira(remote_worklogs))
-update_checkedin_wklids(remote_augwkls, checkedin_augwkls)
+remote_augwkls = sync_testdata_to_remote(jira, raw_remote_worklogs)
+update_checkedin_ids_wkls(remote_augwkls, checkedin_augwkls)
 
 # Basically running `update_instrs` manually
 diffs_local = diff_worklogs(local_augwkls, checkedin_augwkls)
