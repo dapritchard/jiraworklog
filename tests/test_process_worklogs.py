@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 from jiraworklog.configuration import Configuration
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 from jiraworklog.diff_worklogs import (
-    augm_wkls_local,
-    augm_wkls_checkedin,
-    augm_wkls_jira,
-    create_augwkl_jira,
+    # augm_wkls_local,
+    # augm_wkls_checkedin,
+    # augm_wkls_jira,
+    # create_augwkl_jira,
     diff_worklogs,
     map_worklogs
 )
@@ -15,6 +16,11 @@ from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_external import create_update_instructions
 from jiraworklog.sync_worklogs import process_worklogs_pure, strptime_ptl, sync_worklogs
 
+def map_worklogs(f, issues):
+    return {k: list(map(f, v)) for k, v in issues.items()}
+
+def strptime_ptl(datetime_str: str) -> datetime:
+    return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
 
 # Create mock JIRA class -------------------------------------------------------
 
@@ -76,7 +82,7 @@ def upload_remote_worklog(jira, mock_remote_augwkl):
 def sync_testdata_to_remote(jira, mock_remote_wkls):
     def upload_remote_worklog_ptl(mock_remote_wkl):
         jira_wkl = upload_remote_worklog(jira, mock_remote_wkl)
-        return create_augwkl_jira(jira_wkl)
+        return WorklogJira(jira_wkl)
     conf = create_conf(list(mock_remote_wkls.keys()))
     remote_worklogs = read_remote_worklogs(jira, conf)
     map_worklogs(delete_remote_worklog, remote_worklogs)
@@ -203,7 +209,7 @@ raw_remote_worklogs = {
 }
 remote_worklogs = map_worklogs(WorklogJira, raw_remote_worklogs)
 
-conf = create_conf(remote_worklogs.keys())
+# conf = create_conf(remote_worklogs.keys())
 
 
 def update_checkedin_ids_wkls(remote_wkls, checkedin_wkls):
@@ -234,12 +240,12 @@ def update_checkedin_ids_wkls_singleiss(remote_listwkls, checkedin_listwkls):
 # remote_augwkls = sync_testdata_to_remote(jira, augm_wkls_jira(remote_worklogs))
 
 # Jira testing
-remote_augwkls = sync_testdata_to_remote(jira, raw_remote_worklogs)
-update_checkedin_ids_wkls(remote_augwkls, checkedin_augwkls)
+upd_remote_wkls = sync_testdata_to_remote(jira, remote_worklogs)
+upd_checkedin_wkls = update_checkedin_ids_wkls(upd_remote_wkls, checkedin_worklogs)
 
 # Basically running `update_instrs` manually
-diffs_local = diff_worklogs(local_augwkls, checkedin_augwkls)
-diffs_remote = diff_worklogs(remote_augwkls, checkedin_augwkls)
+diffs_local = diff_worklogs(local_worklogs, upd_checkedin_wkls)
+diffs_remote = diff_worklogs(upd_remote_wkls, upd_checkedin_wkls)
 update_instrs = create_update_instructions(diffs_local, diffs_remote)
 
-push_worklogs(jira, checkedin_augwkls.copy(), [x.copy() for x in update_instrs])
+push_worklogs(jira, upd_checkedin_wkls.copy(), [x.copy() for x in update_instrs])
