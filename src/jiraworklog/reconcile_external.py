@@ -20,59 +20,65 @@ class DiffsAligned:
         self.remote = remote
         self.aligned = aligned
 
-
-class UpdateInstrV2:
-
-    remote: bool
-    action: str
-    issue: str
-    worklog: Union[WorklogCanon, WorklogJira]
-
-    def __init__(
-        self,
-        remote: str,
-        action: str,
-        issue: str,
-        augwkl: WorklogCanon
-    ):
-        self.remote = True if remote == 'local' else False
-        self.action = action
-        self.issue = issue
-        self.worklog = augwkl
+    def append(self, other: DiffsAligned) -> DiffsAligned:
+        self.local.append(other.local)
+        self.remote.append(other.remote)
+        self.aligned.append(other.aligned)
 
 
-def create_update_instructions(
+# class UpdateInstrV2:
+
+#     remote: bool
+#     action: str
+#     issue: str
+#     worklog: Union[WorklogCanon, WorklogJira]
+
+#     def __init__(
+#         self,
+#         remote: str,
+#         action: str,
+#         issue: str,
+#         augwkl: WorklogCanon
+#     ):
+#         self.remote = True if remote == 'local' else False
+#         self.action = action
+#         self.issue = issue
+#         self.worklog = augwkl
+
+
+def create_empty_diffsaligned() -> DiffsAligned:
+    return DiffsAligned([], [], [])
+
+def reconcile_diffs(
     diffs_local: dict[str, dict[str, list[WorklogCanon]]],
     diffs_remote: dict[str, dict[str, list[WorklogJira]]]
 ):
     # TODO: assert that keys are identical?
-    nested_update_instrs = {
-        k: reconcile_external_changes(diffs_local[k], diffs_remote[k])
-        for k
-        in diffs_local.keys()
-    }
-    update_instrs = flatten_update_instructions(nested_update_instrs)
-    return update_instrs
+    acc_added = create_empty_diffsaligned()
+    acc_removed = create_empty_diffsaligned()
+    for k in diffs_local.keys():
+        rec_diffs = reconcile_external_changes(
+            diffs_local[k],
+            diffs_remote[k]
+        )
+        acc_added.append(rec_diffs['added'])
+        acc_removed.append(rec_diffs['removed'])
+    return None
 
 def reconcile_external_changes(
     diff_local: dict[str, list[WorklogCanon]],
     diff_remote: dict[str, list[WorklogJira]]
-):
+) -> dict[str, DiffsAligned]:
     added = find_aligned_extchanges(diff_local['added'], diff_remote['added'])
     removed = find_aligned_extchanges(
         diff_local['removed'],
         diff_remote['removed']
     )
-    return {
-        'checkedin': {
-            'added': added['aligned'],
-            'removed': removed['aligned']
-        },
-        'local': {
-            'added': added['local'],
-            'removed': removed['local']
-        }
+    reconciled_external_changes = {
+        'added': added,
+        'removed': removed
     }
+    return reconciled_external_changes
 
 def find_aligned_extchanges(
     local_listwkl: list[WorklogCanon],
@@ -108,17 +114,17 @@ def find_aligned_extchanges(
     diffs_aligned = DiffsAligned(updated_local, updated_remote, aligned)
     return diffs_aligned
 
-def flatten_update_instructions(nested_diffs):
-    flattened = []
-    for k_issue, v_issue in nested_diffs.items():
-        for k_where, v_where in v_issue.items():
-            for k_action, v_action in v_where.items():
-                for augwkl in v_action:
-                    entry = {
-                        'remote': True if k_where == 'local' else False,
-                        'action': k_action,
-                        'issue': k_issue,
-                        'augwkl': augwkl
-                    }
-                    flattened.append(entry)
-    return flattened
+# def flatten_update_instructions(nested_diffs):
+#     flattened = []
+#     for k_issue, v_issue in nested_diffs.items():
+#         for k_where, v_where in v_issue.items():
+#             for k_action, v_action in v_where.items():
+#                 for augwkl in v_action:
+#                     entry = {
+#                         'remote': True if k_where == 'local' else False,
+#                         'action': k_action,
+#                         'issue': k_issue,
+#                         'augwkl': augwkl
+#                     }
+#                     flattened.append(entry)
+#     return flattened
