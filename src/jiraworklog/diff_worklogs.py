@@ -56,6 +56,20 @@ def diff_worklogs_singleissue(
         'removed': remaining_checkedin
     }
 
+
+class Diffs:
+
+    added: list[Union[WorklogCanon, WorklogJira]]
+    removed: list[Union[WorklogCanon, WorklogJira]]
+
+    def __init__(
+        self,
+        added: list[Union[WorklogCanon, WorklogJira]],
+        removed: list[WorklogCheckedin]
+    ) -> None:
+        self.added = added
+        self.removed = removed
+
 # def make_diff_worklogs(create_augiss_other, create_augiss_checkedin):
 #     def diff_worklogs(dictof_issue_1, dictof_issue_2):
 #         # TODO: assert that they keys are identical for the two?
