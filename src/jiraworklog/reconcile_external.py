@@ -4,6 +4,23 @@ from jiraworklog.worklogs import WorklogCanon, WorklogJira
 from typing import Union
 
 
+class DiffsAligned:
+
+    local: list[WorklogCanon]
+    remote: list[WorklogJira]
+    aligned: list[WorklogJira]
+
+    def __init__(
+        self,
+        local: list[WorklogCanon],
+        remote: list[WorklogJira],
+        aligned: list[WorklogJira]
+    ) -> None:
+        self.local = local
+        self.remote = remote
+        self.aligned = aligned
+
+
 class UpdateInstrV2:
 
     remote: bool
@@ -60,7 +77,7 @@ def reconcile_external_changes(
 def find_aligned_extchanges(
     local_listwkl: list[WorklogCanon],
     remote_listwkl: list[WorklogJira]
-):
+) -> DiffsAligned:
     # aligned = []
     # updated_local = []
     # remote_copy_listwkl = remote_listwkl.copy()
@@ -90,22 +107,6 @@ def find_aligned_extchanges(
             updated_remote.append(remote_wkl)
     diffs_aligned = DiffsAligned(updated_local, updated_remote, aligned)
     return diffs_aligned
-
-class DiffsAligned:
-
-    local: list[WorklogCanon]
-    remote: list[WorklogJira]
-    aligned: list[WorklogJira]
-
-    def __init__(
-        self,
-        local: list[WorklogCanon],
-        remote: list[WorklogJira],
-        aligned: list[WorklogJira]
-    ) -> None:
-        self.local = local
-        self.remote = remote
-        self.aligned = aligned
 
 def flatten_update_instructions(nested_diffs):
     flattened = []
