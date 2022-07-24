@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+from copy import deepcopy
 from datetime import datetime
 from jiraworklog.configuration import Configuration
-from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
+from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira, jira_to_full
 from jiraworklog.diff_worklogs import (
     # augm_wkls_local,
     # augm_wkls_checkedin,
@@ -13,14 +14,12 @@ from jiraworklog.diff_worklogs import (
 )
 # from jiraworklog.push_worklogs import UpdateInstrs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
-from jiraworklog.reconcile_external import create_update_instructions
+from jiraworklog.reconcile_external import reconcile_diffs
 from jiraworklog.sync_worklogs import process_worklogs_pure, strptime_ptl, sync_worklogs
+from jiraworklog.utils import map_worklogs_key
 
-def map_worklogs(f, issues):
-    return {k: list(map(f, v)) for k, v in issues.items()}
-
-def strptime_ptl(datetime_str: str) -> datetime:
-    return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
+# def strptime_ptl(datetime_str: str) -> datetime:
+#     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
 
 # Create mock JIRA class -------------------------------------------------------
 
@@ -80,13 +79,13 @@ def upload_remote_worklog(jira, mock_remote_augwkl):
     return jira_wkl
 
 def sync_testdata_to_remote(jira, mock_remote_wkls):
-    def upload_remote_worklog_ptl(mock_remote_wkl):
+    def upload_remote_worklog_ptl(mock_remote_wkl, issueKey):
         jira_wkl = upload_remote_worklog(jira, mock_remote_wkl)
-        return WorklogJira(jira_wkl)
+        return WorklogJira(jira_wkl, issueKey)
     conf = create_conf(list(mock_remote_wkls.keys()))
     remote_worklogs = read_remote_worklogs(jira, conf)
     map_worklogs(delete_remote_worklog, remote_worklogs)
-    return map_worklogs(upload_remote_worklog_ptl, mock_remote_wkls)
+    return map_worklogs_key(upload_remote_worklog_ptl, mock_remote_wkls)
 
 
 def create_conf(issue_nms: list[str]) -> Configuration:
@@ -165,7 +164,7 @@ raw_checkedin_worklogs = {
         }
     ]
 }
-checkedin_worklogs = map_worklogs(WorklogCheckedin, raw_checkedin_worklogs)
+checkedin_worklogs = map_worklogs_key(WorklogCheckedin, raw_checkedin_worklogs)
 
 
 jira_99923_15601 = JIRAMock(
@@ -207,7 +206,7 @@ jira_99923_15679 = JIRAMock(
 raw_remote_worklogs = {
     'P9992-3': [jira_99923_15601, jira_99923_15636, jira_99923_15679]
 }
-remote_worklogs = map_worklogs(WorklogJira, raw_remote_worklogs)
+remote_worklogs = map_worklogs_key(WorklogJira, raw_remote_worklogs)
 
 # conf = create_conf(remote_worklogs.keys())
 
@@ -226,7 +225,7 @@ def update_checkedin_ids_wkls_singleiss(remote_listwkls, checkedin_listwkls):
     for remote_wkl in remote_listwkls:
         for i, checkedin_wkl in enumerate(chk_copy_listwkls):
             if checkedin_wkl == remote_wkl:
-                chk_copy_listwkls[i] = remote_wkl
+                chk_copy_listwkls[i] = WorklogCheckedin(remote_wkl.full, remote_wkl.issueKey)
                 continue
     return chk_copy_listwkls
 
@@ -246,6 +245,7 @@ upd_checkedin_wkls = update_checkedin_ids_wkls(upd_remote_wkls, checkedin_worklo
 # Basically running `update_instrs` manually
 diffs_local = diff_worklogs(local_worklogs, upd_checkedin_wkls)
 diffs_remote = diff_worklogs(upd_remote_wkls, upd_checkedin_wkls)
-update_instrs = create_update_instructions(diffs_local, diffs_remote)
+update_instrs = reconcile_diffs(diffs_local, diffs_remote, upd_remote_wkls)
 
-push_worklogs(jira, upd_checkedin_wkls.copy(), [x.copy() for x in update_instrs])
+chk_copy = deepcopy(upd_checkedin_wkls)
+update_instrs.push_worklogs_v2(jira, chk_copy)

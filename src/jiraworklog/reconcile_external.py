@@ -6,6 +6,8 @@ from jiraworklog.push_worklogs import UpdateInstrs
 from jiraworklog.worklogs import WorklogCanon, WorklogJira
 from typing import Any
 
+from pprint import pprint
+
 
 class DiffsAligned:
 
@@ -80,9 +82,11 @@ def map_local_to_jira(
     local_listwkl: list[WorklogCanon],
     remote_wkls: dict[str, list[WorklogJira]]
 ) -> list[WorklogJira]:
-    out = []
-    for wkl in local_listwkl:
-        out.append(find(local_listwkl, remote_wkls[wkl.issueId]))
+    out = [
+        find(wkl, remote_wkls[wkl.issueKey])
+        for wkl
+        in local_listwkl
+    ]
     return out
 
 def find(val: Any, coll: list[Any]) -> Any:

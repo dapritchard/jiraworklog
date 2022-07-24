@@ -7,17 +7,17 @@ from typing import Any
 class WorklogCanon:
 
     canon: dict[str, str]
-    issueId: str
+    issueKey: str
 
-    def __init__(self, canon: dict[str, str], issueId: str):
+    def __init__(self, canon: dict[str, str], issueKey: str) -> None:
         self.canon = canon
-        self.issueId = issueId
+        self.issueKey = issueKey
 
     def __eq__(self, obj: Any) -> bool:
         return (
             isinstance(obj, WorklogCanon)
             and (self.canon == obj.canon)
-            and (self.issueId == obj.issueId)
+            and (self.issueKey == obj.issueKey)
         )
 
     def __ne__(self, obj: Any) -> bool:
@@ -27,9 +27,9 @@ class WorklogCheckedin(WorklogCanon):
 
     full: dict[str, str]
 
-    def __init__(self, full: dict[str, str]):
+    def __init__(self, full: dict[str, str], issueKey: str) -> None:
         canon = full_to_canon(full)
-        super().__init__(canon, full['issueId'])
+        super().__init__(canon, issueKey)
         self.full = full
 
 
@@ -37,13 +37,13 @@ class WorklogJira(WorklogCheckedin):
 
     jira: j.Worklog
 
-    def __init__(self, jira_wkl: j.Worklog):
+    def __init__(self, jira_wkl: j.Worklog, issueKey: str) -> None:
         full = jira_to_full(jira_wkl)
-        super().__init__(full)
+        super().__init__(full, issueKey)
         self.jira = jira_wkl
 
     def to_checkedin(self) -> WorklogCheckedin:
-        return WorklogCheckedin(self.full)
+        return WorklogCheckedin(self.full, self.issueKey)
 
 
 def jira_to_full(jira_wkl: j.Worklog) -> dict[str, str]:

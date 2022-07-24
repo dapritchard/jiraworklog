@@ -111,7 +111,7 @@ class RemoteUpdateAdd:
         del worklogs
         for _ in range(self.n_add):
             issue = jira.add_worklog(
-                issue=issues['self.issueId'],
+                issue=issues[self.issueId],
                 timeSpent=self.timeSpent,
                 started=self.started,
                 comment=self.comment

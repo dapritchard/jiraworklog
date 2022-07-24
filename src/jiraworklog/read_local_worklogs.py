@@ -3,7 +3,8 @@
 import csv
 from datetime import datetime
 from jiraworklog.configuration import Configuration, read_conf
-from jiraworklog.diff_worklogs import map_worklogs
+# from jiraworklog.diff_worklogs import map_worklogs
+from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCanon
 import pytz
 import re
@@ -14,10 +15,11 @@ def read_local_worklogs(worklogs_path: str) -> dict[str, list[WorklogCanon]]:
     conf = read_conf()
     worklogs_native = read_worklogs_native(worklogs_path)
     worklogs_parsed = normalize_worklogs_local(worklogs_native, conf)
-    worklogs = map_worklogs(WorklogCanon, worklogs_parsed)
+    worklogs = map_worklogs_key(WorklogCanon, worklogs_parsed)
     return worklogs
 
 
+# Return a list with each entry a row in the CSV
 def read_worklogs_native(worklogs_path: str) -> list[dict[str, Any]]:
     # TODO: is error handling needed? E.g. wrong number of columns
     with open(worklogs_path, mode='r') as csv_file:
@@ -33,7 +35,7 @@ def read_worklogs_native(worklogs_path: str) -> list[dict[str, Any]]:
 def normalize_worklogs_local(
     entries: list[dict[str, Any]],
     conf: Configuration
-) -> dict['str', Any]:
+) -> dict[str, Any]:
     tags_key = conf.parse_delimited['col_labels']['tags']
     delimiter2 = conf.parse_delimited['delimiter2']
     # TODO: make this a field in Configuration?

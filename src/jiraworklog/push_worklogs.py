@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 from jira import JIRA
 # from jiraworklog.delete_worklog import delete_worklog
-from jiraworklog.diff_worklogs import create_augwkl_jira
-from jiraworklog.sync_worklogs import strptime_ptl
+# from jiraworklog.diff_worklogs import create_augwkl_jira
+# from jiraworklog.sync_worklogs import strptime_ptl
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
-from functools import partial, reduce
+from functools import reduce
 from typing import Any
 
 # def update_worklogs(jira, checkedin, diff_local, diff_remote):
@@ -83,14 +84,14 @@ def update_checkedin_add(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     jira_wkl: WorklogJira
 ) -> None:
-    checkedin_wkls[jira_wkl.issueId].append(jira_wkl.to_checkedin())
+    checkedin_wkls[jira_wkl.issueKey].append(jira_wkl.to_checkedin())
 
 # TODO: is this better than what we had with the flat form?
 def update_checkedin_remove(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     jira_wkl: WorklogJira
 ) -> None:
-    checkedin_wkls[jira_wkl.issueId].remove(jira_wkl)
+    checkedin_wkls[jira_wkl.issueKey].remove(jira_wkl)
 
 # TODO: is this better than what we had with the flat form?
 def push_worklog_add(
@@ -98,14 +99,16 @@ def push_worklog_add(
     canon_wkl: WorklogCanon,
     jira: JIRA
 ) -> None:
+    def strptime_ptl(datetime_str: str) -> datetime:
+        return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
     # TODO: add error handling?
     raw_jira_wkl = jira.add_worklog(
-        issue=canon_wkl.issueId,
+        issue=canon_wkl.issueKey,
         timeSpentSeconds=canon_wkl.canon['timeSpentSeconds'],
         comment=canon_wkl.canon['comment'],
-        started=strptime_ptl(canon_wkl.canon['comment'])
+        started=strptime_ptl(canon_wkl.canon['started'])
     )
-    jira_wkl = WorklogJira(raw_jira_wkl)
+    jira_wkl = WorklogJira(raw_jira_wkl, canon_wkl.issueKey)
     update_checkedin_add(checkedin_wkls, jira_wkl)
 
 # TODO: is this better than what we had with the flat form?

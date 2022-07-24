@@ -13,7 +13,7 @@ class Configuration:
     timezone: str
     # checked_in_path: Optional[]  # TODO: try to convert this to timezone here
     # checked_in_path: Optional[] # TODO
-    parse_type: # TODO: this should be an enum
+    # parse_type: # TODO: this should be an enum
     # parse_delimited: # TODO: this should be an optional?
 
     def __init__(self, raw: dict[str, Any]):

@@ -2,7 +2,8 @@
 
 import json
 from jiraworklog.configuration import Configuration
-from jiraworklog.diff_worklogs import map_worklogs
+# from jiraworklog.diff_worklogs import map_worklogs
+from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCheckedin
 import os.path
 from typing import Any
@@ -29,7 +30,7 @@ def read_checkedin_worklogs(
         # unconditionally do so
         worklogs_raw = {}
     align_checkedin_with_conf(worklogs_raw, conf)
-    worklogs = map_worklogs(WorklogCheckedin, worklogs_raw)
+    worklogs = map_worklogs_key(WorklogCheckedin, worklogs_raw)
     return worklogs
 
 def align_checkedin_with_conf(
