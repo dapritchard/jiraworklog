@@ -137,6 +137,3 @@ def augm_wkls_checkedin(checkedin_issues):
 
 def augm_wkls_local(local_issues):
     return map_worklogs(create_augwkl_local, local_issues)
-
-def map_worklogs(f, issues):
-    return {k: list(map(f, v)) for k, v in issues.items()}
