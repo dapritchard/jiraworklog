@@ -29,29 +29,6 @@ class ReconciledDiffs:
         self.aligned.extend(other.aligned)
 
 
-# class UpdateInstrV2:
-
-#     remote: bool
-#     action: str
-#     issue: str
-#     worklog: Union[WorklogCanon, WorklogJira]
-
-#     def __init__(
-#         self,
-#         remote: str,
-#         action: str,
-#         issue: str,
-#         augwkl: WorklogCanon
-#     ):
-#         self.remote = True if remote == 'local' else False
-#         self.action = action
-#         self.issue = issue
-#         self.worklog = augwkl
-
-
-def create_empty_diffsaligned() -> ReconciledDiffs:
-    return ReconciledDiffs([], [], [])
-
 def reconcile_diffs(
     diffs_local: dict[str, dict[str, list[WorklogCanon]]],
     diffs_remote: dict[str, dict[str, list[WorklogJira]]],
@@ -75,6 +52,7 @@ def reconcile_diffs(
         rmt_remove_listwkl=rmt_remove
     )
     return update_instructions
+
 
 def map_local_to_jira(
     local_listwkl: list[WorklogCanon],
@@ -141,6 +119,11 @@ def find_aligned_extchanges(
             updated_remote.append(remote_wkl)
     diffs_aligned = ReconciledDiffs(updated_local, updated_remote, aligned)
     return diffs_aligned
+
+
+def create_empty_diffsaligned() -> ReconciledDiffs:
+    return ReconciledDiffs([], [], [])
+
 
 # def flatten_update_instructions(nested_diffs):
 #     flattened = []
