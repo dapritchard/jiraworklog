@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from jiraworklog.update_instructions import UpdateInstrs
 from jiraworklog.worklogs import WorklogCanon, WorklogJira
-from typing import Any
 
 
 class ReconciledDiffs:
@@ -65,11 +64,6 @@ def map_local_to_jira(
     ]
     return out
 
-def find(val: Any, coll: list[Any]) -> Any:
-    for elem in coll:
-        if val == elem:
-            return elem
-    raise RuntimeError('Unable to find the provided value in the collection')
 
 def reconcile_external_changes(
     diff_local: dict[str, list[WorklogCanon]],
