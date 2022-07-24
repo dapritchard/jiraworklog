@@ -7,7 +7,7 @@ from jiraworklog.worklogs import WorklogCanon, WorklogJira
 from typing import Any
 
 
-class DiffsAligned:
+class ReconciledDiffs:
 
     local: list[WorklogCanon]
     remote: list[WorklogJira]
@@ -23,7 +23,7 @@ class DiffsAligned:
         self.remote = remote
         self.aligned = aligned
 
-    def extend(self, other: DiffsAligned):
+    def extend(self, other: ReconciledDiffs):
         self.local.extend(other.local)
         self.remote.extend(other.remote)
         self.aligned.extend(other.aligned)
@@ -49,8 +49,8 @@ class DiffsAligned:
 #         self.worklog = augwkl
 
 
-def create_empty_diffsaligned() -> DiffsAligned:
-    return DiffsAligned([], [], [])
+def create_empty_diffsaligned() -> ReconciledDiffs:
+    return ReconciledDiffs([], [], [])
 
 def reconcile_diffs(
     diffs_local: dict[str, dict[str, list[WorklogCanon]]],
@@ -96,7 +96,7 @@ def find(val: Any, coll: list[Any]) -> Any:
 def reconcile_external_changes(
     diff_local: dict[str, list[WorklogCanon]],
     diff_remote: dict[str, list[WorklogJira]]
-) -> dict[str, DiffsAligned]:
+) -> dict[str, ReconciledDiffs]:
     added = find_aligned_extchanges(diff_local['added'], diff_remote['added'])
     removed = find_aligned_extchanges(
         diff_local['removed'],
@@ -111,7 +111,7 @@ def reconcile_external_changes(
 def find_aligned_extchanges(
     local_listwkl: list[WorklogCanon],
     remote_listwkl: list[WorklogJira]
-) -> DiffsAligned:
+) -> ReconciledDiffs:
     # aligned = []
     # updated_local = []
     # remote_copy_listwkl = remote_listwkl.copy()
@@ -139,7 +139,7 @@ def find_aligned_extchanges(
             aligned.append(remote_wkl)
         except:
             updated_remote.append(remote_wkl)
-    diffs_aligned = DiffsAligned(updated_local, updated_remote, aligned)
+    diffs_aligned = ReconciledDiffs(updated_local, updated_remote, aligned)
     return diffs_aligned
 
 # def flatten_update_instructions(nested_diffs):
