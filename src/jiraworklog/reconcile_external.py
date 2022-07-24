@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+from jiraworklog.push_worklogs import UpdateInstrs
 from jiraworklog.worklogs import WorklogCanon, WorklogJira
-from typing import Union
+from typing import Any
 
 
 class DiffsAligned:
@@ -20,10 +23,10 @@ class DiffsAligned:
         self.remote = remote
         self.aligned = aligned
 
-    def append(self, other: DiffsAligned) -> DiffsAligned:
-        self.local.append(other.local)
-        self.remote.append(other.remote)
-        self.aligned.append(other.aligned)
+    def append(self, other: DiffsAligned):
+        self.local.extend(other.local)
+        self.remote.extend(other.remote)
+        self.aligned.extend(other.aligned)
 
 
 # class UpdateInstrV2:
@@ -51,8 +54,9 @@ def create_empty_diffsaligned() -> DiffsAligned:
 
 def reconcile_diffs(
     diffs_local: dict[str, dict[str, list[WorklogCanon]]],
-    diffs_remote: dict[str, dict[str, list[WorklogJira]]]
-):
+    diffs_remote: dict[str, dict[str, list[WorklogJira]]],
+    remote_wkls: dict[str, list[WorklogJira]]
+) -> UpdateInstrs:
     # TODO: assert that keys are identical?
     acc_added = create_empty_diffsaligned()
     acc_removed = create_empty_diffsaligned()
@@ -63,7 +67,29 @@ def reconcile_diffs(
         )
         acc_added.append(rec_diffs['added'])
         acc_removed.append(rec_diffs['removed'])
-    return None
+    rmt_remove = map_local_to_jira(acc_removed.local, remote_wkls)
+    update_instructions = UpdateInstrs(
+        chk_add_listwkl=acc_added.aligned,
+        chk_remove_listwkl=acc_removed.aligned,
+        rmt_add_listwkl=acc_added.local,
+        rmt_remove_listwkl=rmt_remove
+    )
+    return update_instructions
+
+def map_local_to_jira(
+    local_listwkl: list[WorklogCanon],
+    remote_wkls: dict[str, list[WorklogJira]]
+) -> list[WorklogJira]:
+    out = []
+    for wkl in local_listwkl:
+        out.append(find(local_listwkl, remote_wkls[wkl.issueId]))
+    return out
+
+def find(val: Any, coll: list[Any]) -> Any:
+    for elem in coll:
+        if val == elem:
+            return elem
+    raise RuntimeError('Unable to find the provided value in the collection')
 
 def reconcile_external_changes(
     diff_local: dict[str, list[WorklogCanon]],
