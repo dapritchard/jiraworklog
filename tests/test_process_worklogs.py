@@ -12,7 +12,7 @@ from jiraworklog.diff_worklogs import (
     diff_worklogs,
     map_worklogs
 )
-# from jiraworklog.push_worklogs import UpdateInstrs
+# from jiraworklog.update_instructions import UpdateInstrs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_external import reconcile_diffs
 from jiraworklog.sync_worklogs import process_worklogs_pure, strptime_ptl, sync_worklogs

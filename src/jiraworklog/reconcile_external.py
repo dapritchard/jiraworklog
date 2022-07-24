@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from jiraworklog.push_worklogs import UpdateInstrs
+from jiraworklog.update_instructions import UpdateInstrs
 from jiraworklog.worklogs import WorklogCanon, WorklogJira
 from typing import Any
-
-from pprint import pprint
 
 
 class DiffsAligned:
@@ -25,7 +23,7 @@ class DiffsAligned:
         self.remote = remote
         self.aligned = aligned
 
-    def append(self, other: DiffsAligned):
+    def extend(self, other: DiffsAligned):
         self.local.extend(other.local)
         self.remote.extend(other.remote)
         self.aligned.extend(other.aligned)
@@ -67,8 +65,8 @@ def reconcile_diffs(
             diffs_local[k],
             diffs_remote[k]
         )
-        acc_added.append(rec_diffs['added'])
-        acc_removed.append(rec_diffs['removed'])
+        acc_added.extend(rec_diffs['added'])
+        acc_removed.extend(rec_diffs['removed'])
     rmt_remove = map_local_to_jira(acc_removed.local, remote_wkls)
     update_instructions = UpdateInstrs(
         chk_add_listwkl=acc_added.aligned,

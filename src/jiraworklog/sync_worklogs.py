@@ -8,7 +8,7 @@ from jiraworklog.read_local_worklogs import read_local_worklogs
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_external import reconcile_diffs
-from jiraworklog.push_worklogs import UpdateInstrs
+from jiraworklog.update_instructions import UpdateInstrs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 
 def sync_worklogs(jira: JIRA, worklogs_path: str) -> None:
