@@ -39,12 +39,10 @@ def reconcile_diffs(
     acc_added = create_empty_diffsaligned()
     acc_removed = create_empty_diffsaligned()
     for k in diffs_local.keys():
-        rec_diffs = reconcile_diffs_singleissue(
-            diffs_local[k],
-            diffs_remote[k]
-        )
-        acc_added.extend(rec_diffs['added'])
-        acc_removed.extend(rec_diffs['removed'])
+        added = rec_action(diffs_local[k].added, diffs_remote[k].added)
+        removed = rec_action(diffs_local[k].removed, diffs_remote[k].removed)
+        acc_added.extend(added)
+        acc_removed.extend(removed)
     rmt_remove = map_local_to_jira(acc_removed.local, remote_wkls)
     update_instructions = UpdateInstrs(
         chk_add_listwkl=acc_added.aligned,
@@ -55,23 +53,23 @@ def reconcile_diffs(
     return update_instructions
 
 
-def reconcile_diffs_singleissue(
-    diff_local: Diffs,
-    diff_remote: Diffs
-) -> dict[str, ReconciledDiffs]:
-    added = find_aligned_extchanges(diff_local.added, diff_remote.added)
-    removed = find_aligned_extchanges(
-        diff_local.removed,
-        diff_remote.removed
-    )
-    reconciled_diffs_singleissue = {
-        'added': added,
-        'removed': removed
-    }
-    return reconciled_diffs_singleissue
+# def recdiffs_singleissue(
+#     diff_local: Diffs,
+#     diff_remote: Diffs
+# ) -> dict[str, ReconciledDiffs]:
+#     added = rec_action(diff_local.added, diff_remote.added)
+#     removed = rec_action(
+#         diff_local.removed,
+#         diff_remote.removed
+#     )
+#     reconciled_diffs_singleissue = {
+#         'added': added,
+#         'removed': removed
+#     }
+#     return reconciled_diffs_singleissue
 
 
-def find_aligned_extchanges(
+def rec_action(
     local_listwkl: list[WorklogCanon],
     remote_listwkl: list[WorklogCanon]
 ) -> ReconciledDiffs:
