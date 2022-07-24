@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
+from jiraworklog.diff_worklogs import Diffs
 from jiraworklog.update_instructions import UpdateInstrs
-from jiraworklog.worklogs import WorklogCanon, WorklogJira
+from jiraworklog.utils import find
+from jiraworklog.worklogs import WorklogCanon, WorklogCanon
 
 
 class ReconciledDiffs:
 
     local: list[WorklogCanon]
-    remote: list[WorklogJira]
-    aligned: list[WorklogJira]
+    remote: list[WorklogCanon]
+    aligned: list[WorklogCanon]
 
     def __init__(
         self,
         local: list[WorklogCanon],
-        remote: list[WorklogJira],
-        aligned: list[WorklogJira]
+        remote: list[WorklogCanon],
+        aligned: list[WorklogCanon]
     ) -> None:
         self.local = local
         self.remote = remote
@@ -29,15 +31,15 @@ class ReconciledDiffs:
 
 
 def reconcile_diffs(
-    diffs_local: dict[str, dict[str, list[WorklogCanon]]],
-    diffs_remote: dict[str, dict[str, list[WorklogJira]]],
-    remote_wkls: dict[str, list[WorklogJira]]
+    diffs_local: dict[str, Diffs],
+    diffs_remote: dict[str, Diffs],
+    remote_wkls: dict[str, list[WorklogCanon]]
 ) -> UpdateInstrs:
     # TODO: assert that keys are identical?
     acc_added = create_empty_diffsaligned()
     acc_removed = create_empty_diffsaligned()
     for k in diffs_local.keys():
-        rec_diffs = reconcile_external_changes(
+        rec_diffs = reconcile_diffs_singleissue(
             diffs_local[k],
             diffs_remote[k]
         )
@@ -53,36 +55,25 @@ def reconcile_diffs(
     return update_instructions
 
 
-def map_local_to_jira(
-    local_listwkl: list[WorklogCanon],
-    remote_wkls: dict[str, list[WorklogJira]]
-) -> list[WorklogJira]:
-    out = [
-        find(wkl, remote_wkls[wkl.issueKey])
-        for wkl
-        in local_listwkl
-    ]
-    return out
-
-
-def reconcile_external_changes(
-    diff_local: dict[str, list[WorklogCanon]],
-    diff_remote: dict[str, list[WorklogJira]]
+def reconcile_diffs_singleissue(
+    diff_local: Diffs,
+    diff_remote: Diffs
 ) -> dict[str, ReconciledDiffs]:
-    added = find_aligned_extchanges(diff_local['added'], diff_remote['added'])
+    added = find_aligned_extchanges(diff_local.added, diff_remote.added)
     removed = find_aligned_extchanges(
-        diff_local['removed'],
-        diff_remote['removed']
+        diff_local.removed,
+        diff_remote.removed
     )
-    reconciled_external_changes = {
+    reconciled_diffs_singleissue = {
         'added': added,
         'removed': removed
     }
-    return reconciled_external_changes
+    return reconciled_diffs_singleissue
+
 
 def find_aligned_extchanges(
     local_listwkl: list[WorklogCanon],
-    remote_listwkl: list[WorklogJira]
+    remote_listwkl: list[WorklogCanon]
 ) -> ReconciledDiffs:
     # aligned = []
     # updated_local = []
@@ -113,6 +104,18 @@ def find_aligned_extchanges(
             updated_remote.append(remote_wkl)
     diffs_aligned = ReconciledDiffs(updated_local, updated_remote, aligned)
     return diffs_aligned
+
+
+def map_local_to_jira(
+    local_listwkl: list[WorklogCanon],
+    remote_wkls: dict[str, list[WorklogCanon]]
+) -> list[WorklogCanon]:
+    out = [
+        find(wkl, remote_wkls[wkl.issueKey])
+        for wkl
+        in local_listwkl
+    ]
+    return out
 
 
 def create_empty_diffsaligned() -> ReconciledDiffs:
