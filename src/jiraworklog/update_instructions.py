@@ -86,17 +86,9 @@ def update_checkedin_add(
 # TODO: is this better than what we had with the flat form?
 def update_checkedin_remove(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
-    jira_wkl: WorklogCanon
+    jira_wkl: WorklogCheckedin
 ) -> None:
-    # Note that this is essentially an implementation of list `remove` since the
-    # type hinting won't let us use a superclass as a value to `remove`
-    found_match = False
-    for i, w in enumerate(checkedin_wkls[jira_wkl.issueKey]):
-        if w == jira_wkl:
-            found_match = True
-            del checkedin_wkls[jira_wkl.issueKey][i]
-    if not found_match:
-        raise RuntimeError('Internal logic error. Please file a bug report')
+    checkedin_wkls[jira_wkl.issueKey].remove(jira_wkl)
 
 # TODO: is this better than what we had with the flat form?
 def push_worklog_add(
