@@ -6,8 +6,6 @@ from jira import JIRA
 # from jiraworklog.diff_worklogs import create_augwkl_jira
 # from jiraworklog.sync_worklogs import strptime_ptl
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
-from functools import reduce
-from typing import Any
 
 # def update_worklogs(jira, checkedin, diff_local, diff_remote):
 #     # Note that `checkedin` is modified in the call to `perform_update_actions`
@@ -19,7 +17,7 @@ from typing import Any
 class UpdateInstrs:
 
     chk_add_listwkl: list[WorklogJira]
-    chk_remove_listwkl: list[WorklogJira]
+    chk_remove_listwkl: list[WorklogCanon]
     rmt_add_listwkl: list[WorklogCanon]
     rmt_remove_listwkl: list[WorklogJira]
     # jira: JIRA
@@ -27,9 +25,9 @@ class UpdateInstrs:
     def __init__(
         self,
         chk_add_listwkl: list[WorklogJira],
-        chk_remove_listwkl: list[WorklogJira],
+        chk_remove_listwkl: list[WorklogCanon],
         rmt_add_listwkl: list[WorklogCanon],
-        rmt_remove_listwkl: list[WorklogJira]# ,
+        rmt_remove_listwkl: list[WorklogJira],
         # jira: JIRA
     ) -> None:
         self.chk_add_listwkl = chk_add_listwkl
@@ -59,7 +57,6 @@ class UpdateInstrs:
         self,
         checkedin_wkls: dict[str, list[WorklogCheckedin]]
     ) -> None:
-        # return reduce(update_checkedin_add, self.chk_remove_listwkl, checkedin_wkls)
         for wkl in self.chk_remove_listwkl:
             update_checkedin_remove(checkedin_wkls, wkl)
 
@@ -89,9 +86,17 @@ def update_checkedin_add(
 # TODO: is this better than what we had with the flat form?
 def update_checkedin_remove(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
-    jira_wkl: WorklogJira
+    jira_wkl: WorklogCanon
 ) -> None:
-    checkedin_wkls[jira_wkl.issueKey].remove(jira_wkl)
+    # Note that this is essentially an implementation of list `remove` since the
+    # type hinting won't let us use a superclass as a value to `remove`
+    found_match = False
+    for i, w in enumerate(checkedin_wkls[jira_wkl.issueKey]):
+        if w == jira_wkl:
+            found_match = True
+            del checkedin_wkls[jira_wkl.issueKey][i]
+    if not found_match:
+        raise RuntimeError('Internal logic error. Please file a bug report')
 
 # TODO: is this better than what we had with the flat form?
 def push_worklog_add(
@@ -119,17 +124,17 @@ def push_worklog_remove(
     jira_wkl.jira.delete()
     update_checkedin_remove(checkedin_wkls, jira_wkl)
 
-# TODO: is this better than what we had with the flat form?
-def push_worklogs_NEW(
-    jira: JIRA,
-    checkedin_wkls: dict[str, list[WorklogCheckedin]],
-    update_instrs: UpdateInstrs
-):
-    chk_1 = reduce(update_checkedin_add, update_instrs.checkedin_add, checkedin_wkls)
-    chk_2 = reduce(update_checkedin_remove, update_instrs.checkedin_remove, chk_1)
-    chk_3 = reduce(lambda x,y: push_worklog_add(x, y, jira), update_instrs.remote_add, chk_2)
-    chk_4 = reduce(push_worklog_remove, update_instrs.remote_remove, chk_3)
-    return chk_4
+# # TODO: is this better than what we had with the flat form?
+# def push_worklogs_NEW(
+#     jira: JIRA,
+#     checkedin_wkls: dict[str, list[WorklogCheckedin]],
+#     update_instrs: UpdateInstrs
+# ):
+#     chk_1 = reduce(update_checkedin_add, update_instrs.checkedin_add, checkedin_wkls)
+#     chk_2 = reduce(update_checkedin_remove, update_instrs.checkedin_remove, chk_1)
+#     chk_3 = reduce(lambda x,y: push_worklog_add(x, y, jira), update_instrs.remote_add, chk_2)
+#     chk_4 = reduce(push_worklog_remove, update_instrs.remote_remove, chk_3)
+#     return chk_4
 
 # def push_worklogs(jira, checkedin, update_instrs):
 #     for instr in update_instrs:
