@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import jira.resources as j
 from typing import Any
+
+from jiraworklog.utils import map_worklogs
 
 
 class WorklogCanon:
@@ -23,6 +27,10 @@ class WorklogCanon:
     def __ne__(self, obj: Any) -> bool:
         return not self == obj
 
+    def to_canon(self) -> WorklogCanon:
+        return self
+
+
 class WorklogCheckedin(WorklogCanon):
 
     full: dict[str, str]
@@ -31,6 +39,9 @@ class WorklogCheckedin(WorklogCanon):
         canon = full_to_canon(full)
         super().__init__(canon, issueKey)
         self.full = full
+
+    def to_canon(self) -> WorklogCanon:
+        return WorklogCanon(self.canon, self.issueKey)
 
 
 class WorklogJira(WorklogCheckedin):
@@ -70,3 +81,14 @@ def full_to_canon(full_wkl: dict[str, str]) -> dict[str, str]:
         'timeSpentSeconds': full_wkl['timeSpentSeconds']
     }
     return canon
+
+
+def map_jira_to_canon(
+    jira_wkls: dict[str, list[WorklogJira]]
+) -> dict[str, list[WorklogCanon]]:
+    canon_wkls = {
+        k: [w.to_canon() for w in v]
+        for k, v
+        in jira_wkls.items()
+    }
+    return canon_wkls

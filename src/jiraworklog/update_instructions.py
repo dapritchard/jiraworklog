@@ -17,7 +17,7 @@ from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 class UpdateInstrs:
 
     chk_add_listwkl: list[WorklogJira]
-    chk_remove_listwkl: list[WorklogCanon]
+    chk_remove_listwkl: list[WorklogCheckedin]
     rmt_add_listwkl: list[WorklogCanon]
     rmt_remove_listwkl: list[WorklogJira]
     # jira: JIRA
@@ -25,7 +25,7 @@ class UpdateInstrs:
     def __init__(
         self,
         chk_add_listwkl: list[WorklogJira],
-        chk_remove_listwkl: list[WorklogCanon],
+        chk_remove_listwkl: list[WorklogCheckedin],
         rmt_add_listwkl: list[WorklogCanon],
         rmt_remove_listwkl: list[WorklogJira],
         # jira: JIRA

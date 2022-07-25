@@ -3,11 +3,21 @@
 from typing import Any
 
 def map_worklogs(f, issues):
-    return {k: list(map(f, v)) for k, v in issues.items()}
+    return {k: [f(w) for w in v] for k, v in issues.items()}
 
 
 def map_worklogs_key(f, issues):
     out = {k: [f(w, k) for w in v] for k, v in issues.items()}
+    return out
+
+
+def map2_issues(f, issues_1, issues_2):
+    # TODO: assert that they keys are identical for the two
+    out = {
+        k: f(issues_1[k], issues_2[k])
+        for k
+        in issues_1.keys()
+    }
     return out
 
 

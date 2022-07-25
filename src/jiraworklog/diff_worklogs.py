@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from jiraworklog.utils import map2_issues
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 
 
@@ -76,6 +77,13 @@ def diff_worklogs_singleissue(
     return diffs_singleissue
 
 
+def diff_local(
+    local_wkls: dict[str, list[WorklogCanon]],
+    checkedin_wkls: dict[str, list[WorklogCheckedin]]
+) -> dict[str, DiffsLocal]:
+    out = map2_issues(diff_local_listwkls, local_wkls, checkedin_wkls)
+    return out
+
 # The efficiency of this algorithm could likely by improved. However, note
 # that we have to handle the possibility of duplicate worklog entries which
 # precludes us from doing certain things like using sets
@@ -94,13 +102,22 @@ def diff_local_listwkls(
     return diffed_local_listwkls
 
 
+def diff_remote(
+    remote_wkls: dict[str, list[WorklogJira]],
+    checkedin_wkls: dict[str, list[WorklogCheckedin]]
+) -> dict[str, DiffsRemote]:
+    out = map2_issues(diff_remote_listwkls, remote_wkls, checkedin_wkls)
+    return out
+
+
+# NOTE: I think this is the same algorithm as for `diff_remote_listwkls`?
 # The efficiency of this algorithm could likely by improved. However, note
 # that we have to handle the possibility of duplicate worklog entries which
 # precludes us from doing certain things like using sets
 def diff_remote_listwkls(
     remote_listwkl: list[WorklogJira],
     checkedin_listwkl: list[WorklogCheckedin]
-) -> DiffsLocal:
+) -> DiffsRemote:
     remaining_remote = []
     remaining_checkedin = checkedin_listwkl.copy()
     for remote_wkl in remote_listwkl:
@@ -108,5 +125,5 @@ def diff_remote_listwkls(
             remaining_checkedin.remove(remote_wkl)
         except:
             remaining_remote.append(remote_wkl)
-    diffed_remote_listwkls = DiffsLocal(remaining_remote, remaining_checkedin)
+    diffed_remote_listwkls = DiffsRemote(remaining_remote, remaining_checkedin)
     return diffed_remote_listwkls

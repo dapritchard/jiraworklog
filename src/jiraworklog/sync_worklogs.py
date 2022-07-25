@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
+# from datetime import datetime
 from jira import JIRA
 from jiraworklog.configuration import read_conf
-from jiraworklog.diff_worklogs import diff_worklogs
+from jiraworklog.diff_worklogs import diff_worklogs, diff_local, diff_remote
 from jiraworklog.read_local_worklogs import read_local_worklogs
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
-from jiraworklog.reconcile_external import reconcile_diffs
+from jiraworklog.reconcile_diffs import reconcile_diffs
 from jiraworklog.update_instructions import UpdateInstrs
-from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
+from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira, map_jira_to_canon
 
 def sync_worklogs(jira: JIRA, worklogs_path: str) -> None:
     conf = read_conf()
@@ -41,10 +41,10 @@ def process_worklogs_pure(
     # local and the remote views that isn't in the checked-in view), and create
     # a data structure of "instructions" regarding what needs to be updated in
     # the checked-in worklogs file and the remote Jira worklogs.
-    diffs_local = diff_worklogs(local_wkls, checkedin_wkls)
-    diffs_remote = diff_worklogs(remote_wkls, checkedin_wkls)
-    update_instrs = reconcile_diffs(diffs_local, diffs_remote, checkedin_wkls)
+    diffs_local = diff_local(local_wkls, checkedin_wkls)
+    diffs_remote = diff_remote(remote_wkls, checkedin_wkls)
+    update_instrs = reconcile_diffs(diffs_local, diffs_remote, remote_wkls)
     return update_instrs
 
-def strptime_ptl(datetime_str: str) -> datetime:
-    return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
+# def strptime_ptl(datetime_str: str) -> datetime:
+#     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')

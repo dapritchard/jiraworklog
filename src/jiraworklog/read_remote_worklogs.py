@@ -2,7 +2,8 @@
 
 from jira import JIRA
 from jiraworklog.configuration import Configuration
-from jiraworklog.worklogs import WorklogJira
+from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
+from typing import Union, Any
 
 def read_remote_worklogs(
     jira: JIRA,
