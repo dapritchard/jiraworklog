@@ -246,10 +246,13 @@ def update_checkedin_ids_wkls_singleiss(remote_listwkls, checkedin_listwkls):
 upd_remote_wkls = sync_testdata_to_remote(jira, remote_worklogs)
 upd_checkedin_wkls = update_checkedin_ids_wkls(upd_remote_wkls, checkedin_worklogs)
 
-# Basically running `update_instrs` manually
+# Basically running `process_worklogs_pure` manually
 diffs_local = diff_local(local_worklogs, upd_checkedin_wkls)
 diffs_remote = diff_remote(upd_remote_wkls, upd_checkedin_wkls)
 update_instrs = reconcile_diffs(diffs_local, diffs_remote, upd_remote_wkls)
+
+# Actually run `process_worklogs_pure`
+update_instrs = process_worklogs_pure(local_worklogs, upd_checkedin_wkls, upd_remote_wkls)
 
 chk_copy = deepcopy(upd_checkedin_wkls)
 update_instrs.push_worklogs_v2(jira, chk_copy)
