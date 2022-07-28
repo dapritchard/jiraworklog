@@ -1,28 +1,33 @@
 #!/usr/bin/env python3
 
-localiss = {
+from jiraworklog.utils import map_worklogs_key
+from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin
+
+
+raw_local_wkls = {
     'P9992-3': [
         {'comment': 'Sent from Python today',
          'started': '2021-02-16T12:29:00.000-0500',
-         'timeSpentSeconds': 60
+         'timeSpentSeconds': '60'
          },
         {'comment': 'Another task completed',
          'started': '2021-02-16T14:11:00.000-0500',
-         'timeSpentSeconds': 60
+         'timeSpentSeconds': '60'
          },
         {'comment': 'This is the big one',
          'started': '2021-02-16T15:32:00.000-0500',
-         'timeSpentSeconds': 60
+         'timeSpentSeconds': '60'
          }
     ]
 }
-localiss_0to2 = {'P9992-3': localiss['P9992-3'][0:2]}
-localiss_0to1 = {'P9992-3': localiss['P9992-3'][0:1]}
-localiss_0to0 = {'P9992-3': []}
-localiss_1to3 = {'P9992-3': localiss['P9992-3'][1:]}
-localiss_2to3 = {'P9992-3': localiss['P9992-3'][2:]}
+local_wkls = map_worklogs_key(WorklogCanon, raw_local_wkls)
+local_0to2 = {'P9992-3': local_wkls['P9992-3'][0:2]}
+local_0to1 = {'P9992-3': local_wkls['P9992-3'][0:1]}
+local_0to0 = {'P9992-3': []}
+local_1to3 = {'P9992-3': local_wkls['P9992-3'][1:]}
+local_2to3 = {'P9992-3': local_wkls['P9992-3'][2:]}
 
-chkiss_3 = {
+raw_checkedin_wkls = {
     'P9992-3': [
         {'author': 'Daffy Duck',
          'comment': 'Sent from Python today',
@@ -31,7 +36,7 @@ chkiss_3 = {
          'issueId': '16977',
          'started': '2021-02-16T12:29:00.000-0500',
          'timeSpent': '1m',
-         'timeSpentSeconds': 60,
+         'timeSpentSeconds': '60',
          'updateAuthor': 'Daffy Duck',
          'updated': '2021-10-03T17:21:55.764-0400'
          },
@@ -42,7 +47,7 @@ chkiss_3 = {
          'issueId': '16977',
          'started': '2021-02-16T14:11:00.000-0500',
          'timeSpent': '1m',
-         'timeSpentSeconds': 60,
+         'timeSpentSeconds': '60',
          'updateAuthor': 'Daffy Duck',
          'updated': '2021-10-03T17:22:06.923-0400'
          },
@@ -53,12 +58,13 @@ chkiss_3 = {
          'issueId': '16977',
          'started': '2021-02-16T15:32:00.000-0500',
          'timeSpent': '1m',
-         'timeSpentSeconds': 60,
+         'timeSpentSeconds': '60',
          'updateAuthor': 'Daffy Duck',
          'updated': '2021-10-03T17:25:55.122-0400'
          }
     ]
 }
-chkiss_2 = {'P9992-3': chkiss_3['P9992-3'][0:2]}
-chkiss_1 = {'P9992-3': chkiss_3['P9992-3'][0:1]}
-chkiss_0 = {'P9992-3': []}
+checkedin_wkls = map_worklogs_key(WorklogCheckedin, raw_checkedin_wkls)
+checkedin_0to2 = {'P9992-3': checkedin_wkls['P9992-3'][0:2]}
+checkedin_0to1 = {'P9992-3': checkedin_wkls['P9992-3'][0:1]}
+checkedin_0to0 = {'P9992-3': []}
