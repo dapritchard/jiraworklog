@@ -26,6 +26,11 @@ local_0to1 = {'P9992-3': local_wkls['P9992-3'][0:1]}
 local_0to0 = {'P9992-3': []}
 local_1to3 = {'P9992-3': local_wkls['P9992-3'][1:]}
 local_2to3 = {'P9992-3': local_wkls['P9992-3'][2:]}
+localtwo_wkls = {
+    'P7777-7': [WorklogCanon(w.canon, 'P7777-7') for w in local_wkls['P9992-3']],
+    'P9992-3': local_wkls['P9992-3']
+}
+
 
 raw_checkedin_wkls = {
     'P9992-3': [
@@ -68,3 +73,9 @@ checkedin_wkls = map_worklogs_key(WorklogCheckedin, raw_checkedin_wkls)
 checkedin_0to2 = {'P9992-3': checkedin_wkls['P9992-3'][0:2]}
 checkedin_0to1 = {'P9992-3': checkedin_wkls['P9992-3'][0:1]}
 checkedin_0to0 = {'P9992-3': []}
+checkedin_1to3 = {'P9992-3': checkedin_wkls['P9992-3'][1:]}
+checkedin_2to3 = {'P9992-3': checkedin_wkls['P9992-3'][2:]}
+checkedintwo_wkls = {
+    'P7777-7': [WorklogCheckedin(w.full, 'P7777-7') for w in checkedin_wkls['P9992-3']],
+    'P9992-3': checkedin_wkls['P9992-3']
+}

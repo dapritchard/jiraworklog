@@ -13,11 +13,7 @@ def map_worklogs_key(f, issues):
 
 def map2_issues(f, issues_1, issues_2):
     # TODO: assert that they keys are identical for the two
-    out = {
-        k: f(issues_1[k], issues_2[k])
-        for k
-        in issues_1.keys()
-    }
+    out = {k: f(issues_1[k], issues_2[k]) for k in issues_1.keys()}
     return out
 
 
