@@ -22,43 +22,6 @@ from jiraworklog.utils import map_worklogs, map_worklogs_key
 def strptime_ptl(datetime_str: str) -> datetime:
     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
 
-# Create mock JIRA class -------------------------------------------------------
-
-class JIRAMock:
-
-    def __init__(
-        self,
-        author: str,
-        comment: str,
-        created: str,
-        id: str,
-        issueId: str,
-        started: str,
-        timeSpent: str,
-        timeSpentSeconds: int,
-        updateAuthor: str,
-        updated: str
-    ):
-        self.raw = {
-            'author': {
-                'displayName': author,
-            },
-            'comment': comment,
-            'created': created,
-            'id': id,
-            'issueId': issueId,
-            'started': started,
-            'timeSpent': timeSpent,
-            'timeSpentSeconds': timeSpentSeconds,
-            'updateAuthor': {
-                'displayName': updateAuthor,
-            },
-            'updated': updated
-        }
-
-    def __repr__(self) -> str:
-        return f"<JIRAMock Worklog: id='{self.raw['id']}'>"
-
 
 # ------------------------------------------------------------------------------
 
