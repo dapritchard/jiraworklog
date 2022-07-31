@@ -40,12 +40,12 @@ class WorklogCheckedin(WorklogCanon):
         super().__init__(canon, issueKey)
         self.full = full
 
-    # def __eq__(self, obj: Any) -> bool:
-    #     if isinstance(obj, WorklogCheckedin):
-    #         out = self.full == obj.full and super().__eq__(obj)
-    #     else:
-    #         out = super().__eq__(obj)
-    #     return out
+    def __eq__(self, obj: Any) -> bool:
+        if isinstance(obj, WorklogCheckedin):
+            out = self.full == obj.full and super().__eq__(obj)
+        else:
+            out = super().__eq__(obj)
+        return out
 
     def to_canon(self) -> WorklogCanon:
         return WorklogCanon(self.canon, self.issueKey)
