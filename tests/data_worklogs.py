@@ -3,7 +3,7 @@
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 # from copy import deepcopy
-from tests.jiramock import JIRAWklMock
+from tests.jiramock import JIRAMock, JIRAWklMock
 
 
 raw_local_wkls = {
@@ -88,8 +88,9 @@ checkedindup_wkls = {
     'P9992-3': checkedin_wkls['P9992-3'] + checkedin_wkls['P9992-3']
 }
 
+jiraclient = JIRAMock()
 raw_remote_wkls = {
-    k: [JIRAWklMock(**w) for w in v]
+    k: [JIRAWklMock(**w).set_jira(jiraclient) for w in v]
     for k, v in
     raw_checkedin_wkls.items()
 }

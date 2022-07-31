@@ -7,7 +7,7 @@ from tests.data_worklogs import *
 
 
 def test_reconcile_diffs_no_changes():
-    """TODO"""
+    """Test no local or remote changes"""
 
     # Confirm the data inputs
     chk, diffs = diffs_empty
@@ -19,6 +19,7 @@ def test_reconcile_diffs_no_changes():
     assert diffs['diffs_remote']['P9992-3'].removed == []
 
     instr = reconcile_diffs(**diffs)
+    jiraclient.clear()
     # Test `checkedin_add`
     prev_chk = deepcopy(chk)
     instr.checkedin_add(chk)
@@ -27,3 +28,13 @@ def test_reconcile_diffs_no_changes():
     prev_chk = deepcopy(chk)
     instr.checkedin_remove(chk)
     assert prev_chk == chk
+    # Test `remote_add`
+    prev_chk = deepcopy(chk)
+    instr.remote_add(chk, jiraclient)
+    assert prev_chk == chk
+    assert jiraclient.entries == []
+    # Test `remote_remove`
+    prev_chk = deepcopy(chk)
+    instr.remote_remove(chk)
+    assert prev_chk == chk
+    assert jiraclient.entries == []
