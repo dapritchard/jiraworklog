@@ -124,3 +124,62 @@ def test_diff_local_twoissue():
     assert actual['P7777-7'].removed == checkedintwo_wkls['P7777-7'][2:3]
     assert actual['P9992-3'].added == remotetwo_wkls['P9992-3'][0:1]
     assert actual['P9992-3'].removed == checkedintwo_wkls['P9992-3'][2:3]
+
+
+def test_diff_local_dups():
+    """Check that comparisons for one issue with duplicates work"""
+
+    # 6 local 6 checkedin
+    actual = diff_local(localdup_wkls, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == []
+    assert actual['P9992-3'].removed == []
+    # 6 remote 6 checkedin
+    actual = diff_remote(remotedup_wkls, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == []
+    assert actual['P9992-3'].removed == []
+
+    # 3 local 6 checkedin
+    actual = diff_local(local_wkls, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == []
+    assert actual['P9992-3'].removed == checkedin_wkls['P9992-3']
+    # 3 remote 6 checkedin
+    actual = diff_remote(remote_wkls, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == []
+    assert actual['P9992-3'].removed == checkedin_wkls['P9992-3']
+
+    # 6 local 3 checkedin
+    actual = diff_local(local_wkls, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == local_wkls['P9992-3']
+    assert actual['P9992-3'].removed == []
+    # 6 remote 3 checkedin
+    actual = diff_remote(remote_wkls, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == remote_wkls['P9992-3']
+    assert actual['P9992-3'].removed == []
+
+    # 0 local 6 checkedin
+    actual = diff_local(local_0to0, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == []
+    assert actual['P9992-3'].removed == checkedindup_wkls['P9992-3']
+    # 0 remote 3 checkedin
+    actual = diff_remote(remote_0to0, checkedindup_wkls)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == []
+    assert actual['P9992-3'].removed == checkedindup_wkls['P9992-3']
+
+    # 6 local 0 checkedin
+    actual = diff_local(localdup_wkls, checkedin_0to0)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == localdup_wkls['P9992-3']
+    assert actual['P9992-3'].removed == []
+    # 6 remote 0 checkedin
+    actual = diff_remote(remotedup_wkls, checkedin_0to0)
+    assert_keys(actual, ['P9992-3'])
+    assert actual['P9992-3'].added == localdup_wkls['P9992-3']
+    assert actual['P9992-3'].removed == []

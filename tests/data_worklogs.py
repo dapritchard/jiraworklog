@@ -2,6 +2,7 @@
 
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
+# from copy import deepcopy
 from tests.jiramock import JIRAMock
 
 
@@ -30,6 +31,9 @@ local_2to3 = {'P9992-3': local_wkls['P9992-3'][2:]}
 localtwo_wkls = {
     'P7777-7': [WorklogCanon(w.canon, 'P7777-7') for w in local_wkls['P9992-3']],
     'P9992-3': local_wkls['P9992-3']
+}
+localdup_wkls = {
+    'P9992-3': local_wkls['P9992-3'] + local_wkls['P9992-3']
 }
 
 
@@ -80,6 +84,9 @@ checkedintwo_wkls = {
     'P7777-7': [WorklogCheckedin(w.full, 'P7777-7') for w in checkedin_wkls['P9992-3']],
     'P9992-3': checkedin_wkls['P9992-3']
 }
+checkedindup_wkls = {
+    'P9992-3': checkedin_wkls['P9992-3'] + checkedin_wkls['P9992-3']
+}
 
 raw_remote_wkls = {
     k: [JIRAMock(**w) for w in v]
@@ -95,4 +102,7 @@ remote_2to3 = {'P9992-3': remote_wkls['P9992-3'][2:]}
 remotetwo_wkls = {
     'P7777-7': [WorklogJira(w.jira, 'P7777-7') for w in remote_wkls['P9992-3']],
     'P9992-3': remote_wkls['P9992-3']
+}
+remotedup_wkls = {
+    'P9992-3': remote_wkls['P9992-3'] + remote_wkls['P9992-3']
 }
