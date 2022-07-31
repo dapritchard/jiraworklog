@@ -44,7 +44,7 @@ def upload_remote_worklog(jira, mock_remote_augwkl):
 
 def sync_testdata_to_remote(jira, mock_remote_wkls):
     def upload_remote_worklog_ptl(
-        mock_remote_wkl: dict[str, list[JIRAMock]],
+        mock_remote_wkl: dict[str, list[JIRAWklMock]],
         issueKey: str
     ) -> WorklogJira:
         jira_wkl = upload_remote_worklog(jira, mock_remote_wkl)
@@ -134,7 +134,7 @@ raw_checkedin_worklogs = {
 checkedin_worklogs = map_worklogs_key(WorklogCheckedin, raw_checkedin_worklogs)
 
 
-jira_99923_15601 = JIRAMock(
+jira_99923_15601 = JIRAWklMock(
     author='Daffy Duck',
     comment='Project kick-off meeting',
     created='2021-10-03T17:20:03.553-0400',
@@ -146,7 +146,7 @@ jira_99923_15601 = JIRAMock(
     updateAuthor='Daffy Duck',
     updated='2021-10-03T17:20:03.553-0400'
 )
-jira_99923_15636 = JIRAMock(
+jira_99923_15636 = JIRAWklMock(
     author='Daffy Duck',
     comment='Fracture negative control',
     created='2021-10-03T17:21:55.764-0400',
@@ -158,7 +158,7 @@ jira_99923_15636 = JIRAMock(
     updateAuthor='Daffy Duck',
     updated='2021-10-03T17:21:55.764-0400'
 )
-jira_99923_15679 = JIRAMock(
+jira_99923_15679 = JIRAWklMock(
     author='Daffy Duck',
     comment='Specify fracture definitions',
     created='2021-10-03T17:22:21.438-0400',

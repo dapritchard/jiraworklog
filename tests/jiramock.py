@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-class JIRAMock:
+class JIRAWklMock:
 
     def __init__(
         self,
