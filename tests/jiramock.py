@@ -11,7 +11,7 @@ class JIRAMock:
         issueId: str,
         started: str,
         timeSpent: str,
-        timeSpentSeconds: int,
+        timeSpentSeconds: str,
         updateAuthor: str,
         updated: str
     ):
@@ -25,7 +25,7 @@ class JIRAMock:
             'issueId': issueId,
             'started': started,
             'timeSpent': timeSpent,
-            'timeSpentSeconds': timeSpentSeconds,
+            'timeSpentSeconds': int(timeSpentSeconds),
             'updateAuthor': {
                 'displayName': updateAuthor,
             },

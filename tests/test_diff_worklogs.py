@@ -5,15 +5,11 @@ from jiraworklog.diff_worklogs import (
     diff_remote
 )
 from tests.data_worklogs import *
-from typing import Any
-
-
-def assert_keys(obj: dict[str, Any], keys: list[str]) -> None:
-    assert set(obj.keys()) == set(keys)
+from tests.utils import assert_keys
 
 
 def test_diff_local_basic():
-    """Check that basic comparisons for one issue work"""
+    """Basic comparisons for one issue"""
 
     # 0 local 0 checkedin
     actual = diff_local(local_0to0, checkedin_0to0)
@@ -94,7 +90,7 @@ def test_diff_local_basic():
 
 
 def test_diff_local_twoissue():
-    """Check that basic comparisons for two issues work"""
+    """Basic comparisons for two issues"""
 
     loc = {
         'P7777-7': localtwo_wkls['P7777-7'][0:2],
@@ -127,7 +123,7 @@ def test_diff_local_twoissue():
 
 
 def test_diff_local_dups():
-    """Check that comparisons for one issue with duplicates work"""
+    """Comparisons for one issue with duplicates"""
 
     # 6 local 6 checkedin
     actual = diff_local(localdup_wkls, checkedindup_wkls)
@@ -152,12 +148,12 @@ def test_diff_local_dups():
     assert actual['P9992-3'].removed == checkedin_wkls['P9992-3']
 
     # 6 local 3 checkedin
-    actual = diff_local(local_wkls, checkedindup_wkls)
+    actual = diff_local(localdup_wkls, checkedin_wkls)
     assert_keys(actual, ['P9992-3'])
     assert actual['P9992-3'].added == local_wkls['P9992-3']
     assert actual['P9992-3'].removed == []
     # 6 remote 3 checkedin
-    actual = diff_remote(remote_wkls, checkedindup_wkls)
+    actual = diff_remote(remotedup_wkls, checkedin_wkls)
     assert_keys(actual, ['P9992-3'])
     assert actual['P9992-3'].added == remote_wkls['P9992-3']
     assert actual['P9992-3'].removed == []

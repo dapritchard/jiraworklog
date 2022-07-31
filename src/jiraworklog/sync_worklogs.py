@@ -33,8 +33,6 @@ def process_worklogs_pure(
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     remote_wkls: dict[str, list[WorklogJira]]
 ) -> UpdateInstrs:
-# def process_worklogs_pure(local_worklogs, checkedin_worklogs, remote_worklogs
-# ) -> list[dict[str, list[WorklogCheckedin] | TODO]]:
 
     # Figure out what has changed in the local and the remote views, try to
     # reconcile any "external changes" (i.e. changes that occurred in both the
@@ -45,6 +43,3 @@ def process_worklogs_pure(
     diffs_remote = diff_remote(remote_wkls, checkedin_wkls)
     update_instrs = reconcile_diffs(diffs_local, diffs_remote, remote_wkls)
     return update_instrs
-
-# def strptime_ptl(datetime_str: str) -> datetime:
-#     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
