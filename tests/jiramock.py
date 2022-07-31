@@ -1,28 +1,27 @@
 #!/usr/bin/env python3
 
-import jira.resources as j
+from __future__ import annotations
+
+import jira as j
 from jiraworklog.worklogs import jira_to_full
 from typing import Any, Optional
 
 
-class JIRAMock:
+class JIRAMock(j.JIRA):
 
-    path: str
     entries: list[dict[str, dict[str, str]]]
     curr_id: int
 
-    def __init__(
-        self,
-        path: str
-    ) -> None:
-        self.path = path
+    def __init__(self) -> None:
+        self.entries = []
+        self.curr_id=1000000
 
     def add_worklog(
-        self,
-        issue: str,
-        timeSpentSeconds: str,
-        comment: str,
-        started: str
+            self,
+            issue: str,
+            timeSpentSeconds: str,
+            comment: str,
+            started: str
     ):
         wkl = {
             'issue': issue,
@@ -32,21 +31,30 @@ class JIRAMock:
         }
         entry = {'action': 'add', 'worklog': wkl}
         self.entries.append(entry)
+        jira_wkl_mock = JIRAWklMock(
+            author='Daffy Duck',
+            comment=comment,
+            created='2021-10-03T17:21:55.764-0400',
+            id=str(self.curr_id),
+            issueId='',  # FIXME
+            started=started,
+            timeSpent='',  # FIXME
+            timeSpentSeconds=timeSpentSeconds,
+            updateAuthor='Daffy Duck',
+            updated='2021-10-03T17:21:55.764-0400'
+        )
+        self.curr_id = self.curr_id + 1
+        return jira_wkl_mock
+
+    def clear(self) -> JIRAMock:
+        self.entries = []
+        return self
 
 
-        # issue,
-        # timeSpent: (Optional[str]) = None,
-        # timeSpentSeconds: (Optional[str]) = None,
-        # adjustEstimate: (Optional[str]) = None,
-        # newEstimate: (Optional[str]) = None,
-        # reduceBy: (Optional[str]) = None,
-        # comment: (Optional[str]) = None,
-        # started: (Optional[datetime.datetime]) = None,
-        # user: (Optional[str]) = None,
 class JIRAWklMock(j.Worklog):
 
     raw: dict[str, Any]
-    jira: Optional[JIRAMock]
+    jiraclient: Optional[JIRAMock]
 
     def __init__(
         self,
@@ -77,15 +85,23 @@ class JIRAWklMock(j.Worklog):
             },
             'updated': updated
         }
-        self.jira = None
+        self.jiraclient = None
+
 
     def __repr__(self) -> str:
         return f"<JIRAMock Worklog: id='{self.raw['id']}'>"
 
+
+    def set_jira(self, jiraclient: JIRAMock) -> JIRAWklMock:
+        self.jiraclient = jiraclient
+        return self
+
+
     def delete(self) -> None:
-        if self.jira is not None:
+        if self.jiraclient is not None:
             entry = {'action': 'remove', 'worklog': jira_to_full(self)}
-            self.jira.entries.append(entry)
+            self.jiraclient.entries.append(entry)
         else:
-            msg = 'Tried to call `delete` without setting `jira` attribute'
+            msg = ('Tried to call `delete` without setting the `jiraclient` '
+                   'attribute')
             raise RuntimeError(msg)
