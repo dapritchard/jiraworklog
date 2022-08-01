@@ -96,8 +96,6 @@ def push_worklog_add(
     canon_wkl: WorklogCanon,
     jira: JIRA
 ) -> None:
-    def strptime_ptl(datetime_str: str) -> datetime:
-        return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
     # TODO: add error handling?
     raw_jira_wkl = jira.add_worklog(
         issue=canon_wkl.issueKey,
@@ -115,6 +113,11 @@ def push_worklog_remove(
 ) -> None:
     jira_wkl.jira.delete()
     update_checkedin_remove(checkedin_wkls, jira_wkl)
+
+
+def strptime_ptl(datetime_str: str) -> datetime:
+    return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
+
 
 # # TODO: is this better than what we had with the flat form?
 # def push_worklogs_NEW(
