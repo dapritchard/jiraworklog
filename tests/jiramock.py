@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
 from __future__ import annotations
+from copy import deepcopy
+from datetime import datetime
 
 import jira as j
-from jiraworklog.worklogs import jira_to_full
-from typing import Any, Optional
+from jiraworklog.update_instructions import strptime_ptl
+from jiraworklog.worklogs import WorklogCanon, jira_to_full
+from typing import Any, Optional, Union
 
 
 class JIRAMock(j.JIRA):
 
-    entries: list[dict[str, dict[str, str]]]
+    entries: list[dict[str, dict[str, Union[str, datetime]]]]
     curr_id: int
 
     def __init__(self) -> None:
@@ -105,3 +108,17 @@ class JIRAWklMock(j.Worklog):
             msg = ('Tried to call `delete` without setting the `jiraclient` '
                    'attribute')
             raise RuntimeError(msg)
+
+
+def to_addentry(
+    local_listwkls: list[WorklogCanon]
+) -> list[dict[str, dict[str, Union[str, datetime]]]]:
+    def to_entry(wkl):
+        worklog = {
+            'issue': wkl.issueKey,
+            'timeSpentSeconds': wkl.canon['timeSpentSeconds'],
+            'comment': wkl.canon['comment'],
+            'started': strptime_ptl(wkl.canon['started'])
+        }
+        return {'action': 'add', 'worklog': worklog}
+    return [to_entry(w) for w in local_listwkls]

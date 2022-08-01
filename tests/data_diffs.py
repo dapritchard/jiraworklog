@@ -19,3 +19,9 @@ diffs_empty = create_diffs(
     dw.checkedin_wkls,
     dw.remote_wkls
 )
+
+diffs_addlocal = create_diffs(
+    dw.local_wkls,
+    dw.checkedin_2to3,
+    dw.remote_2to3
+)
