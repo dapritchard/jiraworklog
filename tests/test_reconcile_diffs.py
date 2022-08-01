@@ -4,7 +4,7 @@ from copy import deepcopy
 from jiraworklog.reconcile_diffs import reconcile_diffs
 from tests.data_diffs import *
 from tests.data_worklogs import *
-from tests.jiramock import to_addentry
+from tests.jiramock import BuildCheckedin, to_addentry
 
 
 def test_reconcile_diffs_no_changes():
@@ -53,24 +53,18 @@ def test_reconcile_diffs_addlocal():
     assert diffs['diffs_remote']['P9992-3'].added == []
     assert diffs['diffs_remote']['P9992-3'].removed == []
 
-    instr = reconcile_diffs(**diffs)
+    # Setup
     jiraclient.clear()
-    # Test `checkedin_add`
     prev_chk = deepcopy(chk)
-    instr.checkedin_add(chk)
-    assert chk == prev_chk
-    # Test `checkedin_remove`
-    prev_chk = deepcopy(chk)
-    instr.checkedin_remove(chk)
-    assert chk == prev_chk
-    # Test `remote_add`
-    prev_chk = deepcopy(chk)
-    instr.remote_add(chk, jiraclient)
-    # assert chk == prev_chk. # FIXME
-    assert jiraclient.entries == to_addentry(local_wkls['P9992-3'][:2])
-    # Test `remote_remove`
-    prev_chk = deepcopy(chk)
-    prev_entries = deepcopy(jiraclient.entries)
-    instr.remote_remove(chk)
-    assert chk == prev_chk
-    assert jiraclient.entries == prev_entries
+    build_chk = BuildCheckedin()
+
+    # Process diffs and push updates
+    instr = reconcile_diffs(**diffs)
+    instr.push_worklogs(chk, jiraclient)
+
+    new_wkls = build_chk.build_listchk(local_wkls['P9992-3'][:2])
+    prev_chk['P9992-3'].extend(new_wkls)
+    assert prev_chk == chk
+
+    entries = to_addentry(local_wkls['P9992-3'][:2])
+    assert jiraclient.entries == entries

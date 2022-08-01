@@ -218,4 +218,4 @@ update_instrs = reconcile_diffs(diffs_local, diffs_remote, upd_remote_wkls)
 update_instrs = process_worklogs_pure(local_worklogs, upd_checkedin_wkls, upd_remote_wkls)
 
 chk_copy = deepcopy(upd_checkedin_wkls)
-update_instrs.push_worklogs(jira, chk_copy)
+update_instrs.push_worklogs(chk_copy, jira)

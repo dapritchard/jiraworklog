@@ -38,8 +38,8 @@ class UpdateInstrs:
 
     def push_worklogs(
         self,
-        jira: JIRA,
-        checkedin_wkls: dict[str, list[WorklogCheckedin]]
+        checkedin_wkls: dict[str, list[WorklogCheckedin]],
+        jira: JIRA
     ) -> None:
         self.checkedin_add(checkedin_wkls)
         self.checkedin_remove(checkedin_wkls)

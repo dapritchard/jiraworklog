@@ -55,17 +55,17 @@ class WorklogJira(WorklogCheckedin):
 
     jira: j.Worklog
 
-    def __init__(self, jira_wkl: j.Worklog, issueKey: str) -> None:
-        full = jira_to_full(jira_wkl)
+    def __init__(self, jira_basewkl: j.Worklog, issueKey: str) -> None:
+        full = jira_to_full(jira_basewkl)
         super().__init__(full, issueKey)
-        self.jira = jira_wkl
+        self.jira = jira_basewkl
 
     def to_checkedin(self) -> WorklogCheckedin:
         return WorklogCheckedin(self.full, self.issueKey)
 
 
-def jira_to_full(jira_wkl: j.Worklog) -> dict[str, str]:
-    raw = jira_wkl.raw
+def jira_to_full(jira_basewkl: j.Worklog) -> dict[str, str]:
+    raw = jira_basewkl.raw
     full = {
         'author': raw['author']['displayName'],
         'comment': raw['comment'],
