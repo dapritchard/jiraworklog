@@ -1,30 +1,29 @@
 #!/usr/bin/env python3
 
 from __future__ import annotations
-from copy import deepcopy
 from datetime import datetime
 
 import jira as j
 from jiraworklog.update_instructions import strptime_ptl
-from jiraworklog.worklogs import WorklogCanon, jira_to_full
+from jiraworklog.worklogs import WorklogCanon, WorklogJira, jira_to_full
 from typing import Any, Optional, Union
 
 
 class JIRAMock(j.JIRA):
 
     entries: list[dict[str, dict[str, Union[str, datetime]]]]
-    curr_id: int
+    builder: BuildCheckedin
 
     def __init__(self) -> None:
         self.entries = []
-        self.curr_id=1000000
+        self.builder = BuildCheckedin()
 
     def add_worklog(
             self,
             issue: str,
             timeSpentSeconds: str,
             comment: str,
-            started: str
+            started: datetime
     ):
         wkl = {
             'issue': issue,
@@ -34,24 +33,63 @@ class JIRAMock(j.JIRA):
         }
         entry = {'action': 'add', 'worklog': wkl}
         self.entries.append(entry)
-        jira_wkl_mock = JIRAWklMock(
+        jira_wkl_mock = self.builder.build(**wkl)
+        return jira_wkl_mock
+
+
+    def clear(self) -> JIRAMock:
+        self.entries = []
+        self.builder.reset()
+        return self
+
+
+class BuildCheckedin():
+
+    curr_id: int
+
+    def __init__(self) -> None:
+        self.curr_id=1000000
+
+
+    def build(
+        self,
+        issue: str,
+        timeSpentSeconds: str,
+        comment: str,
+        started: datetime
+    ) -> JIRAWklMock:
+        jiramock_wkl = JIRAWklMock(
             author='Daffy Duck',
             comment=comment,
             created='2021-10-03T17:21:55.764-0400',
             id=str(self.curr_id),
-            issueId='',  # FIXME
-            started=started,
+            issueId=issue,  # FIXME
+            started=started.strftime('%Y-%m-%dT%H:%M:%S.%f%z'),
             timeSpent='',  # FIXME
             timeSpentSeconds=timeSpentSeconds,
             updateAuthor='Daffy Duck',
             updated='2021-10-03T17:21:55.764-0400'
         )
         self.curr_id = self.curr_id + 1
-        return jira_wkl_mock
+        return jiramock_wkl
 
-    def clear(self) -> JIRAMock:
-        self.entries = []
-        return self
+
+    def build_listchk(self, canon_wkls: list[WorklogCanon]) -> list[JIRAMock]:
+        checkedin_listwkls = []
+        for wkl in canon_wkls:
+            jiramock_basewkl = self.build(
+                issue=wkl.issueKey,
+                timeSpentSeconds=wkl.canon['timeSpentSeconds'],
+                comment=wkl.canon['comment'],
+                started=strptime_ptl(wkl.canon['started'])
+            )
+            jiramock_wkl = WorklogJira(jiramock_basewkl, wkl.issueKey)
+            checkedin_listwkls.append(jiramock_wkl.to_checkedin())
+        return checkedin_listwkls
+
+
+    def reset(self) -> None:
+        self.curr_id=1000000
 
 
 class JIRAWklMock(j.Worklog):
@@ -110,6 +148,7 @@ class JIRAWklMock(j.Worklog):
             raise RuntimeError(msg)
 
 
+# TODO: can we use the same routine that the mock class uses?
 def to_addentry(
     local_listwkls: list[WorklogCanon]
 ) -> list[dict[str, dict[str, Union[str, datetime]]]]:
