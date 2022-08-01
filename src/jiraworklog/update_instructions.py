@@ -36,7 +36,7 @@ class UpdateInstrs:
         self.rmt_remove_listwkl = rmt_remove_listwkl
         # self.jira = jira
 
-    def push_worklogs_v2(
+    def push_worklogs(
         self,
         jira: JIRA,
         checkedin_wkls: dict[str, list[WorklogCheckedin]]

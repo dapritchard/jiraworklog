@@ -22,7 +22,7 @@ def sync_worklogs(jira: JIRA, worklogs_path: str) -> None:
         remote_wkls
     )
     try:
-        update_instrs.push_worklogs_v2(jira, checkedin_wkls)
+        update_instrs.push_worklogs(jira, checkedin_wkls)
     finally:
         # TODO: update checked-in worklogs on disk. This construction depends on
         # the partially updated version of `checkedin_worklogs` being available
