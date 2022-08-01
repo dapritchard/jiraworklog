@@ -19,25 +19,19 @@ def test_reconcile_diffs_no_changes():
     assert diffs['diffs_remote']['P9992-3'].added == []
     assert diffs['diffs_remote']['P9992-3'].removed == []
 
-    instr = reconcile_diffs(**diffs)
+    # Setup
     jiraclient.clear()
-    # Test `checkedin_add`
     prev_chk = deepcopy(chk)
-    instr.checkedin_add(chk)
-    assert chk == prev_chk
-    # Test `checkedin_remove`
-    prev_chk = deepcopy(chk)
-    instr.checkedin_remove(chk)
-    assert chk == prev_chk
-    # Test `remote_add`
-    prev_chk = deepcopy(chk)
-    instr.remote_add(chk, jiraclient)
-    assert chk == prev_chk
-    assert jiraclient.entries == []
-    # Test `remote_remove`
-    prev_chk = deepcopy(chk)
-    instr.remote_remove(chk)
-    assert chk == prev_chk
+    build_chk = BuildCheckedin()
+
+    # Process diffs and push updates
+    instr = reconcile_diffs(**diffs)
+    instr.push_worklogs(chk, jiraclient)
+
+    # Check the updated version of the checked-in worklogs
+    assert prev_chk == chk
+
+    # Check the log of mocked remote server requests
     assert jiraclient.entries == []
 
 
@@ -62,9 +56,11 @@ def test_reconcile_diffs_addlocal():
     instr = reconcile_diffs(**diffs)
     instr.push_worklogs(chk, jiraclient)
 
+    # Check the updated version of the checked-in worklogs
     new_wkls = build_chk.build_listchk(local_wkls['P9992-3'][:2])
     prev_chk['P9992-3'].extend(new_wkls)
     assert prev_chk == chk
 
+    # Check the mocked commands log that would be sent to the Jira server
     entries = to_addentry(local_wkls['P9992-3'][:2])
     assert jiraclient.entries == entries
