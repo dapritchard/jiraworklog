@@ -5,7 +5,7 @@ from datetime import datetime
 
 import jira as j
 from jiraworklog.update_instructions import strptime_ptl
-from jiraworklog.worklogs import WorklogCanon, WorklogJira, jira_to_full
+from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira, jira_to_full
 from typing import Any, Optional, Union
 
 
@@ -161,3 +161,14 @@ def to_addentry(
         }
         return {'action': 'add', 'worklog': worklog}
     return [to_entry(w) for w in local_listwkls]
+
+
+def to_rementry(
+    checkedin_listwkls: list[WorklogCheckedin]
+) -> list[dict[str, dict[str, str]]]:
+    entries = [
+        {'action': 'remove', 'worklog': w.full}
+        for w
+        in checkedin_listwkls
+    ]
+    return entries
