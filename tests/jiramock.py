@@ -74,6 +74,19 @@ class BuildCheckedin():
         return jiramock_wkl
 
 
+    def buildwkl(
+        self,
+        local_wkl: WorklogCanon
+    ) -> JIRAWklMock:
+        jiramock_wkl = self.build(
+            issue=local_wkl.issueKey,
+            timeSpentSeconds=local_wkl.canon['timeSpentSeconds'],
+            comment=local_wkl.canon['comment'],
+            started=strptime_ptl(local_wkl.canon['started'])
+        )
+        return jiramock_wkl
+
+
     def build_listchk(self, canon_wkls: list[WorklogCanon]) -> list[JIRAMock]:
         checkedin_listwkls = []
         for wkl in canon_wkls:
@@ -163,9 +176,12 @@ def to_addentry(
     return [to_entry(w) for w in local_listwkls]
 
 
+# The type of the value of the inner dict in the return type is guaranteed to be
+# `str` rather than `Union[str, datetime]`, but we make it more general so that
+# we can concatenate the types later
 def to_rementry(
     checkedin_listwkls: list[WorklogCheckedin]
-) -> list[dict[str, dict[str, str]]]:
+) -> list[dict[str, dict[str, Union[str, datetime]]]]:
     entries = [
         {'action': 'remove', 'worklog': w.full}
         for w

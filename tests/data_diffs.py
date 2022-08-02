@@ -31,3 +31,9 @@ diffs_remlocal = create_diffs(
     dw.checkedin_wkls,
     dw.remote_wkls
 )
+
+diffs_bothlocal = create_diffs(
+    dw.local_1to3,
+    dw.checkedin_0to1,
+    {'P9992-3': dw.remote_0to1['P9992-3'] + dw.remote_2to3['P9992-3']}
+)
