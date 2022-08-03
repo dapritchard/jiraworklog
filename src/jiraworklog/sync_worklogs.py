@@ -8,7 +8,7 @@ from jiraworklog.read_local_worklogs import read_local_worklogs
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_diffs import reconcile_diffs
-from jiraworklog.update_instructions import UpdateInstrs
+from jiraworklog.update_instructions import UpdateInstructions
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 
 def sync_worklogs(jira: JIRA, worklogs_path: str) -> None:
@@ -32,7 +32,7 @@ def process_worklogs_pure(
     local_wkls: dict[str, list[WorklogCanon]],
     checkedin_wkls: dict[str, list[WorklogCheckedin]],
     remote_wkls: dict[str, list[WorklogJira]]
-) -> UpdateInstrs:
+) -> UpdateInstructions:
 
     # Figure out what has changed in the local and the remote views, try to
     # reconcile any "external changes" (i.e. changes that occurred in both the

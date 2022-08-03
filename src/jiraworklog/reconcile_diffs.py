@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from jiraworklog.diff_worklogs import DiffsLocal, DiffsRemote
-from jiraworklog.update_instructions import UpdateInstrs
+from jiraworklog.update_instructions import UpdateInstructions
 from jiraworklog.utils import find
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 
@@ -78,7 +78,7 @@ def reconcile_diffs(
     diffs_local: dict[str, DiffsLocal],
     diffs_remote: dict[str, DiffsRemote],
     remote_wkls: dict[str, list[WorklogJira]]
-) -> UpdateInstrs:
+) -> UpdateInstructions:
     acc_added = create_empty_reconcileadded()
     acc_removed = create_empty_reconcileremoved()
     # TODO: assert that keys are identical?
@@ -88,7 +88,7 @@ def reconcile_diffs(
         acc_added.extend(added)
         acc_removed.extend(removed)
     rmt_remove = map_checkedin_to_jira(acc_removed.local, remote_wkls)
-    update_instructions = UpdateInstrs(
+    update_instructions = UpdateInstructions(
         chk_add_listwkl=acc_added.aligned,
         chk_remove_listwkl=acc_removed.aligned,
         rmt_add_listwkl=acc_added.local,

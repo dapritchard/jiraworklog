@@ -14,7 +14,7 @@ from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 #     return checkedin
 
 
-class UpdateInstrs:
+class UpdateInstructions:
 
     chk_add_listwkl: list[WorklogJira]
     chk_remove_listwkl: list[WorklogCheckedin]
