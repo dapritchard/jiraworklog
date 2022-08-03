@@ -8,6 +8,7 @@ from typing import Any, Optional
 class Configuration:
 
     author: str
+    authentication: dict[str, str]
     issues_map: dict[str, str]
     issue_nms: list[str]
     timezone: str
@@ -19,6 +20,7 @@ class Configuration:
     def __init__(self, raw: dict[str, Any]):
 
         self.author = raw['author']
+        self.authentication = raw['authentication']
         self.issues_map = raw['issues_map']
         self.issue_nms = self.issues_map.values()
         self.timezone = raw.get('timezone')

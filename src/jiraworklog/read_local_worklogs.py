@@ -11,7 +11,10 @@ import re
 from typing import Any, Callable
 
 
-def read_local_worklogs(worklogs_path: str) -> dict[str, list[WorklogCanon]]:
+def read_local_worklogs(
+    worklogs_path: str,
+    conf: Configuration
+) -> dict[str, list[WorklogCanon]]:
     conf = read_conf()
     worklogs_native = read_worklogs_native(worklogs_path)
     worklogs_parsed = normalize_worklogs_local(worklogs_native, conf)

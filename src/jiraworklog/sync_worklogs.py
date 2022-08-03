@@ -2,7 +2,7 @@
 
 # from datetime import datetime
 from jira import JIRA
-from jiraworklog.configuration import read_conf
+from jiraworklog.configuration import Configuration
 from jiraworklog.diff_worklogs import diff_local, diff_remote
 from jiraworklog.read_local_worklogs import read_local_worklogs
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
@@ -11,9 +11,13 @@ from jiraworklog.reconcile_diffs import reconcile_diffs
 from jiraworklog.update_instructions import UpdateInstructions
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 
-def sync_worklogs(jira: JIRA, worklogs_path: str) -> None:
-    conf = read_conf()
-    local_wkls = read_local_worklogs(worklogs_path)
+# TODO: worklogs_path is included in conf. Plus we want to be able to read from stdin also
+def sync_worklogs(
+    jira: JIRA,
+    conf: Configuration,
+    worklogs_path: str
+) -> None:
+    local_wkls = read_local_worklogs(worklogs_path, conf)
     checkedin_wkls = read_checkedin_worklogs(conf)
     remote_wkls = read_remote_worklogs(jira, conf)
     update_instrs = process_worklogs_pure(
