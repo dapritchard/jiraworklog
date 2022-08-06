@@ -30,8 +30,10 @@ class Configuration:
         self.parse_delimited = raw['parse_delimited']
 
 
-def read_conf() -> Configuration:
-    with open(os.path.expanduser('~/.jwconfig.yaml'), 'r') as yaml_file:
+def read_conf(path=None) -> Configuration:
+    if path is None:
+        path='~/.jwconfig.yaml'
+    with open(os.path.expanduser(path), 'r') as yaml_file:
         contents = yaml.safe_load(yaml_file.read())
     conf = Configuration(contents)
     return conf
