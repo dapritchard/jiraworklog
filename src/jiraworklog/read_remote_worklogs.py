@@ -10,8 +10,8 @@ def read_remote_worklogs(
     conf: Configuration
 ) -> dict[str, list[WorklogJira]]:
     # TODO: error handling
-    issues = {nm: jira.issue(nm) for nm in conf.issue_nms}
-    worklogs = {k: [WorklogJira(x, k) for x in jira.worklogs(v)]
-                for (k, v)
-                in issues.items()}
+    # TODO: what does JIRA do if there's no issue of that name?
+    worklogs = {k: [WorklogJira(x, k) for x in jira.worklogs(k)]
+                for k
+                in conf.issue_nms}
     return worklogs
