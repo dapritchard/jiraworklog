@@ -9,7 +9,9 @@ from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_diffs import reconcile_diffs
 from jiraworklog.update_instructions import UpdateInstructions
+from jiraworklog.utils import map_worklogs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
+import json
 
 # TODO: worklogs_path is included in conf. Plus we want to be able to read from stdin also
 def sync_worklogs(
@@ -28,9 +30,9 @@ def sync_worklogs(
     try:
         update_instrs.push_worklogs(checkedin_wkls, jira)
     finally:
-        # TODO: update checked-in worklogs on disk. This construction depends on
-        # the partially updated version of `checkedin_worklogs` being available
-        pass
+        checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
+        with open(conf.checked_in_path, "w") as file:
+            json.dump(obj=checkedin_full, fp=file, indent=4)
 
 def process_worklogs_pure(
     local_wkls: dict[str, list[WorklogCanon]],
