@@ -19,7 +19,7 @@ def read_checkedin_worklogs(
         )
     else:
         is_default_path = False
-        raw_path = conf['checked_in_path']
+        raw_path = conf.checked_in_path
         checkedin_path = os.path.expanduser(raw_path)
     try:
         with open(checkedin_path) as checkedin_file:
