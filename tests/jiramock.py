@@ -11,12 +11,19 @@ from typing import Any, Optional, Union
 
 class JIRAMock(j.JIRA):
 
+    # TODO: do we need the builder?
     entries: list[dict[str, dict[str, Union[str, datetime]]]]
+    remote_wkls: dict[str, list[WorklogJira]]
     builder: BuildCheckedin
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        remote_wkls: Optional[dict[str, list[WorklogJira]]] = None,
+        builder: Optional[BuildCheckedin] = None
+    ) -> None:
         self.entries = []
-        self.builder = BuildCheckedin()
+        self.remote_wkls = {} if remote_wkls is None else remote_wkls
+        self.builder = BuildCheckedin() if builder is None else builder
 
     def add_worklog(
             self,
@@ -36,6 +43,13 @@ class JIRAMock(j.JIRA):
         jira_wkl_mock = self.builder.build(**wkl)
         return jira_wkl_mock
 
+    # TODO: should this be a more faithful error message to the real JIRA type
+    # if we give it a key that doesn't exist?
+    def worklogs(self, issueKey):
+        return self.remote_wkls[issueKey]
+
+    def _set_remote_wkls(self, remote_worklogs):
+        self.remote_wkls = remote_worklogs
 
     def clear(self) -> JIRAMock:
         self.entries = []
