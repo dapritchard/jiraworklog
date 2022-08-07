@@ -22,7 +22,7 @@ class Configuration:
         self.author = raw['author']
         self.authentication = raw['authentication']
         self.issues_map = raw['issues_map']
-        self.issue_nms = self.issues_map.values()
+        self.issue_nms = list(self.issues_map.values())
         self.timezone = raw.get('timezone')
         self.checked_in_path = raw.get('checked_in_path')
         self.parse_type = raw['parse_type']
@@ -30,7 +30,7 @@ class Configuration:
         self.parse_delimited = raw['parse_delimited']
 
 
-def read_conf(path=None) -> Configuration:
+def read_conf(path: Optional[str] = None) -> Configuration:
     if path is None:
         path='~/.jwconfig.yaml'
     with open(os.path.expanduser(path), 'r') as yaml_file:
