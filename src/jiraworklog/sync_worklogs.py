@@ -13,11 +13,12 @@ from jiraworklog.utils import map_worklogs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 import json
 
-# TODO: worklogs_path is included in conf. Plus we want to be able to read from stdin also
+# TODO: we want to be able to read from stdin also
 def sync_worklogs(
     jira: JIRA,
     conf: Configuration,
-    worklogs_path: str
+    worklogs_path: str,
+    checkedin_outpath: str
 ) -> None:
     local_wkls = read_local_worklogs(worklogs_path, conf)
     checkedin_wkls = read_checkedin_worklogs(conf)
@@ -31,7 +32,7 @@ def sync_worklogs(
         update_instrs.push_worklogs(checkedin_wkls, jira)
     finally:
         checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
-        with open(conf.checked_in_path, "w") as file:
+        with open(checkedin_outpath, "w") as file:
             json.dump(obj=checkedin_full, fp=file, indent=4)
 
 def process_worklogs_pure(
