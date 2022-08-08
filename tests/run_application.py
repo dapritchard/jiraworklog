@@ -15,10 +15,17 @@ def run_application(
     remotecmds_outpath: str
 ) -> None:
 
+    def stringify(entry):
+        if entry['action'] == 'add':
+            started = entry['worklog']['started']
+            entry['worklog']['started'] = started.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+        return entry
+
     parsed_args = parser.parse_args(args)
     conf = read_conf(parsed_args.config_path)
     conf.checked_in_path = checkedin_inpath
 
-    sync_worklogs(jira, conf, parsed_args.file, checkedin_outpath)
-    with open(checkedin_outpath, "w") as file:
-        json.dump(obj=remotecmds_outpath, fp=file, indent=4)
+    jira = sync_worklogs(jira, conf, parsed_args.file, checkedin_outpath)
+    entries = [stringify(x) for x in jira.entries]
+    with open(remotecmds_outpath, "w") as file:
+        json.dump(obj=entries, fp=file, indent=4)
