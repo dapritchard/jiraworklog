@@ -32,15 +32,23 @@ def calc_diff(path_1: str, path_2: str):
     return list(diff)
 
 
-def test_1():
-    inpaths = resolve_inpaths('tests/data/01-add-to-empty/')
+def create_test(indir_path):
+    def test():
+        inpaths, outpaths, outdir_path = run_test(indir_path)
+        assert_golden(inpaths['gld-chk'], outdir_path['checkedin'])
+        assert_golden(inpaths['gld-rcmds'], outdir_path['remotecmds'])
+        os.remove(outpaths['checkedin'])
+        os.remove(outpaths['remotecmds'])
+        os.rmdir(outdir_path)
+    return test
+
+test_1 = create_test('tests/data/01-add-to-empty/')
+
+def run_test(indir_path: str):
+    inpaths = resolve_inpaths(indir_path)
     outdir_path, outpaths = create_outpaths()
     exercise_system(inpaths, outpaths)
-    assert_golden(inpaths['gld-chk'], outdir_path['checkedin'])
-    assert_golden(inpaths['gld-rcmds'], outdir_path['remotecmds'])
-    os.remove(outpaths['checkedin'])
-    os.remove(outpaths['remotecmds'])
-    os.rmdir(outdir_path)
+    return [inpaths, outpaths, outdir_path]
 
 
 def exercise_system(
@@ -76,7 +84,7 @@ def resolve_inpaths(input_dir: str) -> dict[str, str]:
     def find_remote_path(dir_path):
         for s in os.listdir(dir_path):
             if s.startswith('worklogs.'):
-                return s
+                return input_dir + s
         raise RuntimeError('Unable to find worklogs file')
     inpaths = {
         'config': input_dir + 'config.yaml',
@@ -92,7 +100,7 @@ def resolve_inpaths(input_dir: str) -> dict[str, str]:
 def create_outpaths():
     outdir_path = tempfile.mkdtemp()
     outpaths = {
-        'checkedin': outdir_path + 'checkedin.json',
-        'remotecmds': outdir_path + 'remotecmds.json'
+        'checkedin': outdir_path + '/' + 'checkedin.json',
+        'remotecmds': outdir_path + '/' + 'remotecmds.json'
     }
     return [outdir_path, outpaths]
