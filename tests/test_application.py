@@ -9,9 +9,9 @@ from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogJira
 from tests.jiramock import JIRAMock, JIRAWklMock
 from tests.run_application import run_application
+import tempfile
 
 os.makedirs('tests/temp', exist_ok=True)
-
 
 def assert_golden(expected_path: str, actual_path: str) -> None:
     diff = calc_diff(expected_path, actual_path)
@@ -31,35 +31,37 @@ def calc_diff(path_1: str, path_2: str):
             )
     return list(diff)
 
+
 def test_1():
-    out = exercise_system(
-        config_path='tests/data/configs/config-csv.yaml',
-        worklogs_path='tests/data/worklogs/worklogs.csv',
-        checkedin_path='tests/data/checkedins/empty.json',
-        remote_path='tests/data/checkedins/empty.json'
-    )
-    assert_golden('tests/data/checkedins/empty.json', 'tests/temp/checkedin.json')
+    inpaths = resolve_inpaths('tests/data/01-add-to-empty/')
+    outdir_path, outpaths = create_outpaths()
+    exercise_system(inpaths, outpaths)
+    assert_golden(inpaths['gld-chk'], outdir_path['checkedin'])
+    assert_golden(inpaths['gld-rcmds'], outdir_path['remotecmds'])
+    os.remove(outpaths['checkedin'])
+    os.remove(outpaths['remotecmds'])
+    os.rmdir(outdir_path)
+
 
 def exercise_system(
-    config_path: str,
-    worklogs_path: str,
-    checkedin_path: str,
-    remote_path: str
-):
-    shutil.copy(src=config_path, dst='tests/temp/config.yaml')
-    shutil.copy(src=worklogs_path, dst='tests/temp/worklogs.csv')
-    shutil.copy(src=checkedin_path, dst='tests/temp/checkedin.json')
-    jiramock = init_jira(remote_path)
-    jiramock_updated = run_application(
-        args=['tests/temp/worklogs.csv', '--config-path', 'tests/temp/config.yaml'],
-        jira=jiramock
+    inpaths: dict[str, str],
+    outpaths: dict[str, str]
+) -> None:
+    jiramock = init_jira(inpaths['remote'])
+    run_application(
+        args=[inpaths['worklogs'], '--config-path', inpaths['config']],
+        jira=jiramock,
+        checkedin_inpath=inpaths['checkedin'],
+        checkedin_outpath=outpaths['checkedin'],
+        remotecmds_outpath=outpaths['remotecmds']
     )
-    return jiramock_updated
+
 
 def init_jira(path: str) -> JIRAMock:
     mockremote_worklogs = read_mockremote_worklogs(path)
     jiramock = JIRAMock(mockremote_worklogs)
     return jiramock
+
 
 def read_mockremote_worklogs(path: str) -> dict[str, list[WorklogJira]]:
     def to_jiramock(wkl_raw: dict[str, str], issue_key: str) -> WorklogJira:
@@ -68,3 +70,29 @@ def read_mockremote_worklogs(path: str) -> dict[str, list[WorklogJira]]:
         worklogs_raw = json.load(file)
     jiramock_wkls = map_worklogs_key(to_jiramock, worklogs_raw)
     return jiramock_wkls
+
+
+def resolve_inpaths(input_dir: str) -> dict[str, str]:
+    def find_remote_path(dir_path):
+        for s in os.listdir(dir_path):
+            if s.startswith('worklogs.'):
+                return s
+        raise RuntimeError('Unable to find worklogs file')
+    inpaths = {
+        'config': input_dir + 'config.yaml',
+        'worklogs': find_remote_path(input_dir),
+        'checkedin': input_dir + 'checkedin.json',
+        'remote': input_dir + 'remote.json',
+        'gld-chk': input_dir + 'gld-checkedin.json',
+        'gld-rcmds': input_dir + 'gld-remotecmds.json'
+    }
+    return inpaths
+
+
+def create_outpaths():
+    outdir_path = tempfile.mkdtemp()
+    outpaths = {
+        'checkedin': outdir_path + 'checkedin.json',
+        'remotecmds': outdir_path + 'remotecmds.json'
+    }
+    return [outdir_path, outpaths]
