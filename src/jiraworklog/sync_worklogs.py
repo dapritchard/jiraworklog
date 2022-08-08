@@ -13,13 +13,20 @@ from jiraworklog.utils import map_worklogs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 import json
 
+from typing import TypeVar
+
+JiraSubcl = TypeVar('JiraSubcl', bound='JIRA')
+
+
 # TODO: we want to be able to read from stdin also
 def sync_worklogs(
-    jira: JIRA,
+    # jira: JIRA,
+    jira: JiraSubcl,
     conf: Configuration,
     worklogs_path: str,
     checkedin_outpath: str
-) -> None:
+# ) -> JIRA:
+) -> JiraSubcl:
     local_wkls = read_local_worklogs(worklogs_path, conf)
     checkedin_wkls = read_checkedin_worklogs(conf)
     remote_wkls = read_remote_worklogs(jira, conf)
@@ -34,6 +41,7 @@ def sync_worklogs(
         checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
         with open(checkedin_outpath, "w") as file:
             json.dump(obj=checkedin_full, fp=file, indent=4)
+    return jira
 
 def process_worklogs_pure(
     local_wkls: dict[str, list[WorklogCanon]],
