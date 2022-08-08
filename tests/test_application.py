@@ -2,7 +2,6 @@
 
 import json
 import os
-import shutil
 
 import difflib
 from jiraworklog.utils import map_worklogs_key
@@ -35,8 +34,11 @@ def calc_diff(path_1: str, path_2: str):
 def create_test(indir_path):
     def test():
         inpaths, outpaths, outdir_path = run_test(indir_path)
-        assert_golden(inpaths['gld-chk'], outdir_path['checkedin'])
-        assert_golden(inpaths['gld-rcmds'], outdir_path['remotecmds'])
+        # assert_golden(inpaths['gld-chk'], outpaths['checkedin'])
+        with open(inpaths['gld-chk'], 'r') as file_expected:
+            with open(outpaths['checkedin'], 'r') as file_actual:
+                assert json.load(file_expected) == json.load(file_actual)
+        assert_golden(inpaths['gld-rcmds'], outpaths['remotecmds'])
         os.remove(outpaths['checkedin'])
         os.remove(outpaths['remotecmds'])
         os.rmdir(outdir_path)

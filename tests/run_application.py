@@ -25,7 +25,7 @@ def run_application(
     conf = read_conf(parsed_args.config_path)
     conf.checked_in_path = checkedin_inpath
 
-    jira = sync_worklogs(jira, conf, parsed_args.file, checkedin_outpath)
+    jira, _ = sync_worklogs(jira, conf, parsed_args.file, checkedin_outpath)
     entries = [stringify(x) for x in jira.entries]
     with open(remotecmds_outpath, "w") as file:
         json.dump(obj=entries, fp=file, indent=4)

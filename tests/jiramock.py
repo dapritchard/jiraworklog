@@ -62,8 +62,7 @@ class BuildCheckedin():
     curr_id: int
 
     def __init__(self) -> None:
-        self.curr_id=1000000
-
+        self.curr_id=1000001
 
     def build(
         self,
@@ -77,16 +76,15 @@ class BuildCheckedin():
             comment=comment,
             created='2021-10-03T17:21:55.764-0400',
             id=str(self.curr_id),
-            issueId=issue,  # FIXME
+            issueId=issue,  # FIXME: should only contain digits? Do we care?
             started=started.strftime('%Y-%m-%dT%H:%M:%S.%f%z'),
-            timeSpent='',  # FIXME
+            timeSpent=to_dhms(timeSpentSeconds),
             timeSpentSeconds=timeSpentSeconds,
             updateAuthor='Daffy Duck',
             updated='2021-10-03T17:21:55.764-0400'
         )
         self.curr_id = self.curr_id + 1
         return jiramock_wkl
-
 
     def buildwkl(
         self,
@@ -99,7 +97,6 @@ class BuildCheckedin():
             started=strptime_ptl(local_wkl.canon['started'])
         )
         return jiramock_wkl
-
 
     def build_listchk(self, canon_wkls: list[WorklogCanon]) -> list[JIRAMock]:
         checkedin_listwkls = []
@@ -116,7 +113,7 @@ class BuildCheckedin():
 
 
     def reset(self) -> None:
-        self.curr_id=1000000
+        self.curr_id=1000001
 
 
 class JIRAWklMock(j.Worklog):
@@ -202,3 +199,16 @@ def to_rementry(
         in checkedin_listwkls
     ]
     return entries
+
+
+# TODO: verify that this is actually how Jira behaves
+def to_dhms(seconds: str) -> str:
+    m, s = divmod(int(seconds), 60)
+    h, m = divmod(m, 60)
+    d, h = divmod(h, 24)
+    chunks = []
+    if d != 0: chunks.append(f'{d}d')
+    if h != 0: chunks.append(f'{h}h')
+    if m != 0: chunks.append(f'{m}m')
+    if s != 0: chunks.append(f'{s}s')
+    return ' '.join(chunks)
