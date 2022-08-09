@@ -23,7 +23,7 @@ def sync_worklogs(
     conf: Configuration,
     worklogs_path: str,
     write_checkedin: bool = False
-) -> Tuple[JiraSubcl, dict[str, Any]]:
+) -> Tuple[JiraSubcl, dict[str, Any], UpdateInstructions]:
     local_wkls = read_local_worklogs(worklogs_path, conf)
     checkedin_wkls = read_checkedin_worklogs(conf)
     remote_wkls = read_remote_worklogs(jira, conf)
@@ -39,7 +39,7 @@ def sync_worklogs(
         if write_checkedin:
             with open(conf.checked_in_path, "w") as file:
                 json.dump(obj=checkedin_full, fp=file, indent=4)
-    return (jira, checkedin_full)
+    return (jira, checkedin_full, update_instrs)
 
 
 def process_worklogs_pure(

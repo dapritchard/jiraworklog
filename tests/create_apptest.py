@@ -6,6 +6,7 @@ import os
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogJira
 from jiraworklog.update_instructions import strptime_ptl
+from jiraworklog.update_instructions import UpdateInstructions
 from tests.jiramock import JIRAMock, JIRAWklMock
 from tests.run_application import run_application
 from typing import Any, Tuple
@@ -32,7 +33,7 @@ from typing import Any, Tuple
 
 def create_apptest(input_dir):
     def test():
-        jira, checkedin_full = exercise_system(input_dir)
+        jira, checkedin_full, _ = exercise_system(input_dir)
         gld_rcmds, gld_chk = read_golden(input_dir)
         assert gld_rcmds == jira.entries
         assert gld_chk == checkedin_full
@@ -41,7 +42,7 @@ def create_apptest(input_dir):
 
 def exercise_system(
     input_dir: str
-) -> Tuple[JIRAMock, dict[str, Any]]:
+) -> Tuple[JIRAMock, dict[str, Any], UpdateInstructions]:
     inpaths = resolve_inpaths(input_dir)
     jiramock = init_jira(inpaths['remote'])
     out = run_application(
