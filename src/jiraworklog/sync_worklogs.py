@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 # from datetime import datetime
-from datetime import datetime
 from jira import JIRA
 from jiraworklog.configuration import Configuration
 from jiraworklog.diff_worklogs import diff_local, diff_remote
@@ -13,7 +12,6 @@ from jiraworklog.update_instructions import UpdateInstructions
 from jiraworklog.utils import map_worklogs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 import json
-
 from typing import Any, Tuple, TypeVar
 
 JiraSubcl = TypeVar('JiraSubcl', bound='JIRA')
@@ -42,6 +40,7 @@ def sync_worklogs(
             with open(conf.checked_in_path, "w") as file:
                 json.dump(obj=checkedin_full, fp=file, indent=4)
     return (jira, checkedin_full)
+
 
 def process_worklogs_pure(
     local_wkls: dict[str, list[WorklogCanon]],

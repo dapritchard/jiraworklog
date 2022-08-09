@@ -9,7 +9,6 @@ from jiraworklog.update_instructions import strptime_ptl
 from tests.jiramock import JIRAMock, JIRAWklMock
 from tests.run_application import run_application
 from typing import Any, Tuple
-# import tempfile
 
 
 # def assert_golden(expected_path: str, actual_path: str) -> None:
@@ -40,13 +39,6 @@ def create_apptest(input_dir):
     return test
 
 
-# def run_test(input_dir: str):
-#     inpaths = resolve_inpaths(input_dir)
-#     # outdir_path, outpaths = create_outpaths()
-#     exercise_system(inpaths, outpaths)
-#     return [inpaths, outpaths, outdir_path]
-
-
 def exercise_system(
     input_dir: str
 ) -> Tuple[JIRAMock, dict[str, Any]]:
@@ -55,9 +47,7 @@ def exercise_system(
     out = run_application(
         args=[inpaths['worklogs'], '--config-path', inpaths['config']],
         jira=jiramock,
-        checkedin_inpath=inpaths['checkedin']# ,
-        # checkedin_outpath=outpaths['checkedin'],
-        # remotecmds_outpath=outpaths['remotecmds']
+        checkedin_inpath=inpaths['checkedin']
     )
     return out
 
@@ -87,9 +77,7 @@ def resolve_inpaths(input_dir: str) -> dict[str, str]:
         'config': input_dir + 'config.yaml',
         'worklogs': find_remote_path(input_dir),
         'checkedin': input_dir + 'checkedin.json',
-        'remote': input_dir + 'remote.json'# ,
-        # 'gld-chk': input_dir + 'gld-checkedin.json',
-        # 'gld-rcmds': input_dir + 'gld-remotecmds.json'
+        'remote': input_dir + 'remote.json'
     }
     return inpaths
 
@@ -105,11 +93,3 @@ def read_golden(input_dir):
     with open(input_dir + 'gld-checkedin.json', 'r') as file:
         gld_chk = json.load(file)
     return (gld_rcmds, gld_chk)
-
-# def create_outpaths():
-#     outdir_path = tempfile.mkdtemp()
-#     outpaths = {
-#         'checkedin': outdir_path + '/' + 'checkedin.json',
-#         'remotecmds': outdir_path + '/' + 'remotecmds.json'
-#     }
-#     return [outdir_path, outpaths]
