@@ -24,7 +24,7 @@ def sync_worklogs(
     jira: JiraSubcl,
     conf: Configuration,
     worklogs_path: str,
-    checkedin_outpath: str
+    write_checkedin: bool = False
 ) -> Tuple[JiraSubcl, dict[str, Any]]:
     local_wkls = read_local_worklogs(worklogs_path, conf)
     checkedin_wkls = read_checkedin_worklogs(conf)
@@ -38,8 +38,9 @@ def sync_worklogs(
         update_instrs.push_worklogs(checkedin_wkls, jira)
     finally:
         checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
-        with open(checkedin_outpath, "w") as file:
-            json.dump(obj=checkedin_full, fp=file, indent=4)
+        if write_checkedin:
+            with open(conf.checked_in_path, "w") as file:
+                json.dump(obj=checkedin_full, fp=file, indent=4)
     return (jira, checkedin_full)
 
 def process_worklogs_pure(

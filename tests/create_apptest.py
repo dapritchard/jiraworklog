@@ -8,63 +8,58 @@ from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogJira
 from tests.jiramock import JIRAMock, JIRAWklMock
 from tests.run_application import run_application
-import tempfile
-
-os.makedirs('tests/temp', exist_ok=True)
-
-def assert_golden(expected_path: str, actual_path: str) -> None:
-    diff = calc_diff(expected_path, actual_path)
-    if len(diff) >= 1:
-        msg = ''.join(diff)
-        raise RuntimeError(msg)
+from typing import Any, Tuple
+# import tempfile
 
 
-def calc_diff(path_1: str, path_2: str):
-    with open(path_1, 'r') as file_1:
-        with open(path_2, 'r') as file_2:
-            diff = difflib.unified_diff(
-                file_1.readlines(),
-                file_2.readlines(),
-                fromfile=path_1,
-                tofile=path_2,
-            )
-    return list(diff)
+# def assert_golden(expected_path: str, actual_path: str) -> None:
+#     diff = calc_diff(expected_path, actual_path)
+#     if len(diff) >= 1:
+#         msg = ''.join(diff)
+#         raise RuntimeError(msg)
 
 
-def create_test(indir_path):
+# def calc_diff(path_1: str, path_2: str):
+#     with open(path_1, 'r') as file_1:
+#         with open(path_2, 'r') as file_2:
+#             diff = difflib.unified_diff(
+#                 file_1.readlines(),
+#                 file_2.readlines(),
+#                 fromfile=path_1,
+#                 tofile=path_2,
+#             )
+#     return list(diff)
+
+
+def create_apptest(input_dir):
     def test():
-        inpaths, outpaths, outdir_path = run_test(indir_path)
-        # assert_golden(inpaths['gld-chk'], outpaths['checkedin'])
-        with open(inpaths['gld-chk'], 'r') as file_expected:
-            with open(outpaths['checkedin'], 'r') as file_actual:
-                assert json.load(file_expected) == json.load(file_actual)
-        assert_golden(inpaths['gld-rcmds'], outpaths['remotecmds'])
-        os.remove(outpaths['checkedin'])
-        os.remove(outpaths['remotecmds'])
-        os.rmdir(outdir_path)
+        jira, checkedin_full = exercise_system(input_dir)
+        gld_rcmds, gld_chk = read_golden(input_dir)
+        assert gld_rcmds == jira.entries
+        assert gld_chk == checkedin_full
     return test
 
-test_1 = create_test('tests/data/01-add-to-empty/')
 
-def run_test(indir_path: str):
-    inpaths = resolve_inpaths(indir_path)
-    outdir_path, outpaths = create_outpaths()
-    exercise_system(inpaths, outpaths)
-    return [inpaths, outpaths, outdir_path]
+# def run_test(input_dir: str):
+#     inpaths = resolve_inpaths(input_dir)
+#     # outdir_path, outpaths = create_outpaths()
+#     exercise_system(inpaths, outpaths)
+#     return [inpaths, outpaths, outdir_path]
 
 
 def exercise_system(
-    inpaths: dict[str, str],
-    outpaths: dict[str, str]
-) -> None:
+    input_dir: str
+) -> Tuple[JIRAMock, dict[str, Any]]:
+    inpaths = resolve_inpaths(input_dir)
     jiramock = init_jira(inpaths['remote'])
-    run_application(
+    out = run_application(
         args=[inpaths['worklogs'], '--config-path', inpaths['config']],
         jira=jiramock,
-        checkedin_inpath=inpaths['checkedin'],
-        checkedin_outpath=outpaths['checkedin'],
-        remotecmds_outpath=outpaths['remotecmds']
+        checkedin_inpath=inpaths['checkedin']# ,
+        # checkedin_outpath=outpaths['checkedin'],
+        # remotecmds_outpath=outpaths['remotecmds']
     )
+    return out
 
 
 def init_jira(path: str) -> JIRAMock:
@@ -92,17 +87,24 @@ def resolve_inpaths(input_dir: str) -> dict[str, str]:
         'config': input_dir + 'config.yaml',
         'worklogs': find_remote_path(input_dir),
         'checkedin': input_dir + 'checkedin.json',
-        'remote': input_dir + 'remote.json',
-        'gld-chk': input_dir + 'gld-checkedin.json',
-        'gld-rcmds': input_dir + 'gld-remotecmds.json'
+        'remote': input_dir + 'remote.json'# ,
+        # 'gld-chk': input_dir + 'gld-checkedin.json',
+        # 'gld-rcmds': input_dir + 'gld-remotecmds.json'
     }
     return inpaths
 
 
-def create_outpaths():
-    outdir_path = tempfile.mkdtemp()
-    outpaths = {
-        'checkedin': outdir_path + '/' + 'checkedin.json',
-        'remotecmds': outdir_path + '/' + 'remotecmds.json'
-    }
-    return [outdir_path, outpaths]
+def read_golden(input_dir):
+    with open(input_dir + 'gld-remotecmds.json', 'r') as file:
+        gld_rcmds = json.load(file)
+    with open(input_dir + 'gld-checkedin.json', 'r') as file:
+        gld_chk = json.load(file)
+    return (gld_rcmds, gld_chk)
+
+# def create_outpaths():
+#     outdir_path = tempfile.mkdtemp()
+#     outpaths = {
+#         'checkedin': outdir_path + '/' + 'checkedin.json',
+#         'remotecmds': outdir_path + '/' + 'remotecmds.json'
+#     }
+#     return [outdir_path, outpaths]
