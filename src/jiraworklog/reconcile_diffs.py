@@ -82,7 +82,7 @@ def reconcile_diffs(
     acc_added = create_empty_reconcileadded()
     acc_removed = create_empty_reconcileremoved()
     # TODO: assert that keys are identical?
-    for k in diffs_local.keys():
+    for k in sorted(diffs_local.keys()):
         added = reconcile_added_listwkl(diffs_local[k].added, diffs_remote[k].added)
         removed = reconcile_removed_listwkl(diffs_local[k].removed, diffs_remote[k].removed)
         acc_added.extend(added)
