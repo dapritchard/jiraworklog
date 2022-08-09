@@ -3,9 +3,9 @@
 import json
 import os
 
-import difflib
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogJira
+from jiraworklog.update_instructions import strptime_ptl
 from tests.jiramock import JIRAMock, JIRAWklMock
 from tests.run_application import run_application
 from typing import Any, Tuple
@@ -95,8 +95,13 @@ def resolve_inpaths(input_dir: str) -> dict[str, str]:
 
 
 def read_golden(input_dir):
+    def to_dt(entry):
+        if entry['action'] == 'add':
+            started = entry['worklog']['started']
+            entry['worklog']['started'] = strptime_ptl(started)
+        return entry
     with open(input_dir + 'gld-remotecmds.json', 'r') as file:
-        gld_rcmds = json.load(file)
+        gld_rcmds = [to_dt(x) for x in json.load(file)]
     with open(input_dir + 'gld-checkedin.json', 'r') as file:
         gld_chk = json.load(file)
     return (gld_rcmds, gld_chk)
