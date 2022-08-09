@@ -7,6 +7,8 @@ from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogJira
 from jiraworklog.update_instructions import strptime_ptl
 from jiraworklog.update_instructions import UpdateInstructions
+from pprint import pformat
+from deepdiff import DeepDiff
 from tests.jiramock import JIRAMock, JIRAWklMock
 from tests.run_application import run_application
 from typing import Any, Tuple
@@ -30,13 +32,19 @@ from typing import Any, Tuple
 #             )
 #     return list(diff)
 
+def assert_diff(expected: Any, actual: Any) -> None:
+    diff = DeepDiff(expected, actual)
+    if diff != {}:
+        msg = pformat(diff)
+        raise RuntimeError(f'\n{msg}')
+
 
 def create_apptest(input_dir):
     def test():
         jira, checkedin_full, _ = exercise_system(input_dir)
         gld_rcmds, gld_chk = read_golden(input_dir)
-        assert gld_rcmds == jira.entries
-        assert gld_chk == checkedin_full
+        assert_diff(gld_rcmds, jira.entries)
+        assert_diff(gld_chk, checkedin_full)
     return test
 
 
