@@ -2,7 +2,7 @@
 
 from jiraworklog.cmdline_args import parser
 from jiraworklog.configuration import read_conf
-from jiraworklog.sync_worklogs import JiraSubcl, sync_worklogs
+from jiraworklog.sync_worklogs import sync_worklogs
 from jiraworklog.update_instructions import UpdateInstructions
 from tests.jiramock import JIRAMock
 from typing import Any, Tuple

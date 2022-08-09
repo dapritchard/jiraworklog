@@ -3,8 +3,7 @@
 import json
 import os
 
-from jiraworklog.utils import map_worklogs_key
-from jiraworklog.worklogs import WorklogJira
+from jiraworklog.utils import map_worklogs
 from jiraworklog.update_instructions import strptime_ptl
 from jiraworklog.update_instructions import UpdateInstructions
 from pprint import pformat
@@ -62,18 +61,22 @@ def exercise_system(
 
 
 def init_jira(path: str) -> JIRAMock:
-    mockremote_worklogs = read_mockremote_worklogs(path)
-    jiramock = JIRAMock(mockremote_worklogs)
+    jiramock = JIRAMock()
+    mockremote_worklogs = read_mockremote_worklogs(path, jiramock)
+    jiramock._set_remote_wkls(mockremote_worklogs)
     return jiramock
 
 
-def read_mockremote_worklogs(path: str) -> dict[str, list[WorklogJira]]:
-    def to_jiramock(wkl_raw: dict[str, str], issue_key: str) -> WorklogJira:
-        return WorklogJira(JIRAWklMock(**wkl_raw), issue_key)
+def read_mockremote_worklogs(
+    path: str,
+    jiramock: JIRAMock
+) -> dict[str, list[JIRAWklMock]]:
+    def to_jirabase(wkl_raw: dict[str, str]) -> JIRAWklMock:
+        return JIRAWklMock(**wkl_raw).set_jira(jiramock)
     with open(path) as file:
         worklogs_raw = json.load(file)
-    jiramock_wkls = map_worklogs_key(to_jiramock, worklogs_raw)
-    return jiramock_wkls
+    jirabase_wkls = map_worklogs(to_jirabase, worklogs_raw)
+    return jirabase_wkls
 
 
 def resolve_inpaths(input_dir: str) -> dict[str, str]:

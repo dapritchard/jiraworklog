@@ -13,12 +13,12 @@ class JIRAMock(j.JIRA):
 
     # TODO: do we need the builder?
     entries: list[dict[str, dict[str, Union[str, datetime]]]]
-    remote_wkls: dict[str, list[WorklogJira]]
+    remote_wkls: dict[str, list[JIRAWklMock]]
     builder: BuildCheckedin
 
     def __init__(
         self,
-        remote_wkls: Optional[dict[str, list[WorklogJira]]] = None,
+        remote_wkls: Optional[dict[str, list[JIRAWklMock]]] = None,
         builder: Optional[BuildCheckedin] = None
     ) -> None:
         self.entries = []

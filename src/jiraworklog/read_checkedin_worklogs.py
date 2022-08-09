@@ -33,6 +33,8 @@ def read_checkedin_worklogs(
     worklogs = map_worklogs_key(WorklogCheckedin, worklogs_raw)
     return worklogs
 
+
+# TODO: move this and rename it since it's getting used by read_local_worklogs?
 def align_checkedin_with_conf(
     worklogs: dict[str, Any],
     conf: Configuration

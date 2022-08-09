@@ -4,6 +4,7 @@ import csv
 from datetime import datetime
 from jiraworklog.configuration import Configuration, read_conf
 # from jiraworklog.diff_worklogs import map_worklogs
+from jiraworklog.read_checkedin_worklogs import align_checkedin_with_conf
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCanon
 import pytz
@@ -17,6 +18,7 @@ def read_local_worklogs(
 ) -> dict[str, list[WorklogCanon]]:
     worklogs_native = read_worklogs_native(worklogs_path)
     worklogs_parsed = normalize_worklogs_local(worklogs_native, conf)
+    align_checkedin_with_conf(worklogs_parsed, conf)
     worklogs = map_worklogs_key(WorklogCanon, worklogs_parsed)
     return worklogs
 
