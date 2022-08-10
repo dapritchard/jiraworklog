@@ -50,3 +50,56 @@ def align_checkedin_with_conf(
         for nm in removed_nms:
             del worklogs[nm]
     return worklogs
+
+
+def unconditional_new_checkedin(
+    _checkedin_path: str,
+    _is_default_path: bool
+) -> dict[str, dict[str, str]]:
+    # Use of `del` here to satisfy the linter: https://stackoverflow.com/q/10025680
+    del _checkedin_path
+    del _is_default_path
+    return {}
+
+
+def confirm_new_checkedin(
+    checkedin_path: str,
+    is_default_path: bool
+) -> dict[str, dict[str, str]]:
+    if is_default_path:
+        msg = (
+            'jiraworklog stores a file on disk to track which worklogs that '
+            'it is aware of, however it is unable to find the checked-in '
+            'worklogs file in the default location of '
+            "'~/.config/jira-worklog/checked-in-worklogs.json'. "
+            'If this is your first time running this application then '
+            'you can ask jiraworklog to create a new file in the default '
+            'location, otherwise you should exit and ensure that the correct '
+            'location is specified.\n'
+            'Do you want to create a new file to track worklogs? [y/n]:  '
+        )
+    else:
+        msg = (
+            'jiraworklog stores a file on disk to track which worklogs that '
+            'it is aware of, however it is unable to find the checked-in '
+            'worklogs file in the location specified by your configuration '
+            'file of '
+            f"'{checkedin_path}'. "
+            'If this is your first time running this application then '
+            'you can ask jiraworklog to create a new file in the default '
+            'location, otherwise you should exit and ensure that the correct '
+            'location is specified.\n'
+            'Do you want to create a new file to track worklogs? [y/n]:  '
+        )
+    print(msg)
+    while True:
+        response = input()
+        if response == 'y':
+            return {}
+        elif response == 'n':
+            raise RuntimeError('User specified exit')
+        msg = (
+            f"Invalid response '{response}'. Do you want to create a new file "
+            'to track worklogs? [y/n]:  '
+        )
+        print(msg)
