@@ -33,6 +33,7 @@ def sync_worklogs(
         checkedin_wkls,
         remote_wkls
     )
+    actions['confirm_updates'](update_instrs)
     try:
         update_instrs.push_worklogs(checkedin_wkls, jira)
     finally:
