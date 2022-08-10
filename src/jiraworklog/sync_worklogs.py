@@ -12,7 +12,7 @@ from jiraworklog.update_instructions import UpdateInstructions
 from jiraworklog.utils import map_worklogs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 import json
-from typing import Any, Tuple, TypeVar
+from typing import Any, Callable, Tuple, TypeVar
 
 JiraSubcl = TypeVar('JiraSubcl', bound='JIRA')
 
@@ -22,10 +22,11 @@ def sync_worklogs(
     jira: JiraSubcl,
     conf: Configuration,
     worklogs_path: str,
+    actions: dict[str, Callable[..., Any]],
     write_checkedin: bool = False
 ) -> Tuple[JiraSubcl, dict[str, Any], UpdateInstructions]:
     local_wkls = read_local_worklogs(worklogs_path, conf)
-    checkedin_wkls = read_checkedin_worklogs(conf)
+    checkedin_wkls = read_checkedin_worklogs(conf, actions)
     remote_wkls = read_remote_worklogs(jira, conf)
     update_instrs = process_worklogs_pure(
         local_wkls,

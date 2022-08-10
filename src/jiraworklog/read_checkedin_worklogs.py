@@ -6,10 +6,11 @@ from jiraworklog.configuration import Configuration
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCheckedin
 import os.path
-from typing import Any
+from typing import Any, Callable
 
 def read_checkedin_worklogs(
-    conf: Configuration
+     conf: Configuration,
+     actions: dict[str, Callable[..., Any]]
 ) -> dict[str, list[WorklogCheckedin]]:
     if conf.checked_in_path is None:
         is_default_path = True
@@ -23,12 +24,13 @@ def read_checkedin_worklogs(
         checkedin_path = os.path.expanduser(raw_path)
     try:
         with open(checkedin_path) as checkedin_file:
-            # TODO: validate contents
             worklogs_raw = json.load(checkedin_file)
     except:
-        # TODO: query user whether we should start a new file. For now we just
-        # unconditionally do so
-        worklogs_raw = {}
+        worklogs_raw = actions['confirm_new_checkedin'](
+            checkedin_path,
+            is_default_path
+        )
+    # TODO: validate contents
     align_checkedin_with_conf(worklogs_raw, conf)
     worklogs = map_worklogs_key(WorklogCheckedin, worklogs_raw)
     return worklogs
