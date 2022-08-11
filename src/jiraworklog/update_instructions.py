@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import datetime
+from functools import reduce
 from jira import JIRA
 # from jiraworklog.delete_worklog import delete_worklog
 # from jiraworklog.diff_worklogs import create_augwkl_jira
@@ -117,6 +118,35 @@ def push_worklog_remove(
 
 def strptime_ptl(datetime_str: str) -> datetime:
     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
+
+
+def calc_issue_max_strwidth(update_instr):
+    def update_maxlen(maxlen, listwkl):
+        for x in listwkl:
+            if len(x.issueKey) > maxlen:
+                maxlen = len(x.issueKey)
+        return maxlen
+    maxlen = reduce(
+        update_maxlen,
+        [update_instr.chk_add_listwkl,
+         update_instr.chk_remove_listwkl,
+         update_instr.rmt_add_listwkl,
+         update_instr.rmt_remove_listwkl
+         ],
+        0
+    )
+    return maxlen
+
+
+def calc_n_updates(update_instrs: UpdateInstructions):
+    n_updates = (
+        len(update_instrs.chk_add_listwkl)
+        + len(update_instrs.chk_remove_listwkl)
+        + len(update_instrs.rmt_add_listwkl)
+        + len(update_instrs.rmt_remove_listwkl)
+    )
+    return n_updates
+
 
 
 # # TODO: is this better than what we had with the flat form?
