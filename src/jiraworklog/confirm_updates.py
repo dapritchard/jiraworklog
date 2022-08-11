@@ -14,7 +14,7 @@ def confirm_updates(update_instrs: UpdateInstructions) -> None:
     if n_updates == 0:
         print('There are no changes to be made\n')
         return
-    print('The following changes will be made')
+    print('\nThe following changes will be made')
     print(fmt_changes(update_instrs))
     print('Do you want to proceed with the updates? [y/n]: ', end='')
     while True:
@@ -40,15 +40,27 @@ def fmt_changes(update_instr: UpdateInstructions) -> str:
         return timedelta(seconds = int(s))
 
     def fmt_worklogs(listwkls, pad):
-        lines = []
+        lines_map = {}
+        date_fmt = {}
         for x in listwkls:
-            padkey = pad(f'{x.issueKey}:')
+            padkey = pad(x.issueKey)
             started_dt = strptime_ptl(x.canon['started'])
             ended_dt = started_dt + to_timediff(x.canon['timeSpentSeconds'])
-            started = started_dt.strftime('%Y-%m-%dT%H:%M')
-            ended = ended_dt.strftime('%Y-%m-%dT%H:%M')
-            line = f"    {padkey}    {started}    {ended}    {x.canon['comment']}"
-            lines.append(line)
+            duration = to_dhms(x.canon['timeSpentSeconds'])
+            date = started_dt.strftime('%Y-%m-%d')
+            day = started_dt.strftime('%A %B %d, %Y')
+            started = started_dt.strftime('%H:%M')
+            ended = ended_dt.strftime('%H:%M')
+            line = f"    {padkey}    {started}-{ended}    {duration}    {x.canon['comment']}"
+            if date in lines_map:
+                lines_map[date].append(line)
+            else:
+                lines_map[date] = [line]
+                date_fmt[date] = day
+        lines = []
+        for k in sorted(lines_map.keys()):
+            lines.append(date_fmt[k])
+            lines.extend(lines_map[k])
         return lines
 
     issue_max_strwidth = calc_issue_max_strwidth(update_instr)
