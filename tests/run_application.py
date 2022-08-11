@@ -2,8 +2,8 @@
 
 from jiraworklog.cmdline_args import parser
 from jiraworklog.configuration import read_conf
-from jiraworklog.confirm_updates import unconditional_updates
-from jiraworklog.read_checkedin_worklogs import unconditional_new_checkedin
+from jiraworklog.confirm_updates import confirm_updates, unconditional_updates
+from jiraworklog.read_checkedin_worklogs import confirm_new_checkedin, unconditional_new_checkedin
 from jiraworklog.sync_worklogs import sync_worklogs
 from jiraworklog.update_instructions import UpdateInstructions
 from tests.jiramock import JIRAMock
@@ -15,11 +15,17 @@ def run_application(
     jira: JIRAMock,
     checkedin_inpath: str
 ) -> Tuple[JIRAMock, dict[str, Any], UpdateInstructions]:
-    actions = {
-        'confirm_new_checkedin': unconditional_new_checkedin,
-        'confirm_updates': unconditional_updates
-    }
     parsed_args = parser.parse_args(args)
+    if parsed_args.auto_confirm:
+        actions = {
+            'confirm_new_checkedin': unconditional_new_checkedin,
+            'confirm_updates': unconditional_updates
+        }
+    else:
+        actions = {
+            'confirm_new_checkedin': confirm_new_checkedin,
+            'confirm_updates': confirm_updates
+        }
     conf = read_conf(parsed_args.config_path)
     conf.checked_in_path = checkedin_inpath
     return sync_worklogs(jira, conf, parsed_args.file, actions)

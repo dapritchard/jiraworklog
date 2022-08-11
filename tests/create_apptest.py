@@ -10,7 +10,7 @@ from pprint import pformat
 from deepdiff import DeepDiff
 from tests.jiramock import JIRAMock, JIRAWklMock
 from tests.run_application import run_application
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
 
 # def assert_golden(expected_path: str, actual_path: str) -> None:
@@ -40,7 +40,7 @@ def assert_diff(expected: Any, actual: Any) -> None:
 
 def create_apptest(input_dir):
     def test():
-        jira, checkedin_full, _ = exercise_system(input_dir)
+        jira, checkedin_full, _ = exercise_system(input_dir, ['--auto-confirm'])
         gld_rcmds, gld_chk = read_golden(input_dir)
         assert_diff(gld_rcmds, jira.entries)
         assert_diff(gld_chk, checkedin_full)
@@ -48,12 +48,17 @@ def create_apptest(input_dir):
 
 
 def exercise_system(
-    input_dir: str
+    input_dir: str,
+    args: Optional[list[str]] = None
 ) -> Tuple[JIRAMock, dict[str, Any], UpdateInstructions]:
     inpaths = resolve_inpaths(input_dir)
     jiramock = init_jira(inpaths['remote'])
+    upd_args = (
+        [inpaths['worklogs'], '--config-path', inpaths['config']]
+        + [] if args is None else args
+    )
     out = run_application(
-        args=[inpaths['worklogs'], '--config-path', inpaths['config']],
+        args=upd_args,
         jira=jiramock,
         checkedin_inpath=inpaths['checkedin']
     )

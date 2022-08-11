@@ -16,7 +16,7 @@ def confirm_updates(update_instrs: UpdateInstructions) -> None:
         return
     print('The following changes will be made')
     print(fmt_changes(update_instrs))
-    print('Do you want to proceed with the updates? [y/n]:  ')
+    print('Do you want to proceed with the updates? [y/n]: ', end='')
     while True:
         response = input()
         if response == 'y':
@@ -25,9 +25,9 @@ def confirm_updates(update_instrs: UpdateInstructions) -> None:
             raise RuntimeError('User specified exit')
         msg = (
             f"Invalid response '{response}'. Do you want to proceed with the "
-            'updates? [y/n]:  '
+            'updates? [y/n]: '
         )
-        print(msg)
+        print(msg, end='')
 
 
 def fmt_changes(update_instr: UpdateInstructions) -> str:
@@ -47,7 +47,7 @@ def fmt_changes(update_instr: UpdateInstructions) -> str:
             ended_dt = started_dt + to_timediff(x.canon['timeSpentSeconds'])
             started = started_dt.strftime('%Y-%m-%dT%H:%M')
             ended = ended_dt.strftime('%Y-%m-%dT%H:%M')
-            line = f"{padkey}  {started}  {ended}  {x.canon['comment']}"
+            line = f"    {padkey}    {started}    {ended}    {x.canon['comment']}"
             lines.append(line)
         return lines
 

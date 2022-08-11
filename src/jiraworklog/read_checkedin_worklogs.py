@@ -68,6 +68,8 @@ def confirm_new_checkedin(
     checkedin_path: str,
     is_default_path: bool
 ) -> dict[str, dict[str, str]]:
+    # TODO: see https://docs.python.org/3/library/textwrap.html for a way to
+    # properly wrap these paragraphs
     if is_default_path:
         msg = (
             'jiraworklog stores a file on disk to track which worklogs that '
@@ -78,7 +80,7 @@ def confirm_new_checkedin(
             'you can ask jiraworklog to create a new file in the default '
             'location, otherwise you should exit and ensure that the correct '
             'location is specified.\n'
-            'Do you want to create a new file to track worklogs? [y/n]:  '
+            'Do you want to create a new file to track worklogs? [y/n]: '
         )
     else:
         msg = (
@@ -91,9 +93,9 @@ def confirm_new_checkedin(
             'you can ask jiraworklog to create a new file in the default '
             'location, otherwise you should exit and ensure that the correct '
             'location is specified.\n'
-            'Do you want to create a new file to track worklogs? [y/n]:  '
+            'Do you want to create a new file to track worklogs? [y/n]: '
         )
-    print(msg)
+    print(msg, end='')
     while True:
         response = input()
         if response == 'y':
@@ -102,6 +104,6 @@ def confirm_new_checkedin(
             raise RuntimeError('User specified exit')
         msg = (
             f"Invalid response '{response}'. Do you want to create a new file "
-            'to track worklogs? [y/n]:  '
+            'to track worklogs? [y/n]: '
         )
-        print(msg)
+        print(msg, end='')
