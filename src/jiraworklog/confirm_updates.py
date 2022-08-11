@@ -39,6 +39,21 @@ def fmt_changes(update_instr: UpdateInstructions) -> str:
     def to_timediff(s: str) -> timedelta:
         return timedelta(seconds = int(s))
 
+    def fmt_duration(seconds: str) -> str:
+        """We give 4 spaces of padding whenever the width of `h` is 1, and take 1
+        space away for each additional digit in `h`."""
+        m, s = divmod(int(seconds), 60)
+        h, m = divmod(m, 60)
+        if s >= 30:
+            if m == 59:
+                h = h + 1
+                m = 0
+            else:
+                m = m + 1
+        duration = f"({h}:{str(m) if m >= 10 else '0' + str(m)})"
+        pad = ' ' * (10 - len(duration))
+        return pad + duration
+
     def fmt_worklogs(listwkls, pad):
         lines_map = {}
         date_fmt = {}
@@ -46,12 +61,12 @@ def fmt_changes(update_instr: UpdateInstructions) -> str:
             padkey = pad(x.issueKey)
             started_dt = strptime_ptl(x.canon['started'])
             ended_dt = started_dt + to_timediff(x.canon['timeSpentSeconds'])
-            duration = to_dhms(x.canon['timeSpentSeconds'])
+            padded_dur = fmt_duration(x.canon['timeSpentSeconds'])
             date = started_dt.strftime('%Y-%m-%d')
             day = started_dt.strftime('%A %B %d, %Y')
             started = started_dt.strftime('%H:%M')
             ended = ended_dt.strftime('%H:%M')
-            line = f"    {padkey}    {started}-{ended}    {duration}    {x.canon['comment']}"
+            line = f"    {padkey}    {started}-{ended}{padded_dur}    {x.canon['comment']}"
             if date in lines_map:
                 lines_map[date].append(line)
             else:
