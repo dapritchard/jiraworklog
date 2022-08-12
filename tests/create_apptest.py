@@ -52,7 +52,9 @@ def create_apptest(input_dir):
 # https://docs.python.org/3/library/exceptions.html#OSError
 def create_errortest(
     input_dir: str,
-    errtype, errno, strerror
+    errtype,
+    errno: int,
+    strerror: str
 ):
     def test():
         with pytest.raises(errtype) as exc:
