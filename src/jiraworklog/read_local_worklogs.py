@@ -2,8 +2,7 @@
 
 import csv
 from datetime import datetime
-from jiraworklog.configuration import Configuration, read_conf
-# from jiraworklog.diff_worklogs import map_worklogs
+from jiraworklog.configuration import Configuration
 from jiraworklog.read_checkedin_worklogs import align_checkedin_with_conf
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCanon

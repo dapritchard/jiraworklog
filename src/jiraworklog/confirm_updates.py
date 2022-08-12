@@ -12,7 +12,7 @@ def unconditional_updates(_: UpdateInstructions) -> None:
 def confirm_updates(update_instrs: UpdateInstructions) -> None:
     n_updates = calc_n_updates(update_instrs)
     if n_updates == 0:
-        print('There are no changes to be made\n')
+        print('There are no changes to be made')
         return
     print('\nThe following changes will be made')
     print(fmt_changes(update_instrs))
