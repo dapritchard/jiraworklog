@@ -55,7 +55,7 @@ def exercise_system(
     jiramock = init_jira(inpaths['remote'])
     upd_args = (
         [inpaths['worklogs'], '--config-path', inpaths['config']]
-        + [] if args is None else args
+        + ([] if args is None else args)
     )
     out = run_application(
         args=upd_args,
