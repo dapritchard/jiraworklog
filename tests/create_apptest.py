@@ -2,6 +2,7 @@
 
 import json
 import os
+import pytest
 
 from jiraworklog.utils import map_worklogs
 from jiraworklog.update_instructions import strptime_ptl
@@ -44,6 +45,21 @@ def create_apptest(input_dir):
         gld_rcmds, gld_chk = read_golden(input_dir)
         assert_diff(gld_rcmds, jira.entries)
         assert_diff(gld_chk, checkedin_full)
+    return test
+
+
+# https://docs.pytest.org/en/7.1.x/reference/reference.html#exceptioninfo
+# https://docs.python.org/3/library/exceptions.html#OSError
+def create_errortest(
+    input_dir: str,
+    errtype, errno, strerror
+):
+    def test():
+        with pytest.raises(errtype) as exc:
+            exercise_system(input_dir, ['--auto-confirm'])
+        # TODO: is there a way to show the differences automatically?
+        assert errno == exc.value.errno, f'{errno} != {exc.value.errno}'
+        assert strerror == exc.value.strerror, f'"{strerror}" != "{exc.value.strerror}"'
     return test
 
 
