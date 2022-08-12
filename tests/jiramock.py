@@ -5,7 +5,9 @@ from datetime import datetime
 
 import jira as j
 from jiraworklog.update_instructions import strptime_ptl
+from jiraworklog.utils import map_worklogs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira, jira_to_full
+import json
 from typing import Any, Optional, Union
 
 
@@ -212,3 +214,22 @@ def to_dhms(seconds: str) -> str:
     if m != 0: chunks.append(f'{m}m')
     if s != 0: chunks.append(f'{s}s')
     return ' '.join(chunks)
+
+
+def init_jira(path: str) -> JIRAMock:
+    jiramock = JIRAMock()
+    mockremote_worklogs = read_mockremote_worklogs(path, jiramock)
+    jiramock._set_remote_wkls(mockremote_worklogs)
+    return jiramock
+
+
+def read_mockremote_worklogs(
+    path: str,
+    jiramock: JIRAMock
+) -> dict[str, list[JIRAWklMock]]:
+    def to_jirabase(wkl_raw: dict[str, str]) -> JIRAWklMock:
+        return JIRAWklMock(**wkl_raw).set_jira(jiramock)
+    with open(path) as file:
+        worklogs_raw = json.load(file)
+    jirabase_wkls = map_worklogs(to_jirabase, worklogs_raw)
+    return jirabase_wkls

@@ -52,36 +52,16 @@ def exercise_system(
     args: Optional[list[str]] = None
 ) -> Tuple[JIRAMock, dict[str, Any], UpdateInstructions]:
     inpaths = resolve_inpaths(input_dir)
-    jiramock = init_jira(inpaths['remote'])
     upd_args = (
         [inpaths['worklogs'], '--config-path', inpaths['config']]
         + ([] if args is None else args)
     )
     out = run_application(
         args=upd_args,
-        jira=jiramock,
-        checkedin_inpath=inpaths['checkedin']
+        checkedin_inpath=inpaths['checkedin'],
+        mockremote_inpath=inpaths['checkedin']
     )
     return out
-
-
-def init_jira(path: str) -> JIRAMock:
-    jiramock = JIRAMock()
-    mockremote_worklogs = read_mockremote_worklogs(path, jiramock)
-    jiramock._set_remote_wkls(mockremote_worklogs)
-    return jiramock
-
-
-def read_mockremote_worklogs(
-    path: str,
-    jiramock: JIRAMock
-) -> dict[str, list[JIRAWklMock]]:
-    def to_jirabase(wkl_raw: dict[str, str]) -> JIRAWklMock:
-        return JIRAWklMock(**wkl_raw).set_jira(jiramock)
-    with open(path) as file:
-        worklogs_raw = json.load(file)
-    jirabase_wkls = map_worklogs(to_jirabase, worklogs_raw)
-    return jirabase_wkls
 
 
 def resolve_inpaths(input_dir: str) -> dict[str, str]:
@@ -89,7 +69,7 @@ def resolve_inpaths(input_dir: str) -> dict[str, str]:
         for s in os.listdir(dir_path):
             if s.startswith('worklogs.'):
                 return input_dir + s
-        raise RuntimeError('Unable to find worklogs file')
+        return 'nonexistent-worklogs.txt'
     inpaths = {
         'config': input_dir + 'config.yaml',
         'worklogs': find_remote_path(input_dir),
