@@ -3,7 +3,7 @@
 from tests.create_apptest import create_apptest, create_errortest
 
 
-# Happy-path tests -------------------------------------------------------------
+# Application tests ------------------------------------------------------------
 
 test_01 = create_apptest('tests/data/01-empty-to-empty/')
 test_02 = create_apptest('tests/data/02-add-to-empty/')

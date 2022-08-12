@@ -58,8 +58,12 @@ def create_errortest(
         with pytest.raises(errtype) as exc:
             exercise_system(input_dir, ['--auto-confirm'])
         # TODO: is there a way to show the differences automatically?
-        assert errno == exc.value.errno, f'{errno} != {exc.value.errno}'
-        assert strerror == exc.value.strerror, f'"{strerror}" != "{exc.value.strerror}"'
+        assert errno == exc.value.errno, (
+            f'{errno} != {exc.value.errno}'
+        )
+        assert strerror == exc.value.strerror, (
+            f'"{strerror}" != "{exc.value.strerror}"'
+        )
     return test
 
 
