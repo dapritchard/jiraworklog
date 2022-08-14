@@ -5,13 +5,18 @@ import yaml
 
 from typing import Any, Optional
 
+
+class ConfigParseError(Exception):
+    pass
+
+
 class Configuration:
 
     author: str
     authentication: dict[str, str]
     issues_map: dict[str, str]
     issue_nms: list[str]
-    timezone: str
+    timezone: Optional[str]
     # checked_in_path: Optional[]  # TODO: try to convert this to timezone here
     # checked_in_path: Optional[] # TODO
     # parse_type: # TODO: this should be an enum
