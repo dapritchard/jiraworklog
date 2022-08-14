@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os.path
+from cerberus import Validator
 import yaml
 
 from typing import Any, Optional
@@ -24,6 +25,16 @@ class Configuration:
 
     def __init__(self, raw: dict[str, Any]):
 
+        schema = {
+            'author': {
+                'type': 'string'
+            }
+        }
+        validator = Validator(schema)
+        validator.allow_unknown = True
+        if not validator.validate(raw):
+            raise RuntimeError('Invalid configuration file')
+
         self.author = raw['author']
         self.authentication = raw['authentication']
         self.issues_map = raw['issues_map']
@@ -35,13 +46,14 @@ class Configuration:
         self.parse_delimited = raw['parse_delimited']
 
 
-def read_conf(path: Optional[str] = None) -> Configuration:
+def read_conf(path: Optional[str]) -> Configuration:
     if path is None:
         path='~/.jwconfig.yaml'
     with open(os.path.expanduser(path), 'r') as yaml_file:
         contents = yaml.safe_load(yaml_file.read())
     conf = Configuration(contents)
     return conf
+
 
 # # Jira issues can be identified by either ID or by key. IDs are immutable but
 # # keys can change, for example when an issue moves to another project. See
