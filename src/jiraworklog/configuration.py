@@ -26,9 +26,32 @@ class Configuration:
     def __init__(self, raw: dict[str, Any]):
 
         schema = {
-            'author': {
+            'author': {'type': 'string'},
+            'authentication': {
+                'type': 'dict',
+                'schema': {
+                    'server': {'type': 'string'},
+                    'user': {'type': 'string'},
+                    'apt_token': {'type': 'string'},
+                }
+            },
+            'issues_map': {
+                'type': 'dict',
+                'keysrules': {'type': 'string'},
+                'valuesrules': {'type': 'string'}
+            },
+            'timezone': {
+                'nullable': True,
                 'type': 'string'
-            }
+            },
+            'checked_in_path': {
+                'nullable': True,
+                'type': 'string'
+            },
+            'parse_type': {
+                'type': 'string',
+                'allowed': ['csv']
+            },
         }
         validator = Validator(schema)
         validator.allow_unknown = True
@@ -44,6 +67,30 @@ class Configuration:
         self.parse_type = raw['parse_type']
         # self.parse_delimited = raw.get('parse_delimited')
         self.parse_delimited = raw['parse_delimited']
+
+
+# raw = {
+#     'author': 'asdf',
+#     'authentication': {'server': 'a', 'user': 'b', 'api_token': 'c'},
+#     'issues_map': {'a': 'A'},
+#     'timezone': 'zzz',
+#     'parse_type': 'csv',
+#     # 'parse_delimited': {
+#     #     'col_formats': {
+#     #         'duration': None,
+#     #         'end': '%Y-%m-%d %H:%M',
+#     #         'start': '%Y-%m-%d %H:%M'
+#     #     },
+#     #     'col_labels': {
+#     #         'description': 'task',
+#     #         'duration': None,
+#     #         'end': 'end',
+#     #         'start': 'start',
+#     #         'tags': 'tags'
+#     #     },
+#     #     'delimiter2': ':'
+#     # }
+# }
 
 
 def read_conf(path: Optional[str]) -> Configuration:
