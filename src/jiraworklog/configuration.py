@@ -22,6 +22,7 @@ class Configuration:
     # checked_in_path: Optional[] # TODO
     # parse_type: # TODO: this should be an enum
     # parse_delimited: # TODO: this should be an optional?
+    parse_excel: Optional[dict[str, str]]
 
     def __init__(self, raw: dict[str, Any]):
 
@@ -67,6 +68,7 @@ class Configuration:
         self.parse_type = raw['parse_type']
         # self.parse_delimited = raw.get('parse_delimited')
         self.parse_delimited = raw['parse_delimited']
+        self.parse_excel = None  # FIXME
 
 
 # raw = {
