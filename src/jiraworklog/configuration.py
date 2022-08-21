@@ -8,7 +8,16 @@ from typing import Any, Optional
 
 
 class ConfigParseError(Exception):
-    pass
+
+    validator: Optional[Validator] = None
+
+    def __init__(
+        self,
+        message: str,
+        validator: Optional[Validator] = None
+    ) -> None:
+        self.validator = validator
+        super().__init__(message)
 
 
 class Configuration:
@@ -102,11 +111,10 @@ class Configuration:
                 }
             }
         }
-        validator = Validator(schema)
+        validator = Validator(schema, require_all=True)
         if not validator.validate(raw):
-            import pprint
-            pprint.pprint(validator.document_error_tree)
-            raise RuntimeError('Invalid configuration file')
+            msg = construct_conferr_msg(validator)
+            raise ConfigParseError(msg, validator)
 
         self.author = raw['author']
         self.authentication = raw['authentication']
@@ -151,6 +159,36 @@ def read_conf(path: Optional[str]) -> Configuration:
         contents = yaml.safe_load(yaml_file.read())
     conf = Configuration(contents)
     return conf
+
+
+def construct_conferr_msg(validator: Validator) -> str:
+    def create_wrongtype(obj):
+        if type(obj) is list:
+            return 'a sequence'
+        elif type(obj) is dict:
+            return 'a mapping'
+        elif type(obj) is int:
+            return 'an integer'
+        elif type(obj) is float:
+            return 'a float'
+        elif type(obj) is string:
+            return 'a string'
+        raise RuntimeError('Internal logic error. Please file a bug report')
+    msgs = []
+    etree = validator.document_error_tree
+    if 'author' in etree:
+        for err in etree['author'].errors:
+            if err.rule == 'required':
+                msgs.append("The 'author' field is required but is not provided")
+            elif err.rule == 'type':
+                wrongtype = create_wrongtype(err.value)
+                msgs.append(
+                    f"The 'author' field must be a string, but {wrongtype} "
+                    "was provided"
+                )
+    return '\n'.join(msgs)
+
+
 
 
 # # Jira issues can be identified by either ID or by key. IDs are immutable but
