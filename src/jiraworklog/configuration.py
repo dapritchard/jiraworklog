@@ -33,7 +33,7 @@ class Configuration:
                 'schema': {
                     'server': {'type': 'string'},
                     'user': {'type': 'string'},
-                    'apt_token': {'type': 'string'},
+                    'api_token': {'type': 'string'},
                 }
             },
             'issues_map': {
@@ -51,12 +51,61 @@ class Configuration:
             },
             'parse_type': {
                 'type': 'string',
-                'allowed': ['csv']
+                'allowed': ['csv', 'excel']
             },
+            'parse_delimited': {
+                'nullable': True,
+                'type': 'dict',
+                'schema': {
+                    'delimiter2': {
+                        'nullable': True,
+                        'type': 'string'
+                    },
+                    'col_labels': {
+                        'type': 'dict',
+                        'schema': {
+                            'description': {
+                                'type': 'string'
+                            },
+                            'start': {
+                                'nullable': True,
+                                'type': 'string'
+                            },
+                            'end': {
+                                'nullable': True,
+                                'type': 'string'
+                            },
+                            'duration': {
+                                'nullable': True,
+                                'type': 'string'
+                            },
+                            'tags': {'type': 'string'}
+                        }
+                    },
+                    'col_formats': {
+                        'type': 'dict',
+                        'schema': {
+                            'start': {
+                                'nullable': True,
+                                'type': 'string'
+                            },
+                            'end': {
+                                'nullable': True,
+                                'type': 'string'
+                            },
+                            'duration': {
+                                'nullable': True,
+                                'type': 'string'
+                            }
+                        }
+                    }
+                }
+            }
         }
         validator = Validator(schema)
-        validator.allow_unknown = True
         if not validator.validate(raw):
+            import pprint
+            pprint.pprint(validator.document_error_tree)
             raise RuntimeError('Invalid configuration file')
 
         self.author = raw['author']
