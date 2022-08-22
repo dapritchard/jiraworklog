@@ -38,12 +38,7 @@ class Configuration:
         def perform_additional_checks(raw, validator):
             etree = validator.document_error_tree
             error_msgs = []
-            check_parse = (
-                ('parse_type' not in etree)
-                # and ('parse_delimited' not in etree)
-                # and ('parse_delimited' not in etree)
-            )
-            if check_parse:
+            if 'parse_type' not in etree:
                 has_pdelim = raw.get('parse_delimited') is not None
                 has_pexcel = raw.get('parse_excel') is not None
                 if raw['parse_type'] == 'csv':
@@ -63,13 +58,13 @@ class Configuration:
                     if has_pdelim:
                         msg = (
                             "If 'parse_type' has value \"excel\" then the "
-                            "'parse_excel' field is required"
+                            "'parse_delimited' field cannot be provided"
                         )
                         error_msgs.append(msg)
-                    if has_pexcel:
+                    if not has_pexcel:
                         msg = (
-                            "If 'parse_type' has value \"csv\" then the "
-                            "'parse_delimited' field cannot be provided"
+                            "If 'parse_type' has value \"excel\" then the "
+                            "'parse_excel' field is required"
                         )
                         error_msgs.append(msg)
             return error_msgs
@@ -170,7 +165,7 @@ class Configuration:
         self.checked_in_path = raw.get('checked_in_path')
         self.parse_type = raw['parse_type']
         # self.parse_delimited = raw.get('parse_delimited')
-        self.parse_delimited = raw['parse_delimited']
+        self.parse_delimited = raw['parse_delimited'] # FIXME
         self.parse_excel = None  # FIXME
 
 
