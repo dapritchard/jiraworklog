@@ -154,8 +154,15 @@ class Configuration:
         )
         additional_checks = perform_additional_checks(raw, validator)
         if schema_checks or additional_checks:
-            msg = '\n'.join(schema_checks + additional_checks)
-            raise ConfigParseError(msg, validator)
+            header = (
+                'The configuration file format is incorrectly specified. The '
+                'following issues were found:'
+            )
+            msg = [header]
+            for i, v in enumerate(schema_checks + additional_checks, start=1):
+                msg.append(f'{i}. {v}')
+            msg.append('')
+            raise ConfigParseError('\n'.join(msg), validator)
 
         self.author = raw['author']
         self.authentication = raw['authentication']
