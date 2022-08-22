@@ -7,9 +7,9 @@ import yaml
 from typing import Any, Optional
 
 
-class ConfigParseError(Exception):
+class ConfigParseError(RuntimeError):
 
-    validator: Optional[Validator] = None
+    validator: Optional[Validator]
 
     def __init__(
         self,
@@ -154,15 +154,8 @@ class Configuration:
         )
         additional_checks = perform_additional_checks(raw, validator)
         if schema_checks or additional_checks:
-            header = (
-                'The configuration file format is incorrectly specified. The '
-                'following issues were found:'
-            )
-            msg = [header]
-            for i, v in enumerate(schema_checks + additional_checks, start=1):
-                msg.append(f'{i}. {v}')
-            msg.append('')
-            raise ConfigParseError('\n'.join(msg), validator)
+            conferrmsg = create_conferrmsg(schema_checks + additional_checks)
+            raise ConfigParseError(conferrmsg, validator)
 
         self.author = raw['author']
         self.authentication = raw['authentication']
@@ -327,6 +320,17 @@ def construct_conferr_msg(validator: Validator) -> list[str]:
     return msgs
 
 
+
+def create_conferrmsg(msgs):
+    header = (
+        'The configuration file format is incorrectly specified. The '
+        'following issues were found:'
+    )
+    conferrmsg = [header]
+    for i, v in enumerate(msgs, start=1):
+        conferrmsg.append(f'{i}. {v}')
+    conferrmsg.append('')
+    return '\n'.join(conferrmsg)
 
 
 # # Jira issues can be identified by either ID or by key. IDs are immutable but
