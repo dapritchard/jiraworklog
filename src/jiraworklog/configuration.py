@@ -35,6 +35,45 @@ class Configuration:
 
     def __init__(self, raw: dict[str, Any]):
 
+        def perform_additional_checks(raw, validator):
+            etree = validator.document_error_tree
+            error_msgs = []
+            check_parse = (
+                ('parse_type' not in etree)
+                # and ('parse_delimited' not in etree)
+                # and ('parse_delimited' not in etree)
+            )
+            if check_parse:
+                has_pdelim = raw.get('parse_delimited') is not None
+                has_pexcel = raw.get('parse_excel') is not None
+                if raw['parse_type'] == 'csv':
+                    if not has_pdelim:
+                        msg = (
+                            "If 'parse_type' has value \"csv\" then the "
+                            "'parse_delimited' field is required"
+                        )
+                        error_msgs.append(msg)
+                    if has_pexcel:
+                        msg = (
+                            "If 'parse_type' has value \"csv\" then the "
+                            "'parse_excel' field cannot be provided"
+                        )
+                        error_msgs.append(msg)
+                if raw['parse_type'] == 'excel':
+                    if has_pdelim:
+                        msg = (
+                            "If 'parse_type' has value \"excel\" then the "
+                            "'parse_excel' field is required"
+                        )
+                        error_msgs.append(msg)
+                    if has_pexcel:
+                        msg = (
+                            "If 'parse_type' has value \"csv\" then the "
+                            "'parse_delimited' field cannot be provided"
+                        )
+                        error_msgs.append(msg)
+            return error_msgs
+
         schema = {
             'author': {'type': 'string'},
             'authentication': {
@@ -118,9 +157,9 @@ class Configuration:
             if satisfies_schema
             else construct_conferr_msg(validator)
         )
-        additional_checks = [] # FIXME
+        additional_checks = perform_additional_checks(raw, validator)
         if schema_checks or additional_checks:
-            msg = '\n'.join(schema_checks.extend(additional_checks))
+            msg = '\n'.join(schema_checks + additional_checks)
             raise ConfigParseError(msg, validator)
 
         self.author = raw['author']
