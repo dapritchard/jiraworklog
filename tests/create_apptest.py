@@ -53,19 +53,18 @@ def create_apptest(input_dir):
 def create_errortest(
     input_dir: str,
     errtype,
-    errno: int,
-    strerror: str
+    # errno: int,
+    errmsg: str
 ):
     def test():
         with pytest.raises(errtype) as exc:
             exercise_system(input_dir, ['--auto-confirm'])
         # TODO: is there a way to show the differences automatically?
-        assert errno == exc.value.errno, (
-            f'{errno} != {exc.value.errno}'
-        )
-        assert strerror == exc.value.strerror, (
-            f'"{strerror}" != "{exc.value.strerror}"'
-        )
+        # assert errno == exc.value.errno, (
+        #     f'{errno} != {exc.value.errno}'
+        # )
+        actual_msg = str(exc.value)
+        assert errmsg == actual_msg, f'"{errmsg}" != "{actual_msg}"'
     return test
 
 
