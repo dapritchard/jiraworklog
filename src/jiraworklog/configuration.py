@@ -112,8 +112,15 @@ class Configuration:
             }
         }
         validator = Validator(schema, require_all=True)
-        if not validator.validate(raw):
-            msg = construct_conferr_msg(validator)
+        satisfies_schema = validator.validate(raw)
+        schema_checks = (
+            []
+            if satisfies_schema
+            else construct_conferr_msg(validator)
+        )
+        additional_checks = [] # FIXME
+        if schema_checks or additional_checks:
+            msg = '\n'.join(schema_checks.extend(additional_checks))
             raise ConfigParseError(msg, validator)
 
         self.author = raw['author']
@@ -161,7 +168,7 @@ def read_conf(path: Optional[str]) -> Configuration:
     return conf
 
 
-def construct_conferr_msg(validator: Validator) -> str:
+def construct_conferr_msg(validator: Validator) -> list[str]:
     def create_wrongtype(obj):
         if type(obj) is list:
             return 'a sequence'
@@ -179,14 +186,104 @@ def construct_conferr_msg(validator: Validator) -> str:
     if 'author' in etree:
         for err in etree['author'].errors:
             if err.rule == 'required':
-                msgs.append("The 'author' field is required but is not provided")
+                msgs.append(
+                    "The 'author' field is required but is not provided"
+                )
             elif err.rule == 'type':
                 wrongtype = create_wrongtype(err.value)
                 msgs.append(
-                    f"The 'author' field must be a string, but {wrongtype} "
-                    "was provided"
+                    f"The 'author' field is required to be a string, but "
+                    "{wrongtype} was provided"
                 )
-    return '\n'.join(msgs)
+            else:
+                raise RuntimeError('Internal logic error. Please file a bug report')
+    if 'authentication' in etree:
+        for err in etree['authentication'].errors:
+            if err.rule == 'required':
+                msgs.append(
+                    "The 'authentication' field is required but is not provided"
+                )
+            elif err.rule == 'type':
+                wrongtype = create_wrongtype(err.value)
+                msgs.append(
+                    f"The 'authentication' field is required to be a mapping, "
+                    "but {wrongtype} was provided"
+                )
+            else:
+                # TODO: can be finer-grained
+                msgs.append(
+                    "The 'authentication' field is incorrectly specified"
+                )
+    if 'issues_map' in etree:
+        for err in etree['issues_map'].errors:
+            if err.rule == 'required':
+                msgs.append(
+                    "The 'issues_map' field is required but is not provided"
+                )
+            elif err.rule == 'type':
+                wrongtype = create_wrongtype(err.value)
+                msgs.append(
+                    f"The 'issues_map' field is required to be a mapping, but "
+                    "{wrongtype} was provided"
+                )
+            else:
+                # TODO: can be finer-grained
+                msgs.append(
+                    "The 'authentication' field is incorrectly specified"
+                )
+    if 'timezone' in etree:
+        for err in etree['timezone'].errors:
+            if err.rule == 'type':
+                wrongtype = create_wrongtype(err.value)
+                msgs.append(
+                    f"If the 'timezone' field is provided then it is required "
+                    'to be a string, but {wrongtype} was provided'
+                )
+            else:
+                raise RuntimeError('Internal logic error. Please file a bug report')
+    if 'checked_in_path' in etree:
+        for err in etree['checked_in_path'].errors:
+            if err.rule == 'type':
+                wrongtype = create_wrongtype(err.value)
+                msgs.append(
+                    f"If the 'checked_in_path' field is provided then it is "
+                    'required to be a string, but {wrongtype} was provided'
+                )
+            else:
+                raise RuntimeError('Internal logic error. Please file a bug report')
+    if 'parse_type' in etree:
+        for err in etree['parse_type'].errors:
+            if err.rule == 'required':
+                msgs.append(
+                    "The 'parse_type' field is required but is not provided"
+                )
+            elif err.rule == 'type':
+                wrongtype = create_wrongtype(err.value)
+                msgs.append(
+                    f"The 'parse_type' field is required to be a string, but "
+                    "{wrongtype} was provided"
+                )
+            elif err.rule == 'allowed':
+                msgs.append(
+                    f"The 'parse_type' field is required to be one of 'csv' or "
+                    "'excel', but {err.value} was provided"
+                )
+            else:
+                raise RuntimeError('Internal logic error. Please file a bug report')
+    if 'parse_delimited' in etree:
+        for err in etree['parse_delimited'].errors:
+            if err.rule == 'type':
+                wrongtype = create_wrongtype(err.value)
+                msgs.append(
+                    f"The 'parse_delimited' field is required to be a mapping, "
+                    "but {wrongtype} was provided"
+                )
+            else:
+                # TODO: can be finer-grained
+                msgs.append(
+                    "The 'parse_delimited' field is incorrectly specified"
+                )
+    return msgs
 
 
 
