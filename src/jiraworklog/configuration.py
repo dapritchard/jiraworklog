@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import os.path
 from cerberus import Validator
 import yaml
@@ -67,6 +68,25 @@ class Configuration:
                             "'parse_excel' field is required"
                         )
                         error_msgs.append(msg)
+            if 'authentication' not in etree:
+                if raw['authentication'].get('server') is None:
+                    envval = os.getenv('JW_SERVER')
+                    if envval is None:
+                        error_msgs.append(mkerrmsg_noenv('server', 'JW_SERVER'))
+                    else:
+                        raw['authentication']['server'] = envval
+                if raw['authentication'].get('user') is None:
+                    envval = os.getenv('JW_USER')
+                    if envval is None:
+                        error_msgs.append(mkerrmsg_noenv('user', 'JW_USER'))
+                    else:
+                        raw['authentication']['user'] = envval
+                if raw['authentication'].get('api_token') is None:
+                    envval = os.getenv('JW_API_TOKEN')
+                    if envval is None:
+                        error_msgs.append(mkerrmsg_noenv('api_token', 'JW_API_TOKEN'))
+                    else:
+                        raw['authentication']['api_token'] = envval
             return error_msgs
 
         schema = {
@@ -74,9 +94,18 @@ class Configuration:
             'authentication': {
                 'type': 'dict',
                 'schema': {
-                    'server': {'type': 'string'},
-                    'user': {'type': 'string'},
-                    'api_token': {'type': 'string'},
+                    'server': {
+                        'nullable': True,
+                        'type': 'string'
+                    },
+                    'user': {
+                        'nullable': True,
+                        'type': 'string'
+                    },
+                    'api_token': {
+                        'nullable': True,
+                        'type': 'string'
+                    },
                 }
             },
             'issues_map': {
@@ -329,9 +358,15 @@ def create_conferrmsg(msgs):
     conferrmsg = [header]
     for i, v in enumerate(msgs, start=1):
         conferrmsg.append(f'{i}. {v}')
-    conferrmsg.append('')
     return '\n'.join(conferrmsg)
 
+
+def mkerrmsg_noenv(field: str, envvar: str) -> str:
+    msg = (
+        f"If the '{s1}' field of the 'authentication' mapping is null then the "
+        "'{s2}' environmental variable must be set"
+    )
+    return msg
 
 # # Jira issues can be identified by either ID or by key. IDs are immutable but
 # # keys can change, for example when an issue moves to another project. See
