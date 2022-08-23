@@ -7,5 +7,6 @@ import argparse
 # https://stackoverflow.com/a/18161115
 parser = argparse.ArgumentParser()
 parser.add_argument('file')
-parser.add_argument('-c', '--config-path')
 parser.add_argument('-a', '--auto-confirm', action='store_true')
+parser.add_argument('-c', '--config-path')
+parser.add_argument('-d', '--dry-run', action='store_true')
