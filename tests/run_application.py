@@ -29,4 +29,4 @@ def run_application(
     conf = read_conf(parsed_args.config_path)
     conf.checked_in_path = checkedin_inpath
     jiramock = init_jira(mockremote_inpath)
-    return sync_worklogs(jiramock, conf, parsed_args.file, actions)
+    return sync_worklogs(jiramock, conf, parsed_args, parsed_args.file, actions)

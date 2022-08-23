@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 # from datetime import datetime
+import argparse
 from jira import JIRA
 from jiraworklog.configuration import Configuration
+from jiraworklog.confirm_updates import confirm_updates
 from jiraworklog.diff_worklogs import diff_local, diff_remote
 from jiraworklog.read_local_worklogs import read_local_worklogs
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
@@ -21,6 +23,7 @@ JiraSubcl = TypeVar('JiraSubcl', bound='JIRA')
 def sync_worklogs(
     jira: JiraSubcl,
     conf: Configuration,
+    cmdline_args: argparse.Namespace,
     worklogs_path: str,
     actions: dict[str, Callable[..., Any]],
     write_checkedin: bool = False
@@ -33,12 +36,14 @@ def sync_worklogs(
         checkedin_wkls,
         remote_wkls
     )
-    actions['confirm_updates'](update_instrs)
+    if not cmdline_args.auto_confirm:
+        confirm_updates(update_instrs)
     try:
-        update_instrs.push_worklogs(checkedin_wkls, jira)
+        if not cmdline_args.dry_run:
+            update_instrs.push_worklogs(checkedin_wkls, jira)
     finally:
         checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
-        if write_checkedin:
+        if not cmdline_args.dry_run and write_checkedin:
             with open(conf.checked_in_path, "w") as file:
                 json.dump(obj=checkedin_full, fp=file, indent=4)
     return (jira, checkedin_full, update_instrs)
