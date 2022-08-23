@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 from datetime import timedelta
 from jiraworklog.update_instructions import UpdateInstructions, calc_issue_max_strwidth, calc_n_updates, strptime_ptl
 
