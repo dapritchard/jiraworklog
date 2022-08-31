@@ -222,7 +222,11 @@ def query_col_labels(textwrapper: TextWrapper) -> dict[str, Any]:
 def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
 
     msg = (
-        "TODO"
+        "What is the format used to represent the worklog \"start\" column "
+        "datetime? See https://docs.python.org/3/library/datetime.html"
+        "#strftime-and-strptime-format-codes for a definition of the format "
+        "specification. (You can leave this blank if your worklogs don't "
+        "include a start time, but rather an end time and a duration.) "
     )
     print_para(msg, textwrapper)
     start = input()
@@ -230,7 +234,11 @@ def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
         start = None
 
     msg = (
-        "TODO"
+        "What is the format used to represent the worklog \"end\" column "
+        "datetime? See https://docs.python.org/3/library/datetime.html"
+        "#strftime-and-strptime-format-codes for a definition of the format "
+        "specification. (You can leave this blank if your worklogs don't "
+        "include an end time, but rather a start time and a duration.) "
     )
     print_para(msg, textwrapper)
     end = input()
@@ -238,7 +246,11 @@ def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
         end = None
 
     msg = (
-        "TODO"
+        "What is the format used to represent the worklog \"duration\" column "
+        "datetime? See https://docs.python.org/3/library/datetime.html"
+        "#strftime-and-strptime-format-codes for a definition of the format "
+        "specification. (You can leave this blank if your worklogs don't "
+        "include an duration time, but rather a start time and an end time.) "
     )
     print_para(msg, textwrapper)
     duration = input()
