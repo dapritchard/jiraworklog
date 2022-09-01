@@ -4,30 +4,47 @@ from collections import OrderedDict
 import os
 from textwrap import TextWrapper
 from typing import Any
+import yaml
 
 MAXWIDTH=100
 
+# Add support for `OrderedDict`s. See
+# https://stackoverflow.com/a/50181505/5518304
+yaml.add_representer(
+    OrderedDict,
+    lambda dumper, data: dumper.represent_mapping('tag:yaml.org,2002:map', data.items())
+)
+
 
 def init_config():
+
+    textwrapper = TextWrapper(replace_whitespace=False)
+
+    # TODO: catch KeyboardInterrupt
 
     msg = (
         'What should the filepath be for the configuration file? (If you leave '
         "this blank it will default to '.jiraconfig.yaml'.) "
     )
     print_para(msg, textwrapper)
-    config_path = input()
+    config_path = os.path.expanduser(input())
     if config_path == '':
         config_path = os.path.expanduser('~/.jwconfig.yaml')
-    # TODO: try to write empty file to see if we have permission
 
-    query_config()
+    # Try to obtain write access to the file to ensure that we have the proper
+    # permissions before querying the user for information
+    with open(config_path, 'a') as _:
+        pass
 
-    # TODO: write data to disk
+    config = query_config(textwrapper)
+    with open(config_path, 'w') as file:
+        yaml_stanzas = []
+        for k, v in config.items():
+            yaml_stanzas.append(yaml.dump({k: v}))
+        file.write('\n'.join(yaml_stanzas))
 
 
-def query_config():
-
-    textwrapper = TextWrapper(replace_whitespace=False)
+def query_config(textwrapper: TextWrapper):
 
     # msg = (
     #     "What kind of authentication will you use to access the Jira server?"
@@ -67,16 +84,19 @@ def query_config():
     )
     print_para(msg, textwrapper)
     parse_type = input()
-    while not parse_type in ['csv', 'excel']:
+    while not parse_type in ["csv", "excel"]:
         msg = (
             "Invalid filetype response. Please enter one of either 'csv' or "
             "'excel': "
         )
+        print_para(msg, textwrapper)
         parse_type = input()
 
-
-    parse_delimited = query_parse_delimited(textwrapper)
-    parse_excel = None
+    if parse_type == "csv":
+        parse_delimited = query_parse_delimited(textwrapper)
+        parse_excel = None
+    else:
+        raise RuntimeError("not implemented yet")
 
     config = OrderedDict()
     if auth_token is None:
@@ -123,16 +143,58 @@ def query_auth_token(textwrapper: TextWrapper) -> dict[str, Any]:
     if api_token == "":
         api_token = None
 
-    auth_token = {
-        "server": server,
-        "user": user,
-        "api_token": api_token
-    }
+    auth_token = OrderedDict(
+        server=server,
+        user=user,
+        api_token=api_token
+    )
     return auth_token
 
 
 def query_issue_map(textwrapper: TextWrapper) -> dict[str, Any]:
+
+    # prompt_local = (
+    #     "Enter the name of one of your local worklog tags. Leave this blank if "
+    #     "you are done entering local/remote tag pairs. "
+    # )
+
+    msg = (
+       "In this section you will be asked to map the tags in your local "
+        "worklogs to their corresponding worklog keys in Jira. You may add as "
+        "many local/remote tag pairs as necessary."
+    )
+    print_para(msg, textwrapper)
+    print('')
+
     issue_map = OrderedDict()
+    while True:
+
+        msg = (
+            "Enter the name of one of your local worklog tags. Leave this "
+            "blank if you are done entering local/remote tag pairs. "
+        )
+        print_para(msg, textwrapper)
+        local_tag = input()
+        if local_tag == '':
+            break
+        elif local_tag in issue_map:
+            msg = (
+                f"Warning: the entry '{local_tag}' has already been provided. "
+                "This value will be ignored."
+            )
+            # TODO: remove leading \n?
+            print_para(msg, textwrapper)
+            continue
+
+        msg = (
+            "Enter the name of the remote worklog key corresponding to local "
+            f"workings tagged by '{local_tag}'. "
+        )
+        print_para(msg, textwrapper)
+        remote_key = input()
+
+        issue_map[local_tag] = remote_key
+
     return issue_map
 
 
@@ -152,11 +214,11 @@ def query_parse_delimited(textwrapper: TextWrapper) -> dict[str, Any]:
 
     col_formats = query_col_formats(textwrapper)
 
-    parse_delimited = {
-        "delimiter2" : delimiter2,
-        "col_labels": col_labels,
-        "col_formats": col_formats
-    }
+    parse_delimited = OrderedDict(
+        delimiter2=delimiter2,
+        col_labels=col_labels,
+        col_formats=col_formats
+    )
     return parse_delimited
 
 
@@ -209,16 +271,18 @@ def query_col_labels(textwrapper: TextWrapper) -> dict[str, Any]:
     if tags == "":
         tags = None
 
-    col_labels = {
-        "description": description,
-        "start": start,
-        "end": end,
-        "duration": duration,
-        "tags": tags
-    }
+    col_labels = OrderedDict(
+        description=description,
+        start=start,
+        end=end,
+        duration=duration,
+        tags=tags
+    )
     return col_labels
 
 
+# TODO: we can assertain which columns to query and based on which are non-null
+# when asking for names ask only for those
 def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
 
     msg = (
@@ -257,18 +321,18 @@ def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
     if duration == "":
         duration = None
 
-    col_formats = {
-        "start": start,
-        "end": end,
-        "duration": duration,
-    }
+    col_formats = OrderedDict(
+        start=start,
+        end=end,
+        duration=duration,
+    )
     return col_formats
 
 
 def print_para(msg, textwrapper):
     width = min(MAXWIDTH, os.get_terminal_size().columns)
     textwrapper.width = width
-    para = textwrapper.wrap(msg)
+    para = [''] + textwrapper.wrap(msg)
     if width - len(para[-1]) < 5:
         end = '\n'
     else:
