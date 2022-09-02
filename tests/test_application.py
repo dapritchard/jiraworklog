@@ -30,6 +30,13 @@ test_50 = create_errortest(
 # import jiraworklog.configuration
 # try:
 #     import tests.create_apptest
+#     tests.create_apptest.exercise_system('tests/data/03-remove-to-empty/', ['--auto-confirm'])
+# except jiraworklog.configuration.ConfigParseError as exc:
+#     e = exc
+
+# import jiraworklog.configuration
+# try:
+#     import tests.create_apptest
 #     tests.create_apptest.exercise_system('tests/data/51-config-no-author/', ['--auto-confirm'])
 # except jiraworklog.configuration.ConfigParseError as exc:
 #     e = exc

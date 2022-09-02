@@ -1,3 +1,5 @@
+jwconfig_version: 0.1.0
+
 auth_token:
   server: "https://runway.atlassian.net"
   user: "daffy@runway.com"

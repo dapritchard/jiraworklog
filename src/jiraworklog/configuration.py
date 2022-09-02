@@ -83,6 +83,7 @@ class Configuration:
 
 def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
     schema = {
+        'jwconfig_version': {'type': 'string'},
         'auth_token': {
             'nullable': True,
             'type': 'dict',
@@ -340,6 +341,8 @@ def construct_conferr_msg(validator: Validator) -> list[str]:
                 msgs.append(
                     "The 'parse_delimited' field is incorrectly specified"
                 )
+    if len(validator._errors) != len(msgs):
+        raise ConfigParseError('Internal logic error. Please file a bug report', validator)
     return msgs
 
 
