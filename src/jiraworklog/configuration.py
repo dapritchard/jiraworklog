@@ -23,16 +23,15 @@ class ConfigParseError(RuntimeError):
 
 class Configuration:
 
-    author: str
-    authentication: dict[str, str]
+    auth_type: str
+    auth_token: Optional[dict[str, str]]
+    auth_oath: None
     issues_map: dict[str, str]
     issue_nms: list[str]
-    timezone: Optional[str]
-    # checked_in_path: Optional[]  # TODO: try to convert this to timezone here
-    # checked_in_path: Optional[] # TODO
-    # parse_type: # TODO: this should be an enum
-    # parse_delimited: # TODO: this should be an optional?
-    parse_excel: Optional[dict[str, str]]
+    checked_in_path: Optional[str]  # TODO: try to convert this to timezone here
+    parse_type: str
+    parse_delimited: Optional[dict[str, Any]]
+    parse_excel: None
 
     def __init__(self, raw: dict[str, Any]):
 
@@ -47,15 +46,14 @@ class Configuration:
             conferrmsg = create_conferrmsg(schema_checks + additional_checks)
             raise ConfigParseError(conferrmsg, validator)
 
-        self.auth_type = 'delimited' # TODO: should be an enum
+        self.auth_type = 'token' # TODO: should be an enum (and change type)
         self.auth_token = raw.get('auth_token')
+        self.auth_oath = None
         self.issues_map = raw['issues_map']
         self.issue_nms = list(self.issues_map.values())
-        # self.timezone = raw.get('timezone')
         self.checked_in_path = raw.get('checked_in_path')
-        # self.parse_type = raw['parse_type']
-        # self.parse_delimited = raw.get('parse_delimited')
-        self.parse_delimited = raw['parse_delimited'] # FIXME
+        self.parse_type = 'delimited' # TODO: should be an enum (and change type)
+        self.parse_delimited = raw.get('parse_delimited')
         self.parse_excel = None  # FIXME
 
 
@@ -343,7 +341,6 @@ def construct_conferr_msg(validator: Validator) -> list[str]:
                     "The 'parse_delimited' field is incorrectly specified"
                 )
     return msgs
-
 
 
 def create_conferrmsg(msgs):
