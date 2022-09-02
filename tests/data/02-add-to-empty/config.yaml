@@ -1,6 +1,4 @@
-author: "Daffy Duck"
-
-authentication:
+auth_token:
   server: "https://runway.atlassian.net"
   user: "daffy@runway.com"
   api_token: "J6ab6YMa1HVWADNOmO6TC623"
@@ -9,13 +7,10 @@ issues_map:
   p1: "P01"
   p2: "P02"
 
-timezone: "US/Eastern"
-
 checked_in_path: null
 
-parse_type: "csv"
-
 parse_delimited:
+  delimiter: ","
   delimiter2: ":"
   col_labels:
     description: "task"
@@ -27,3 +22,4 @@ parse_delimited:
     start: "%Y-%m-%d %H:%M"
     end: "%Y-%m-%d %H:%M"
     duration: null
+    timezone: "US/Eastern"

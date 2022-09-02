@@ -27,6 +27,7 @@ def read_worklogs_native(worklogs_path: str) -> list[dict[str, Any]]:
     # TODO: is error handling needed? E.g. wrong number of columns
     with open(worklogs_path, mode='r') as csv_file:
         entries = []
+        # TODO: support other delimiters and options
         reader = csv.DictReader(csv_file)
         for row in reader:
             entries.append(row)
@@ -109,11 +110,11 @@ def create_worklog_parser_startend(
 
 
 def make_fmt_time(conf: Configuration) -> Callable[[datetime], str]:
-    if conf.timezone is None:
+    if conf.parse_delimited['col_formats']['timezone'] is None:
         specified_tz = False
     else:
         specified_tz = True
-        tz = pytz.timezone(conf.timezone)
+        tz = pytz.timezone(conf.parse_delimited['col_formats']['timezone'])
     def fmt_time(dt: datetime) -> str:
         has_tz = not check_tz_naive(dt)
         if not specified_tz and not has_tz:

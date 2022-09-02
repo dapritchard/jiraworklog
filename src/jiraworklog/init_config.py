@@ -10,6 +10,9 @@ MAXWIDTH=100
 
 # Add support for `OrderedDict`s. See
 # https://stackoverflow.com/a/50181505/5518304
+#
+# TODO: it appears you can use regular dicts now: see
+# https://stackoverflow.com/a/63126400/5518304
 yaml.add_representer(
     OrderedDict,
     lambda dumper, data: dumper.represent_mapping('tag:yaml.org,2002:map', data.items())

@@ -6,10 +6,10 @@ from jiraworklog.configuration import Configuration
 
 def auth_jira(conf: Configuration) -> JIRA:
     jira = JIRA(
-        server=conf.authentication['server'],
+        server=conf.auth_token['server'],
         basic_auth=(
-            conf.authentication['user'],
-            conf.authentication['api_token']
+            conf.auth_token['user'],
+            conf.auth_token['api_token']
         )
     )
     return jira

@@ -19,13 +19,13 @@ test_50 = create_errortest(
     "[Errno 2] No such file or directory: 'tests/data/50-config-doesnt-exist/config.yaml'"
 )
 
-test_51 = create_errortest(
-    'tests/data/51-config-author-notprovided/',
-    ConfigParseError,
-    create_conferrmsg([
-        "The 'author' field is required but is not provided"
-    ])
-)
+# test_51 = create_errortest(
+#     'tests/data/51-config-author-notprovided/',
+#     ConfigParseError,
+#     create_conferrmsg([
+#         "The 'author' field is required but is not provided"
+#     ])
+# )
 
 # import jiraworklog.configuration
 # try:
