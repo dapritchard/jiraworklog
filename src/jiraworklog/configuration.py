@@ -36,146 +36,7 @@ class Configuration:
 
     def __init__(self, raw: dict[str, Any]):
 
-        def perform_additional_checks(raw, validator):
-            etree = validator.document_error_tree
-            error_msgs = []
-            # if 'parse_type' not in etree:
-            #     has_pdelim = raw.get('parse_delimited') is not None
-            #     has_pexcel = raw.get('parse_excel') is not None
-            #     if raw['parse_type'] == 'csv':
-            #         if not has_pdelim:
-            #             msg = (
-            #                 "If 'parse_type' has value \"csv\" then the "
-            #                 "'parse_delimited' field is required"
-            #             )
-            #             error_msgs.append(msg)
-            #         if has_pexcel:
-            #             msg = (
-            #                 "If 'parse_type' has value \"csv\" then the "
-            #                 "'parse_excel' field cannot be provided"
-            #             )
-            #             error_msgs.append(msg)
-            #     if raw['parse_type'] == 'excel':
-            #         if has_pdelim:
-            #             msg = (
-            #                 "If 'parse_type' has value \"excel\" then the "
-            #                 "'parse_delimited' field cannot be provided"
-            #             )
-            #             error_msgs.append(msg)
-            #         if not has_pexcel:
-            #             msg = (
-            #                 "If 'parse_type' has value \"excel\" then the "
-            #                 "'parse_excel' field is required"
-            #             )
-            #             error_msgs.append(msg)
-            if 'auth_token' not in etree:
-                # TODO: this
-                if raw['auth_token'].get('server') is None:
-                    envval = os.getenv('JW_SERVER')
-                    if envval is None:
-                        error_msgs.append(mkerrmsg_noenv('server', 'JW_SERVER'))
-                    else:
-                        raw['authentication']['server'] = envval
-                if raw['auth_token'].get('user') is None:
-                    envval = os.getenv('JW_USER')
-                    if envval is None:
-                        error_msgs.append(mkerrmsg_noenv('user', 'JW_USER'))
-                    else:
-                        raw['authentication']['user'] = envval
-                if raw['auth_token'].get('api_token') is None:
-                    envval = os.getenv('JW_API_TOKEN')
-                    if envval is None:
-                        error_msgs.append(mkerrmsg_noenv('api_token', 'JW_API_TOKEN'))
-                    else:
-                        raw['authentication']['api_token'] = envval
-            return error_msgs
-
-        schema = {
-            'auth_token': {
-                'nullable': True,
-                'type': 'dict',
-                'schema': {
-                    'server': {
-                        'nullable': True,
-                        'type': 'string'
-                    },
-                    'user': {
-                        'nullable': True,
-                        'type': 'string'
-                    },
-                    'api_token': {
-                        'nullable': True,
-                        'type': 'string'
-                    },
-                }
-            },
-            'issues_map': {
-                'type': 'dict',
-                'keysrules': {'type': 'string'},
-                'valuesrules': {'type': 'string'}
-            },
-            'checked_in_path': {
-                'nullable': True,
-                'type': 'string'
-            },
-            'parse_delimited': {
-                'nullable': True,
-                'type': 'dict',
-                'schema': {
-                    'delimiter': {
-                        'type': 'string'
-                    },
-                    'delimiter2': {
-                        'nullable': True,
-                        'type': 'string'
-                    },
-                    'col_labels': {
-                        'type': 'dict',
-                        'schema': {
-                            'description': {
-                                'type': 'string'
-                            },
-                            'start': {
-                                'nullable': True,
-                                'type': 'string'
-                            },
-                            'end': {
-                                'nullable': True,
-                                'type': 'string'
-                            },
-                            'duration': {
-                                'nullable': True,
-                                'type': 'string'
-                            },
-                            'tags': {'type': 'string'}
-                        }
-                    },
-                    'col_formats': {
-                        'type': 'dict',
-                        'schema': {
-                            'start': {
-                                'nullable': True,
-                                'type': 'string'
-                            },
-                            'end': {
-                                'nullable': True,
-                                'type': 'string'
-                            },
-                            'duration': {
-                                'nullable': True,
-                                'type': 'string'
-                            },
-                            'timezone': {
-                                'nullable': True,
-                                'type': 'string'
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        validator = Validator(schema, require_all=True)
-        satisfies_schema = validator.validate(raw)
+        validator, satisfies_schema = validate_config(raw)
         schema_checks = (
             []
             if satisfies_schema
@@ -222,14 +83,149 @@ class Configuration:
 # }
 
 
-def read_conf(path: Optional[str]) -> Configuration:
-    if path is None:
-        path='~/.jwconfig.yaml'
-    with open(os.path.expanduser(path), 'r') as yaml_file:
-        contents = yaml.safe_load(yaml_file.read())
-    conf = Configuration(contents)
-    return conf
+def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
+    schema = {
+        'auth_token': {
+            'nullable': True,
+            'type': 'dict',
+            'schema': {
+                'server': {
+                    'nullable': True,
+                    'type': 'string'
+                },
+                'user': {
+                    'nullable': True,
+                    'type': 'string'
+                },
+                'api_token': {
+                    'nullable': True,
+                    'type': 'string'
+                },
+            }
+        },
+        'issues_map': {
+            'type': 'dict',
+            'keysrules': {'type': 'string'},
+            'valuesrules': {'type': 'string'}
+        },
+        'checked_in_path': {
+            'nullable': True,
+            'type': 'string'
+        },
+        'parse_delimited': {
+            'nullable': True,
+            'type': 'dict',
+            'schema': {
+                'delimiter': {
+                    'type': 'string'
+                },
+                'delimiter2': {
+                    'nullable': True,
+                    'type': 'string'
+                },
+                'col_labels': {
+                    'type': 'dict',
+                    'schema': {
+                        'description': {
+                            'type': 'string'
+                        },
+                        'start': {
+                            'nullable': True,
+                            'type': 'string'
+                        },
+                        'end': {
+                            'nullable': True,
+                            'type': 'string'
+                        },
+                        'duration': {
+                            'nullable': True,
+                            'type': 'string'
+                        },
+                        'tags': {'type': 'string'}
+                    }
+                },
+                'col_formats': {
+                    'type': 'dict',
+                    'schema': {
+                        'start': {
+                            'nullable': True,
+                            'type': 'string'
+                        },
+                        'end': {
+                            'nullable': True,
+                            'type': 'string'
+                        },
+                        'duration': {
+                            'nullable': True,
+                            'type': 'string'
+                        },
+                        'timezone': {
+                            'nullable': True,
+                            'type': 'string'
+                        }
+                    }
+                }
+            }
+        }
+    }
+    validator = Validator(schema, require_all=True)
+    satisfies_schema = validator.validate(raw)
+    return (validator, satisfies_schema)
 
+
+def perform_additional_checks(raw, validator):
+    etree = validator.document_error_tree
+    error_msgs = []
+    # if 'parse_type' not in etree:
+    #     has_pdelim = raw.get('parse_delimited') is not None
+    #     has_pexcel = raw.get('parse_excel') is not None
+    #     if raw['parse_type'] == 'csv':
+    #         if not has_pdelim:
+    #             msg = (
+    #                 "If 'parse_type' has value \"csv\" then the "
+    #                 "'parse_delimited' field is required"
+    #             )
+    #             error_msgs.append(msg)
+    #         if has_pexcel:
+    #             msg = (
+    #                 "If 'parse_type' has value \"csv\" then the "
+    #                 "'parse_excel' field cannot be provided"
+    #             )
+    #             error_msgs.append(msg)
+    #     if raw['parse_type'] == 'excel':
+    #         if has_pdelim:
+    #             msg = (
+    #                 "If 'parse_type' has value \"excel\" then the "
+    #                 "'parse_delimited' field cannot be provided"
+    #             )
+    #             error_msgs.append(msg)
+    #         if not has_pexcel:
+    #             msg = (
+    #                 "If 'parse_type' has value \"excel\" then the "
+    #                 "'parse_excel' field is required"
+    #             )
+    #             error_msgs.append(msg)
+    if 'auth_token' not in etree:
+        # TODO: this
+        if raw['auth_token'].get('server') is None:
+            envval = os.getenv('JW_SERVER')
+            if envval is None:
+                error_msgs.append(mkerrmsg_noenv('server', 'JW_SERVER'))
+            else:
+                raw['authentication']['server'] = envval
+        if raw['auth_token'].get('user') is None:
+            envval = os.getenv('JW_USER')
+            if envval is None:
+                error_msgs.append(mkerrmsg_noenv('user', 'JW_USER'))
+            else:
+                raw['authentication']['user'] = envval
+        if raw['auth_token'].get('api_token') is None:
+            envval = os.getenv('JW_API_TOKEN')
+            if envval is None:
+                error_msgs.append(mkerrmsg_noenv('api_token', 'JW_API_TOKEN'))
+            else:
+                raw['authentication']['api_token'] = envval
+    return error_msgs
 
 def construct_conferr_msg(validator: Validator) -> list[str]:
     def create_wrongtype(obj):
@@ -368,7 +364,17 @@ def mkerrmsg_noenv(field: str, envvar: str) -> str:
     )
     return msg
 
-# # Jira issues can be identified by either ID or by key. IDs are immutable but
+
+def read_conf(path: Optional[str]) -> Configuration:
+    if path is None:
+        path='~/.jwconfig.yaml'
+    with open(os.path.expanduser(path), 'r') as yaml_file:
+        contents = yaml.safe_load(yaml_file.read())
+    conf = Configuration(contents)
+    return conf
+
+
+# Jira issues can be identified by either ID or by key. IDs are immutable but
 # # keys can change, for example when an issue moves to another project. See
 # # https://community.atlassian.com/t5/Agile-questions/Unique-Issue-ID-where-do-we-stand/qaq-p/586280?tempId=eyJvaWRjX2NvbnNlbnRfbGFuZ3VhZ2VfdmVyc2lvbiI6IjIuMCIsIm9pZGNfY29uc2VudF9ncmFudGVkX2F0IjoxNjMyMTU0MzIzNDMxfQ%3D%3D
 # #
