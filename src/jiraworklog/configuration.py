@@ -113,6 +113,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
         },
         'parse_delimited': {
             'nullable': True,
+            'required': False,
             'type': 'dict',
             'schema': {
                 'delimiter': {
@@ -226,6 +227,39 @@ def perform_additional_checks(raw, validator):
                 raw['authentication']['api_token'] = envval
     return error_msgs
 
+# There seem to be a number of approaches to constructing the error messages.
+#
+# 1. validator.errors prints a nested dictionary of error messages. The one
+# disadvantage with this approach is that any information such as what the
+# actual type is lost. See
+# https://github.com/pyeve/cerberus/blob/8765b317442c002a84e556bd5d9677b868e6deb2/cerberus/base.py#L830
+# for how the errors are created (self.error_handler is
+# errors.BasicErrorHandler)
+#
+# 2. validator.document_error_tree
+#
+# 2. validator._errors gives you a flat version of t
+#
+
+
+def construct_conferr_msg2(validator: Validator) -> list[str]:
+    def create_msg(errors, pad):
+        msgs = []
+        for k, v in errors.items():
+            for w in v:
+                if isinstance(w, str):
+                    msgs.append(f"{pad}{k}: {w}")
+                else:
+                    sub_errors = create_msg(w, pad + indent)
+                    if len(sub_errors) == 1:
+                        msgs.append(f'{pad}{k}:')
+                    else:
+                        msgs.append(f'{pad}{k}:')
+                    msgs.extend(sub_errors)
+        return msgs
+    indent = '  '
+    return create_msg(validator.errors, '')
+
 def construct_conferr_msg(validator: Validator) -> list[str]:
     def create_wrongtype(obj):
         if type(obj) is list:
@@ -236,7 +270,7 @@ def construct_conferr_msg(validator: Validator) -> list[str]:
             return 'an integer'
         elif type(obj) is float:
             return 'a float'
-        elif type(obj) is string:
+        elif type(obj) is str:
             return 'a string'
         raise RuntimeError('Internal logic error. Please file a bug report')
     msgs = []
