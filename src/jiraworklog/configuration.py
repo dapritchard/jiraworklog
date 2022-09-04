@@ -3,9 +3,12 @@
 import os
 import os.path
 from cerberus import Validator
+from enum import Enum
 import yaml
 
 from typing import Any, Optional
+
+ParseType = Enum('ParseType', ['DELIMITED', 'EXCEL'])
 
 
 class ConfigParseError(RuntimeError):
@@ -481,6 +484,15 @@ def read_conf(path: Optional[str]) -> Configuration:
         contents = yaml.safe_load(yaml_file.read())
     conf = Configuration(contents)
     return conf
+
+
+def get_parse_type(conf: Configuration):
+    if conf.parse_delimited is not None:
+        return ParseType.DELIMITED
+    elif conf.parse_excel is not None:
+        return ParseType.EXCEL
+    else:
+        raise RuntimeError('Internal logic error. Please file a bug report')
 
 
 # Jira issues can be identified by either ID or by key. IDs are immutable but
