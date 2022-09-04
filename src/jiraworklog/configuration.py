@@ -36,15 +36,11 @@ class Configuration:
     def __init__(self, raw: dict[str, Any]):
 
         validator, satisfies_schema = validate_config(raw)
-        schema_checks = (
-            []
-            if satisfies_schema
-            else construct_conferr_msg(validator)
-        )
-        additional_checks = perform_additional_checks(raw, validator)
-        if schema_checks or additional_checks:
-            conferrmsg = create_conferrmsg(schema_checks + additional_checks)
-            raise ConfigParseError(conferrmsg, validator)
+        errors_toplevel = perform_additional_checks(validator, raw)
+        if not satisfies_schema or errors_toplevel:
+            conferr_msgs = construct_conferr_msg(validator)
+            conferr_msgs.extend(errors_toplevel)
+            raise ConfigParseError('\n'.join(conferr_msgs), validator)
 
         self.auth_type = 'token' # TODO: should be an enum (and change type)
         self.auth_token = raw.get('auth_token')
@@ -173,7 +169,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
     return (validator, satisfies_schema)
 
 
-def perform_additional_checks(raw, validator):
+def perform_additional_checks_old(raw, validator):
     etree = validator.document_error_tree
     error_msgs = []
     # if 'parse_type' not in etree:
@@ -227,6 +223,72 @@ def perform_additional_checks(raw, validator):
                 raw['authentication']['api_token'] = envval
     return error_msgs
 
+
+def perform_additional_checks(
+    validator: Validator,
+    raw: dict[str, Any]
+) -> list[str]:
+
+    # It would probably be better to embed some of the errors directly in the
+    # `validator.errors` object, but for the time-being everything just gets
+    # placed in a top-level object
+
+    dt = validator.document_error_tree
+
+    # Container for top-level error messages. All other messages get embedded in
+    # the `errors` object, but that data structure lacks a place to store the
+    # top-level errors without adding dictionary elements
+    tl = []
+
+    # Must have exactly one of `auth_token` or `auth_openauth`
+    has_auth_token = raw.get('auth_token') is not None
+    has_auth_openauth = raw.get('auth_openauth') is not None
+    if not (has_auth_token or has_auth_openauth):
+        tl.append("must have either 'auth_token' or 'auth_openauth")
+    elif has_auth_token and has_auth_openauth:
+        tl.append("cannot have both 'auth_token' and 'auth_openauth")
+
+    # Must have exactly one of `parse_delimited` or `parse_excel`
+    has_parse_delimited = raw.get('parse_delimited') is not None
+    has_parse_excel = raw.get('parse_excel') is not None
+    if not (has_parse_delimited or has_parse_excel):
+        tl.append("must have either 'parse_delimited' or 'parse_excel")
+    elif has_parse_delimited and has_parse_excel:
+        tl.append("cannot have both 'parse_delimited' and 'parse_excel")
+
+    # Perform additional checks of `raw['parse_delimited]`
+    if has_parse_delimited and 'parse_delimited' not in dt:
+
+        cl = raw['parse_delimited']['col_labels']
+        cf = raw['parse_delimited']['col_formats']
+
+        has_cl_start = cl.get('start') is not None
+        has_cl_end = cl.get('end') is not None
+        has_cl_duration = cl.get('duration') is not None
+        has_cf_start = cf.get('start') is not None
+        has_cf_end = cf.get('end') is not None
+        has_cf_duration = cf.get('duration') is not None
+
+        if has_cl_start + has_cl_end + has_cl_duration <= 1:
+            msg = "must have at least two of 'start', 'end', or 'duration'"
+            tl.append(msg)
+
+        if has_cl_start and not has_cf_start:
+            msg = "no formatting information provided for the 'start' column"
+            tl.append(msg)
+
+        if has_cl_end and not has_cf_end:
+            msg = "no formatting information provided for the 'end' column"
+            tl.append(msg)
+
+        if has_cl_duration and not has_cf_duration:
+            msg = "no formatting information provided for the 'duration' column"
+            tl.append(msg)
+
+    return tl
+
+
+
 # There seem to be a number of approaches to constructing the error messages.
 #
 # 1. validator.errors prints a nested dictionary of error messages. The one
@@ -242,12 +304,12 @@ def perform_additional_checks(raw, validator):
 #
 
 
-def construct_conferr_msg2(validator: Validator) -> list[str]:
+def construct_conferr_msg(validator: Validator) -> list[str]:
     def create_msg(errors, pad):
         msgs = []
         for k, v in errors.items():
             for w in v:
-                if isinstance(w, str):
+                if isinstance(w, str) or isinstance(w, int):
                     msgs.append(f"{pad}{k}: {w}")
                 else:
                     sub_errors = create_msg(w, pad + indent)
@@ -260,7 +322,7 @@ def construct_conferr_msg2(validator: Validator) -> list[str]:
     indent = '  '
     return create_msg(validator.errors, '')
 
-def construct_conferr_msg(validator: Validator) -> list[str]:
+def construct_conferr_msg_old(validator: Validator) -> list[str]:
     def create_wrongtype(obj):
         if type(obj) is list:
             return 'a sequence'
