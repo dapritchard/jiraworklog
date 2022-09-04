@@ -11,7 +11,7 @@ import re
 from typing import Any, Callable
 
 
-def read_local_worklogs(
+def read_local_delimited(
     worklogs_path: str,
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
@@ -23,6 +23,7 @@ def read_local_worklogs(
 
 
 # Return a list with each entry a row in the CSV
+# TODO: change this and other functions' names to something like `read_local_native`?
 def read_worklogs_native(worklogs_path: str) -> list[dict[str, Any]]:
     # TODO: is error handling needed? E.g. wrong number of columns
     with open(worklogs_path, mode='r') as csv_file:
