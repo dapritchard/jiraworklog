@@ -81,19 +81,23 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
     schema = {
         'jwconfig_version': {'type': 'string'},
         'auth_token': {
-            'nullable': True,
+            # 'nullable': True,
+            # 'required': False,
             'type': 'dict',
             'schema': {
                 'server': {
                     'nullable': True,
+                    'required': False,
                     'type': 'string'
                 },
                 'user': {
                     'nullable': True,
+                    'required': False,
                     'type': 'string'
                 },
                 'api_token': {
                     'nullable': True,
+                    'required': False,
                     'type': 'string'
                 },
             }
@@ -105,11 +109,12 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
         },
         'checked_in_path': {
             'nullable': True,
+            'required': False,
             'type': 'string'
         },
         'parse_delimited': {
-            'nullable': True,
-            'required': False,
+            # 'nullable': True,
+            # 'required': False,
             'type': 'dict',
             'schema': {
                 'delimiter': {
@@ -117,6 +122,7 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                 },
                 'delimiter2': {
                     'nullable': True,
+                    'required': False,
                     'type': 'string'
                 },
                 'col_labels': {
@@ -127,14 +133,17 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                         },
                         'start': {
                             'nullable': True,
+                            'required': False,
                             'type': 'string'
                         },
                         'end': {
                             'nullable': True,
+                            'required': False,
                             'type': 'string'
                         },
                         'duration': {
                             'nullable': True,
+                            'required': False,
                             'type': 'string'
                         },
                         'tags': {'type': 'string'}
@@ -145,18 +154,22 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                     'schema': {
                         'start': {
                             'nullable': True,
+                            'required': False,
                             'type': 'string'
                         },
                         'end': {
                             'nullable': True,
+                            'required': False,
                             'type': 'string'
                         },
                         'duration': {
                             'nullable': True,
+                            'required': False,
                             'type': 'string'
                         },
                         'timezone': {
                             'nullable': True,
+                            'required': False,
                             'type': 'string'
                         }
                     }
