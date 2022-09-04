@@ -3,7 +3,7 @@
 # from datetime import datetime
 import argparse
 from jira import JIRA
-from jiraworklog.configuration import Configuration, ParseType, get_parse_type
+from jiraworklog.configuration import Configuration, ParseType
 from jiraworklog.confirm_updates import confirm_updates
 from jiraworklog.diff_worklogs import diff_local, diff_remote
 from jiraworklog.read_local_worklogs import read_local_delimited
@@ -75,7 +75,6 @@ def read_local_worklogs(
         ParseType.DELIMITED: read_local_delimited,
         ParseType.EXCEL: read_worklogs_native_excel
     }
-    parse_type = get_parse_type(conf)
-    parse_fcn = parse_fcn_map[parse_type]
+    parse_fcn = parse_fcn_map[conf.parse_type]
     local_wkls = parse_fcn(worklogs_path, conf)
     return local_wkls

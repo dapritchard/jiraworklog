@@ -34,7 +34,7 @@ class Configuration:
     checked_in_path: Optional[str]  # TODO: try to convert this to timezone here
     parse_type: str
     parse_delimited: Optional[dict[str, Any]]
-    parse_excel: None
+    parse_excel: Optional[dict[str, Any]]
 
     def __init__(self, raw: dict[str, Any]):
 
@@ -51,9 +51,9 @@ class Configuration:
         self.issues_map = raw['issues_map']
         self.issue_nms = list(self.issues_map.values())
         self.checked_in_path = raw.get('checked_in_path')
-        self.parse_type = 'delimited' # TODO: should be an enum (and change type)
+        self.parse_type = get_parse_type(raw)
         self.parse_delimited = raw.get('parse_delimited')
-        self.parse_excel = None  # FIXME
+        self.parse_excel = raw.get('parse_excel')
 
 
 # raw = {
@@ -116,8 +116,8 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
             'type': 'string'
         },
         'parse_delimited': {
-            # 'nullable': True,
-            # 'required': False,
+            'nullable': True,
+            'required': False,
             'type': 'dict',
             'schema': {
                 'delimiter': {
@@ -176,6 +176,42 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                             'type': 'string'
                         }
                     }
+                }
+            }
+        },
+        'parse_excel': {
+            'nullable': True,
+            'required': False,
+            'type': 'dict',
+            'schema': {
+                'col_labels': {
+                    'type': 'dict',
+                    'schema': {
+                        'description': {
+                            'type': 'string'
+                        },
+                        'start': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'end': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'duration': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'tags': {'type': 'string'}
+                    }
+                },
+                'timezone': {
+                    'nullable': True,
+                    'required': False,
+                    'type': 'string'
                 }
             }
         }
@@ -486,10 +522,10 @@ def read_conf(path: Optional[str]) -> Configuration:
     return conf
 
 
-def get_parse_type(conf: Configuration):
-    if conf.parse_delimited is not None:
+def get_parse_type(raw: dict[str, Any]) -> ParseType:
+    if raw.get('parse_delimited') is not None:
         return ParseType.DELIMITED
-    elif conf.parse_excel is not None:
+    elif raw.get('parse_excel') is not None:
         return ParseType.EXCEL
     else:
         raise RuntimeError('Internal logic error. Please file a bug report')
