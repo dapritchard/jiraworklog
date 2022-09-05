@@ -33,6 +33,7 @@ test_50 = create_errortest(
 #     tests.create_apptest.exercise_system('tests/data/03-remove-to-empty/', ['--auto-confirm'])
 # except jiraworklog.configuration.ConfigParseError as exc:
 #     e = exc
+# # e.validator.error_handler(e.validator._errors)
 
 # import jiraworklog.configuration
 # try:

@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
 
 from jiraworklog.configuration import Configuration
-from jiraworklog.read_local_worklogs import read_worklogs_native
+# from jiraworklog.read_local_worklogs import read_local_general, read_worklogs_native
+from jiraworklog.read_local_worklogs import *
 from jiraworklog.worklogs import WorklogCanon
 from openpyxl import load_workbook
 from typing import Any
 
 
-# # https://www.blog.pythonlibrary.org/2021/07/20/reading-spreadsheets-with-openpyxl-and-python/
-# def read_local_excel(
-#     worklogs_path: str,
-#     conf: Configuration
-# # ) -> dict[str, list[WorklogCanon]]:
-# ) -> None:
-#     pass
+def read_local_excel(
+    worklogs_path: str,
+    conf: Configuration
+) -> dict[str, list[WorklogCanon]]:
+    worklogs_native = read_worklogs_native_excel(worklogs_path, conf)
+    canon_wkls = create_canon_wkls_excel(worklogs_native, conf)
+    return canon_wkls
 
 
+# https://www.blog.pythonlibrary.org/2021/07/20/reading-spreadsheets-with-openpyxl-and-python/
 def read_worklogs_native_excel(
     worklogs_path: str,
     conf: Configuration
@@ -23,7 +25,7 @@ def read_worklogs_native_excel(
     workbook = load_workbook(filename = worklogs_path)
     entries = []
     if conf.parse_excel is None:
-        raise RuntimeError('More than one tag matched')
+        raise RuntimeError('Internal logic error. Please file a bug report')
     else:
         colnames = conf.parse_excel['col_labels'].values()
     for sheet_name in workbook.sheetnames:
@@ -48,11 +50,20 @@ def read_worklogs_native_excel(
             entries.append(new_row)
     return entries
 
-# parse_excel = {
-#    'col_labels': {
-#         'description': "task",
-#         'start': "start",
-#         'end': "end",
-#         'tags': "tags"
-#    }
-# }
+
+def create_canon_wkls_excel(worklogs_native, conf):
+    if conf.parse_excel is None:
+        raise RuntimeError('Internal logic error. Please file a bug report')
+    pe = conf.parse_excel
+    cl = pe['col_labels']
+    maybe_tz = pe.get('timezone')
+    canon_wkls = create_canon_wkls(
+        worklogs_native=worklogs_native,
+        issues_map=conf.issues_map,
+        parse_description=make_parse_field(cl['description']),
+        parse_start=make_maybe_parse_time_dt(cl.get('start'), maybe_tz),
+        parse_end=make_maybe_parse_time_dt(cl.get('end'), maybe_tz),
+        parse_duration=lambda _: None, # FIXME
+        parse_tags=make_parse_tags(cl['tags'], pe.get('delimiter2'))
+    )
+    return canon_wkls

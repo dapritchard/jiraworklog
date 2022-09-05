@@ -337,6 +337,8 @@ def perform_additional_checks(
             msg = "no formatting information provided for the 'duration' column"
             tl.append(msg)
 
+    # TODO: ensure delimiter isn't empty (has exactly one character?)
+
     return tl
 
 
