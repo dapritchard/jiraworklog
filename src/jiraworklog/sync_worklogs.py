@@ -7,7 +7,7 @@ from jiraworklog.configuration import Configuration, ParseType
 from jiraworklog.confirm_updates import confirm_updates
 from jiraworklog.diff_worklogs import diff_local, diff_remote
 from jiraworklog.read_local_worklogs import read_local_delimited
-from jiraworklog.read_local_excel import read_worklogs_native_excel
+from jiraworklog.read_local_excel import read_local_excel
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
 from jiraworklog.reconcile_diffs import reconcile_diffs
@@ -73,7 +73,7 @@ def read_local_worklogs(
 ): # TODO: provide return type
     parse_fcn_map = {
         ParseType.DELIMITED: read_local_delimited,
-        ParseType.EXCEL: read_worklogs_native_excel
+        ParseType.EXCEL: read_local_excel
     }
     parse_fcn = parse_fcn_map[conf.parse_type]
     local_wkls = parse_fcn(worklogs_path, conf)

@@ -2,7 +2,12 @@
 
 from jiraworklog.configuration import Configuration
 # from jiraworklog.read_local_worklogs import read_local_general, read_worklogs_native
-from jiraworklog.read_local_worklogs import *
+from jiraworklog.read_local_common import (
+    create_canon_wkls,
+    make_maybe_parse_time_dt,
+    make_parse_field,
+    make_parse_tags
+)
 from jiraworklog.worklogs import WorklogCanon
 from openpyxl import load_workbook
 from typing import Any
@@ -12,13 +17,13 @@ def read_local_excel(
     worklogs_path: str,
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
-    worklogs_native = read_worklogs_native_excel(worklogs_path, conf)
+    worklogs_native = read_native_worklogs_excel(worklogs_path, conf)
     canon_wkls = create_canon_wkls_excel(worklogs_native, conf)
     return canon_wkls
 
 
 # https://www.blog.pythonlibrary.org/2021/07/20/reading-spreadsheets-with-openpyxl-and-python/
-def read_worklogs_native_excel(
+def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
 ) -> list[dict[str, Any]]:
