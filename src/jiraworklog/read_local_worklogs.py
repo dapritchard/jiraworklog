@@ -2,7 +2,7 @@
 
 import csv
 from datetime import datetime
-from jiraworklog.configuration import Configuration
+from jiraworklog.configuration import Configuration, ParseType
 from jiraworklog.read_checkedin_worklogs import align_checkedin_with_conf
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCanon
@@ -16,6 +16,14 @@ def read_local_delimited(
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
     worklogs_native = read_worklogs_native(worklogs_path)
+    worklogs = read_local_general(worklogs_native, conf)
+    return worklogs
+
+
+def read_local_general(
+    worklogs_native, #  TODO: type
+    conf: Configuration
+) -> dict[str, list[WorklogCanon]]:
     worklogs_parsed = normalize_worklogs_local(worklogs_native, conf)
     align_checkedin_with_conf(worklogs_parsed, conf)
     worklogs = map_worklogs_key(WorklogCanon, worklogs_parsed)
@@ -87,17 +95,33 @@ def create_worklog_parser(
 def create_worklog_parser_startend(
     conf: Configuration
 ) -> Callable[[dict[str, Any]], dict[str, str]]:
-    col_labels = conf.parse_delimited['col_labels']
-    col_formats = conf.parse_delimited['col_formats']
-    start_key = col_labels['start']
-    end_key = col_labels['end']
-    start_fmt = col_formats['start']
-    end_fmt = col_formats['end']
-    description_key = col_labels['description']
+    def create_parse_fromstr(entry_key, datetime_fmt):
+        def parse_fromtstr(entry):
+            return datetime.strptime(entry[entry_key], datetime_fmt)
+        return parse_fromtstr
+    if conf.parse_delimited is not None:
+        cl = conf.parse_delimited['col_labels']
+        cf = conf.parse_delimited['col_formats']
+        parse_start = create_parse_fromstr(cl['start'], cf['start'])
+        parse_end = create_parse_fromstr(cl['end'], cf['end'])
+    elif conf.parse_excel is not None:
+        cl = conf.parse_excel['col_labels']
+        parse_start = lambda entry: entry[cl['start']]
+        parse_end = lambda entry: entry[cl['end']]
+    else:
+        raise RuntimeError('Internal logic error. Please file a bug report')
+    description_key = cl['description']
+    # col_labels = conf.parse_delimited['col_labels']
+    # col_formats = conf.parse_delimited['col_formats']
+    # start_key = col_labels['start']
+    # end_key = col_labels['end']
+    # start_fmt = col_formats['start']
+    # end_fmt = col_formats['end']
+    # description_key = col_labels['description']
     fmt_time = make_fmt_time(conf)
     def worklog_parser(entry: dict[str, Any]) -> dict[str, str]:
-        start = datetime.strptime(entry[start_key], start_fmt)
-        end = datetime.strptime(entry[end_key], end_fmt)
+        start = parse_start(entry)
+        end = parse_end(entry)
         duration_timedelta = end - start
         duration_str = str(int(duration_timedelta.total_seconds()))
         start_str = fmt_time(start)
@@ -111,24 +135,43 @@ def create_worklog_parser_startend(
 
 
 def make_fmt_time(conf: Configuration) -> Callable[[datetime], str]:
-    if conf.parse_delimited['col_formats']['timezone'] is None:
-        specified_tz = False
+
+    if conf.parse_delimited is not None:
+        tz_maybestr = conf.parse_delimited.get('timezone')
+    elif conf.parse_excel is not None:
+        tz_maybestr = conf.parse_excel.get('timezone')
     else:
-        specified_tz = True
-        tz = pytz.timezone(conf.parse_delimited['col_formats']['timezone'])
+        raise RuntimeError('Internal logic error. Please file a bug report')
+
+    if tz_maybestr is None:
+        specified_tz = None
+    else:
+        specified_tz = pytz.timezone(tz_maybestr)
+
     def fmt_time(dt: datetime) -> str:
         has_tz = not check_tz_naive(dt)
-        if not specified_tz and not has_tz:
-            # TODO: throw error
-            pass
-        if specified_tz and not has_tz:
-            # TODO: have to add time zone
-            dt_aware = tz.localize(dt)
-        else:
+        # Case: didn't specify the timezone and the parsed datetime isn't
+        # timezone-aware
+        if specified_tz is None and not has_tz:
+            # TODO: better error type / message
+            raise RuntimeError('TODO')
+        # Case: didn't specify the timezone and the parsed datetime is
+        # timezone-aware
+        if specified_tz is None and has_tz:
             dt_aware = dt
+        # Case: specified the timezone and the parsed datetime isn't
+        # timezone-aware
+        if specified_tz is not None and not has_tz:
+            # TODO: have to add time zone
+            dt_aware = specified_tz.localize(dt)
+        # Case: specified the timezone and the parsed datetime is timezone-aware
+        else:
+            # TODO: better error type / message
+            raise RuntimeError('TODO')
         out_init = dt_aware.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
         out_mung = micro_to_milli(out_init)
         return out_mung
+
     return fmt_time
 
 
