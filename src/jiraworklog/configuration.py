@@ -169,13 +169,13 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                             'nullable': True,
                             'required': False,
                             'type': 'string'
-                        },
-                        'timezone': {
-                            'nullable': True,
-                            'required': False,
-                            'type': 'string'
                         }
                     }
+                },
+                'timezone': {
+                    'nullable': True,
+                    'required': False,
+                    'type': 'string'
                 }
             }
         },

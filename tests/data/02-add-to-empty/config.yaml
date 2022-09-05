@@ -24,4 +24,4 @@ parse_delimited:
     start: "%Y-%m-%d %H:%M"
     end: "%Y-%m-%d %H:%M"
     duration: null
-    timezone: "US/Eastern"
+  timezone: "US/Eastern"
