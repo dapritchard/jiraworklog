@@ -43,7 +43,7 @@ class Configuration:
         if not satisfies_schema or errors_toplevel:
             conferr_msgs = construct_conferr_msg(validator)
             conferr_msgs.extend(errors_toplevel)
-            raise ConfigParseError('\n'.join(conferr_msgs), validator)
+            raise ConfigParseError(create_conferrmsg(conferr_msgs), validator)
 
         self.auth_type = 'token' # TODO: should be an enum (and change type)
         self.auth_token = raw.get('auth_token')
@@ -96,13 +96,47 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
             'required': False,
             'type': 'dict',
             'schema': {
-                'delimiter': {
-                    'type': 'string'
-                },
-                'delimiter2': {
+                'dialect': {
                     'nullable': True,
                     'required': False,
-                    'type': 'string'
+                    'type': 'dict',
+                    'schema': {
+                        'delimiter': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'doublequote': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'boolean'
+                        },
+                        'escapechar': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'lineterminator': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'quotechar': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'quoting': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'integer'
+                        },
+                        'skipinitialwhitespace': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'boolean'
+                        },
+                    }
                 },
                 'col_labels': {
                     'type': 'dict',
@@ -148,6 +182,11 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                         }
                     }
                 },
+                'delimiter2': {
+                    'nullable': True,
+                    'required': False,
+                    'type': 'string'
+                },
                 'timezone': {
                     'nullable': True,
                     'required': False,
@@ -192,10 +231,9 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
             }
         }
     }
-    validator = Validator(schema, require_all=True)
+    validator = Validator(schema, require_all=True) # TODO: move `require_all` into the schema itself?
     satisfies_schema = validator.validate(raw)
     return (validator, satisfies_schema)
-
 
 
 def perform_additional_checks(
@@ -259,7 +297,7 @@ def perform_additional_checks(
             msg = "no formatting information provided for the 'duration' column"
             tl.append(msg)
 
-    # TODO: ensure delimiter isn't empty (has exactly one character?)
+    # TODO: ensure delimiter2 isn't empty if non-None (has exactly one character?)
 
     return tl
 
@@ -283,15 +321,13 @@ def construct_conferr_msg(validator: Validator) -> list[str]:
     return create_msg(validator.errors, '')
 
 
-
-def create_conferrmsg(msgs):
+def create_conferrmsg(msgs: list[str]) -> str:
     header = (
         'The configuration file format is incorrectly specified. The '
         'following issues were found:'
     )
     conferrmsg = [header]
-    for i, v in enumerate(msgs, start=1):
-        conferrmsg.append(f'{i}. {v}')
+    conferrmsg.extend(msgs)
     return '\n'.join(conferrmsg)
 
 

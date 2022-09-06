@@ -12,8 +12,8 @@ issues_map:
 checked_in_path: null
 
 parse_delimited:
-  delimiter: ","
-  delimiter2: ":"
+  dialect:
+    delimiter: ","
   col_labels:
     description: "task"
     start: "start"
@@ -24,4 +24,5 @@ parse_delimited:
     start: "%Y-%m-%d %H:%M"
     end: "%Y-%m-%d %H:%M"
     duration: null
+  delimiter2: ":"
   timezone: "US/Eastern"
