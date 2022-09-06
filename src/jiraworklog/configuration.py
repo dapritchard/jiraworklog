@@ -56,30 +56,6 @@ class Configuration:
         self.parse_excel = raw.get('parse_excel')
 
 
-# raw = {
-#     'author': 'asdf',
-#     'authentication': {'server': 'a', 'user': 'b', 'api_token': 'c'},
-#     'issues_map': {'a': 'A'},
-#     'timezone': 'zzz',
-#     'parse_type': 'csv',
-#     # 'parse_delimited': {
-#     #     'col_formats': {
-#     #         'duration': None,
-#     #         'end': '%Y-%m-%d %H:%M',
-#     #         'start': '%Y-%m-%d %H:%M'
-#     #     },
-#     #     'col_labels': {
-#     #         'description': 'task',
-#     #         'duration': None,
-#     #         'end': 'end',
-#     #         'start': 'start',
-#     #         'tags': 'tags'
-#     #     },
-#     #     'delimiter2': ':'
-#     # }
-# }
-
-
 def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
     schema = {
         'jwconfig_version': {'type': 'string'},
@@ -221,60 +197,6 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
     return (validator, satisfies_schema)
 
 
-def perform_additional_checks_old(raw, validator):
-    etree = validator.document_error_tree
-    error_msgs = []
-    # if 'parse_type' not in etree:
-    #     has_pdelim = raw.get('parse_delimited') is not None
-    #     has_pexcel = raw.get('parse_excel') is not None
-    #     if raw['parse_type'] == 'csv':
-    #         if not has_pdelim:
-    #             msg = (
-    #                 "If 'parse_type' has value \"csv\" then the "
-    #                 "'parse_delimited' field is required"
-    #             )
-    #             error_msgs.append(msg)
-    #         if has_pexcel:
-    #             msg = (
-    #                 "If 'parse_type' has value \"csv\" then the "
-    #                 "'parse_excel' field cannot be provided"
-    #             )
-    #             error_msgs.append(msg)
-    #     if raw['parse_type'] == 'excel':
-    #         if has_pdelim:
-    #             msg = (
-    #                 "If 'parse_type' has value \"excel\" then the "
-    #                 "'parse_delimited' field cannot be provided"
-    #             )
-    #             error_msgs.append(msg)
-    #         if not has_pexcel:
-    #             msg = (
-    #                 "If 'parse_type' has value \"excel\" then the "
-    #                 "'parse_excel' field is required"
-    #             )
-    #             error_msgs.append(msg)
-    if 'auth_token' not in etree:
-        # TODO: this
-        if raw['auth_token'].get('server') is None:
-            envval = os.getenv('JW_SERVER')
-            if envval is None:
-                error_msgs.append(mkerrmsg_noenv('server', 'JW_SERVER'))
-            else:
-                raw['authentication']['server'] = envval
-        if raw['auth_token'].get('user') is None:
-            envval = os.getenv('JW_USER')
-            if envval is None:
-                error_msgs.append(mkerrmsg_noenv('user', 'JW_USER'))
-            else:
-                raw['authentication']['user'] = envval
-        if raw['auth_token'].get('api_token') is None:
-            envval = os.getenv('JW_API_TOKEN')
-            if envval is None:
-                error_msgs.append(mkerrmsg_noenv('api_token', 'JW_API_TOKEN'))
-            else:
-                raw['authentication']['api_token'] = envval
-    return error_msgs
-
 
 def perform_additional_checks(
     validator: Validator,
@@ -342,22 +264,6 @@ def perform_additional_checks(
     return tl
 
 
-
-# There seem to be a number of approaches to constructing the error messages.
-#
-# 1. validator.errors prints a nested dictionary of error messages. The one
-# disadvantage with this approach is that any information such as what the
-# actual type is lost. See
-# https://github.com/pyeve/cerberus/blob/8765b317442c002a84e556bd5d9677b868e6deb2/cerberus/base.py#L830
-# for how the errors are created (self.error_handler is
-# errors.BasicErrorHandler)
-#
-# 2. validator.document_error_tree
-#
-# 2. validator._errors gives you a flat version of t
-#
-
-
 def construct_conferr_msg(validator: Validator) -> list[str]:
     def create_msg(errors, pad):
         msgs = []
@@ -376,124 +282,6 @@ def construct_conferr_msg(validator: Validator) -> list[str]:
     indent = '  '
     return create_msg(validator.errors, '')
 
-def construct_conferr_msg_old(validator: Validator) -> list[str]:
-    def create_wrongtype(obj):
-        if type(obj) is list:
-            return 'a sequence'
-        elif type(obj) is dict:
-            return 'a mapping'
-        elif type(obj) is int:
-            return 'an integer'
-        elif type(obj) is float:
-            return 'a float'
-        elif type(obj) is str:
-            return 'a string'
-        raise RuntimeError('Internal logic error. Please file a bug report')
-    msgs = []
-    etree = validator.document_error_tree
-    # if 'author' in etree:
-    #     for err in etree['author'].errors:
-    #         if err.rule == 'required':
-    #             msgs.append(
-    #                 "The 'author' field is required but is not provided"
-    #             )
-    #         elif err.rule == 'type':
-    #             wrongtype = create_wrongtype(err.value)
-    #             msgs.append(
-    #                 f"The 'author' field is required to be a string, but "
-    #                 "{wrongtype} was provided"
-    #             )
-    #         else:
-    #             raise RuntimeError('Internal logic error. Please file a bug report')
-    if 'auth_token' in etree:
-        for err in etree['auth_token'].errors:
-            if err.rule == 'required':
-                msgs.append(
-                    "The 'auth_token' field is required but is not provided"
-                )
-            elif err.rule == 'type':
-                wrongtype = create_wrongtype(err.value)
-                msgs.append(
-                    f"The 'auth_token' field is required to be a mapping, "
-                    "but {wrongtype} was provided"
-                )
-            else:
-                # TODO: can be finer-grained
-                msgs.append(
-                    "The 'auth_token' field is incorrectly specified"
-                )
-    if 'issues_map' in etree:
-        for err in etree['issues_map'].errors:
-            if err.rule == 'required':
-                msgs.append(
-                    "The 'issues_map' field is required but is not provided"
-                )
-            elif err.rule == 'type':
-                wrongtype = create_wrongtype(err.value)
-                msgs.append(
-                    f"The 'issues_map' field is required to be a mapping, but "
-                    "{wrongtype} was provided"
-                )
-            else:
-                # TODO: can be finer-grained
-                msgs.append(
-                    "The 'auth_token' field is incorrectly specified"
-                )
-    # if 'timezone' in etree:
-    #     for err in etree['timezone'].errors:
-    #         if err.rule == 'type':
-    #             wrongtype = create_wrongtype(err.value)
-    #             msgs.append(
-    #                 f"If the 'timezone' field is provided then it is required "
-    #                 'to be a string, but {wrongtype} was provided'
-    #             )
-    #         else:
-    #             raise RuntimeError('Internal logic error. Please file a bug report')
-    if 'checked_in_path' in etree:
-        for err in etree['checked_in_path'].errors:
-            if err.rule == 'type':
-                wrongtype = create_wrongtype(err.value)
-                msgs.append(
-                    f"If the 'checked_in_path' field is provided then it is "
-                    'required to be a string, but {wrongtype} was provided'
-                )
-            else:
-                raise RuntimeError('Internal logic error. Please file a bug report')
-    if 'parse_type' in etree:
-        for err in etree['parse_type'].errors:
-            if err.rule == 'required':
-                msgs.append(
-                    "The 'parse_type' field is required but is not provided"
-                )
-            elif err.rule == 'type':
-                wrongtype = create_wrongtype(err.value)
-                msgs.append(
-                    f"The 'parse_type' field is required to be a string, but "
-                    "{wrongtype} was provided"
-                )
-            elif err.rule == 'allowed':
-                msgs.append(
-                    f"The 'parse_type' field is required to be one of 'csv' or "
-                    "'excel', but {err.value} was provided"
-                )
-            else:
-                raise RuntimeError('Internal logic error. Please file a bug report')
-    if 'parse_delimited' in etree:
-        for err in etree['parse_delimited'].errors:
-            if err.rule == 'type':
-                wrongtype = create_wrongtype(err.value)
-                msgs.append(
-                    f"The 'parse_delimited' field is required to be a mapping, "
-                    "but {wrongtype} was provided"
-                )
-            else:
-                # TODO: can be finer-grained. Remember to use existing section for timezone
-                msgs.append(
-                    "The 'parse_delimited' field is incorrectly specified"
-                )
-    if len(validator._errors) != len(msgs):
-        raise ConfigParseError('Internal logic error. Please file a bug report', validator)
-    return msgs
 
 
 def create_conferrmsg(msgs):
@@ -505,14 +293,6 @@ def create_conferrmsg(msgs):
     for i, v in enumerate(msgs, start=1):
         conferrmsg.append(f'{i}. {v}')
     return '\n'.join(conferrmsg)
-
-
-def mkerrmsg_noenv(field: str, envvar: str) -> str:
-    msg = (
-        f"If the '{field}' field of the 'auth_token' mapping is null then "
-        f"the '{envvar}' environmental variable must be set"
-    )
-    return msg
 
 
 def read_conf(path: Optional[str]) -> Configuration:
