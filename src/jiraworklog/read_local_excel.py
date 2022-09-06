@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from jiraworklog.configuration import Configuration
-# from jiraworklog.read_local_worklogs import read_local_general, read_worklogs_native
+# from jiraworklog.read_local_delimited import read_local_general, read_worklogs_native
 from jiraworklog.read_local_common import (
     create_canon_wkls,
     make_maybe_parse_time_dt,

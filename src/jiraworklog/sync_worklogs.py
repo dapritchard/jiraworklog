@@ -6,7 +6,7 @@ from jira import JIRA
 from jiraworklog.configuration import Configuration, ParseType
 from jiraworklog.confirm_updates import confirm_updates
 from jiraworklog.diff_worklogs import diff_local, diff_remote
-from jiraworklog.read_local_worklogs import read_local_delimited
+from jiraworklog.read_local_delimited import read_local_delimited
 from jiraworklog.read_local_excel import read_local_excel
 from jiraworklog.read_checkedin_worklogs import read_checkedin_worklogs
 from jiraworklog.read_remote_worklogs import read_remote_worklogs
