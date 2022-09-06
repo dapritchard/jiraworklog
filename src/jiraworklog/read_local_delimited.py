@@ -16,24 +16,58 @@ def read_local_delimited(
     worklogs_path: str,
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
-    worklogs_native = read_native_wkls_delimited(worklogs_path)
+    worklogs_native = read_native_wkls_delimited(worklogs_path, conf)
     canon_wkls = create_canon_wkls_delimited(worklogs_native, conf)
     return canon_wkls
 
 
 # Return a list with each entry a row in the CSV
-def read_native_wkls_delimited(worklogs_path: str) -> list[dict[str, Any]]:
-    # TODO: is error handling needed? E.g. wrong number of columns
-    with open(worklogs_path, mode='r') as csv_file:
+#
+# # Get the values provides by the CSV reader default (i.e. `excel`)
+# # Note that the `quoting` attribute corresponds to `csv.QUOTE_MINIMAL`
+# # https://docs.python.org/3/library/csv.html#csv.QUOTE_MINIMAL
+# excel_options = {
+#     x: getattr(csv.excel, x)
+#     for x in dir(csv.excel)
+#     if not x.startswith('_')
+# }
+def read_native_wkls_delimited(
+    worklogs_path: str,
+    conf: Configuration
+) -> list[dict[str, Any]]:
+    dialect_args = construct_dialect_args(conf)
+    with open(worklogs_path, mode='r', newline='') as csv_file:
         entries = []
-        # TODO: support other delimiters and options
-        reader = csv.DictReader(csv_file)
+        reader = csv.DictReader(csv_file, **dialect_args)
         for row in reader:
+            # TODO: check that we have the right number of columns
+            # https://docs.python.org/3/library/csv.html
+            # If a row has more fields than fieldnames, the remaining data is
+            # put in a list and stored with the fieldname specified by restkey
+            # (which defaults to None). If a non-blank row has fewer fields than
+            # fieldnames, the missing values are filled-in with the value of
+            # restval (which defaults to None).
             entries.append(row)
-    # TODO: check that columns align with config specifications. E.g. the column
-    # labels that are specified exist.
     return entries
 
+
+def construct_dialect_args(conf):
+    # Note that the `escapechar` option has a valid value of `None`. In general
+    # the configuration schema allows for values of `None` to have the same
+    # meaning as omitting the field, which for the fields in `dialect`
+    # correspond to using the default value. Since `None` is the default for the
+    # `escapechar` option the semantics are aligned, but if that were to change
+    # we would need to change the use of `None` to correspond to the default
+    # value (for that field, at least).
+    if conf.parse_delimited is None:
+        raise RuntimeError('Internal logic error. Please file a bug report')
+    dialect = conf.parse_delimited.get('dialect')
+    dialect_args = {'strict': True}
+    if dialect:
+        for k, v in dialect.items():
+            if v:
+                dialect_args[k] = v
+    return dialect_args
 
 def create_canon_wkls_delimited(worklogs_native, conf):
     if conf.parse_delimited is None:
