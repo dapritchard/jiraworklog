@@ -4,6 +4,7 @@ from jiraworklog.configuration import Configuration
 # from jiraworklog.read_local_delimited import read_local_general, read_worklogs_native
 from jiraworklog.read_local_common import (
     create_canon_wkls,
+    make_maybe_parse_duration,
     make_maybe_parse_time_dt,
     make_parse_field,
     make_parse_tags
@@ -68,7 +69,7 @@ def create_canon_wkls_excel(worklogs_native, conf):
         parse_description=make_parse_field(cl['description']),
         parse_start=make_maybe_parse_time_dt(cl.get('start'), maybe_tz),
         parse_end=make_maybe_parse_time_dt(cl.get('end'), maybe_tz),
-        parse_duration=lambda _: None, # FIXME
+        parse_duration=make_maybe_parse_duration(cl.get('duration')),
         parse_tags=make_parse_tags(cl['tags'], pe.get('delimiter2'))
     )
     return canon_wkls

@@ -161,6 +161,13 @@ def make_maybe_parse_time_str(maybe_key, maybe_fmt_str, maybe_tz):
         return make_parse_time_str(maybe_key, maybe_fmt_str, maybe_tz)
 
 
+def make_maybe_parse_duration(maybe_key):
+    if maybe_key is None:
+        return lambda _: None
+    else:
+        return make_parse_duration(maybe_key)
+
+
 def make_parse_time_dt(key, tz_maybestr):
     def parse_time_dt(entry):
         dt = entry[key]
@@ -175,6 +182,45 @@ def make_parse_time_str(key, fmt_str, tz_maybestr):
         dt_aware = add_tzinfo(dt, tz_maybestr)
         return dt_aware
     return parse_time_str
+
+
+# def make_parse_duration(key):
+def make_parse_duration(key):
+
+    def chomp(duration_str, re_str, unit_secs):
+        match = re.match(re_str, duration_str)
+        if match:
+            count = match.group(2)
+            n_secs = int(count) * unit_secs
+            new_str = duration_str[len(match.group(0)):]
+            return (new_str, n_secs)
+        else:
+            return (duration_str, 0)
+
+    def parse_duration(entry) -> int:
+
+        params = [
+            (r'(\s*)?(\d+)w', 604800),
+            (r'(\s*)?(\d+)d',  86400),
+            (r'(\s*)?(\d+)h',   3600),
+            (r'(\s*)?(\d+)m',     60),
+            (r'(\s*)?(\d+)s',      1)
+        ]
+
+        total_secs = 0
+        duration_str = entry[key]
+        for re_str, unit_secs in params:
+            duration_str, n_secs = chomp(duration_str, re_str, unit_secs)
+            total_secs += n_secs
+
+        if duration_str.lstrip():
+            raise RuntimeError(f"Invalid duration entry format: '{entry[key]}'")
+        elif total_secs < 60:
+            raise RuntimeError(f"Duration entry < 60 seconds: '{entry[key]}'")
+        else:
+            return total_secs
+
+    return parse_duration
 
 
 def make_parse_tags(tags_key: str, maybe_delimiter2: Optional[str]): # TODO: return type
