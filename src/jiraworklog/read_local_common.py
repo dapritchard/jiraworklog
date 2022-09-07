@@ -184,7 +184,6 @@ def make_parse_time_str(key, fmt_str, tz_maybestr):
     return parse_time_str
 
 
-# def make_parse_duration(key):
 def make_parse_duration(key):
 
     def chomp(duration_str, re_str, unit_secs):
@@ -200,10 +199,10 @@ def make_parse_duration(key):
     def parse_duration(entry) -> int:
 
         params = [
-            (r'(\s*)?(\d+)w', 604800),
-            (r'(\s*)?(\d+)d',  86400),
-            (r'(\s*)?(\d+)h',   3600),
-            (r'(\s*)?(\d+)m',     60),
+            (r'(\s*)?(\d+)w', 604800),  # 60 * 60 * 24 * 7
+            (r'(\s*)?(\d+)d',  86400),  # 60 * 60 * 24
+            (r'(\s*)?(\d+)h',   3600),  # 60 * 60
+            (r'(\s*)?(\d+)m',     60),  # 60
             (r'(\s*)?(\d+)s',      1)
         ]
 
@@ -215,8 +214,6 @@ def make_parse_duration(key):
 
         if duration_str.lstrip():
             raise RuntimeError(f"Invalid duration entry format: '{entry[key]}'")
-        elif total_secs < 60:
-            raise RuntimeError(f"Duration entry < 60 seconds: '{entry[key]}'")
         else:
             return total_secs
 
