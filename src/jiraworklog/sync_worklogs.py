@@ -38,13 +38,14 @@ def sync_worklogs(
         remote_wkls
     )
     if not cmdline_args.auto_confirm:
-        confirm_updates(update_instrs)
+        confirm_updates(update_instrs, cmdline_args.dry_run)
     try:
         if not cmdline_args.dry_run:
             update_instrs.push_worklogs(checkedin_wkls, jira)
     finally:
         checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
         if not cmdline_args.dry_run and write_checkedin:
+            # FIXME
             with open(conf.checked_in_path, "w") as file:
                 json.dump(obj=checkedin_full, fp=file, indent=4)
     return (jira, checkedin_full, update_instrs)

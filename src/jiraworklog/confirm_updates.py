@@ -8,7 +8,17 @@ def unconditional_updates(_: UpdateInstructions) -> None:
     pass
 
 
-def confirm_updates(update_instrs: UpdateInstructions) -> None:
+def confirm_updates(
+    update_instrs: UpdateInstructions,
+    is_dry_run: bool
+) -> None:
+    if is_dry_run:
+        confirm_updates_dryrun_yes(update_instrs)
+    else:
+        confirm_updates_dryrun_no(update_instrs)
+
+
+def confirm_updates_dryrun_no(update_instrs: UpdateInstructions) -> None:
     n_updates = calc_n_updates(update_instrs)
     if n_updates == 0:
         print('There are no changes to be made')
@@ -27,6 +37,15 @@ def confirm_updates(update_instrs: UpdateInstructions) -> None:
             'updates? [y/n]: '
         )
         print(msg, end='')
+
+
+def confirm_updates_dryrun_yes(update_instrs: UpdateInstructions) -> None:
+    n_updates = calc_n_updates(update_instrs)
+    if n_updates == 0:
+        print('Dry run. There are no changes to be made')
+        return
+    print('\nDry run. The following changes would be made')
+    print(fmt_changes(update_instrs))
 
 
 def fmt_changes(update_instr: UpdateInstructions) -> str:
