@@ -174,11 +174,6 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                             'nullable': True,
                             'required': False,
                             'type': 'string'
-                        },
-                        'duration': {
-                            'nullable': True,
-                            'required': False,
-                            'type': 'string'
                         }
                     }
                 },
@@ -279,7 +274,6 @@ def perform_additional_checks(
         has_cl_duration = cl.get('duration') is not None
         has_cf_start = cf.get('start') is not None
         has_cf_end = cf.get('end') is not None
-        has_cf_duration = cf.get('duration') is not None
 
         if has_cl_start + has_cl_end + has_cl_duration <= 1:
             msg = "must have at least two of 'start', 'end', or 'duration'"
@@ -291,10 +285,6 @@ def perform_additional_checks(
 
         if has_cl_end and not has_cf_end:
             msg = "no formatting information provided for the 'end' column"
-            tl.append(msg)
-
-        if has_cl_duration and not has_cf_duration:
-            msg = "no formatting information provided for the 'duration' column"
             tl.append(msg)
 
     # TODO: ensure delimiter2 isn't empty if non-None (has exactly one character?)

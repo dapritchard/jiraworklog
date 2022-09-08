@@ -23,6 +23,5 @@ parse_delimited:
   col_formats:
     start: "%Y-%m-%d %H:%M"
     end: "%Y-%m-%d %H:%M"
-    duration: null
   delimiter2: ":"
   timezone: "US/Eastern"
