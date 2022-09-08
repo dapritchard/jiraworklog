@@ -5,5 +5,5 @@ build
 htmlcov
 env
 
-# Where we write files when testing
-/tests/temp
+# Excel litters the filesystem with stub files prepended by `~$`
+~$*

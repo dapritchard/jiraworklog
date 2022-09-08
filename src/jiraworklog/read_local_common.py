@@ -153,7 +153,7 @@ def make_maybe_parse_time_dt(maybe_key, maybe_tz):
     if maybe_key is None:
         return lambda _: None
     else:
-        return make_parse_time_dt(key, maybe_tz)
+        return make_parse_time_dt(maybe_key, maybe_tz)
 
 
 def make_maybe_parse_time_str(maybe_key, maybe_fmt_str, maybe_tz):
@@ -224,7 +224,7 @@ def make_parse_duration(key):
 
 def make_parse_tags(tags_key: str, maybe_delimiter2: Optional[str]): # TODO: return type
     if maybe_delimiter2 is None:
-        return lambda entry: set(entry[tags_key])
+        return lambda entry: set([entry[tags_key]])
     else:
         return lambda entry: set(entry[tags_key].split(maybe_delimiter2))
 
