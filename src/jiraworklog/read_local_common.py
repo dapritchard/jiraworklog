@@ -26,22 +26,20 @@ class Interval:
 def create_interval(
     maybe_start: Optional[datetime],
     maybe_end: Optional[datetime],
-    maybe_duration: Optional[int]
+    maybe_duration: Optional[timedelta]
 ) -> Interval:
 
-    has_start = maybe_start is not None
-    has_end = maybe_end is not None
-    has_duration = maybe_duration is not None
-
-    if has_start and has_end and has_duration:
-        # TODO: check that all three values are consistent
+    if maybe_start and maybe_end and maybe_duration:
         iv = Interval(maybe_start, maybe_end - maybe_start)
-    elif has_start and has_end:
+        diff = iv.duration.total_seconds() - maybe_duration.total_seconds()
+        if abs(diff) > 1.0:
+            raise RuntimeError('Inconsistent start, end, and duration entries.')
+    elif maybe_start and maybe_end:
         iv = Interval(maybe_start, maybe_end - maybe_start)
-    elif has_start and has_duration:
-        raise RuntimeError('Not yet implemented: has_start and has_duration')
-    elif has_end and has_duration:
-        raise RuntimeError('Not yet implemented: has_end and has_duration')
+    elif maybe_start and maybe_duration:
+        iv = Interval(maybe_start, maybe_duration)
+    elif maybe_end and maybe_duration:
+        iv = Interval(maybe_end - maybe_duration, maybe_duration)
     else:
         # This case should already be caught at configuration file parse time
         raise RuntimeError('Internal logic error. Please file a bug report')
