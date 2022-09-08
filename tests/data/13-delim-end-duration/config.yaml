@@ -16,12 +16,12 @@ parse_delimited:
     delimiter: ","
   col_labels:
     description: "task"
-    start: "start"
-    end: null
+    start: null
+    end: "end"
     duration: "duration"
     tags: "tags"
   col_formats:
-    start: "%Y-%m-%d %H:%M"
-    end: null
+    start: null
+    end: "%Y-%m-%d %H:%M"
   delimiter2: ":"
   timezone: "US/Eastern"

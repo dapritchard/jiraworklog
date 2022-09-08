@@ -1,0 +1,29 @@
+[
+    {
+        "action": "add",
+        "worklog": {
+            "issue": "P01",
+            "timeSpentSeconds": "1800",
+            "comment": "Data pipeline",
+            "started": "2021-01-12T10:00:00.000000-0500"
+        }
+    },
+    {
+        "action": "add",
+        "worklog": {
+            "issue": "P01",
+            "timeSpentSeconds": "3600",
+            "comment": "Write specifications",
+            "started": "2021-01-12T13:15:00.000000-0500"
+        }
+    },
+    {
+        "action": "add",
+        "worklog": {
+            "issue": "P02",
+            "timeSpentSeconds": "4500",
+            "comment": "Add routines",
+            "started": "2021-01-12T15:45:00.000000-0500"
+        }
+    }
+]
