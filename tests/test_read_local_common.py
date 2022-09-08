@@ -119,6 +119,14 @@ def test_make_parse_duration_invalidformat():
     with pytest.raises(RuntimeError):
         parse_duration({'t': '9 h'})
 
+    # Missing count
+    with pytest.raises(RuntimeError):
+        parse_duration({'t': '9h m'})
+
+    # Missing count
+    with pytest.raises(RuntimeError):
+        parse_duration({'t': 'h 6m'})
+
     # Invalid unit
     with pytest.raises(RuntimeError):
         parse_duration({'t': '9Z'})
@@ -126,6 +134,14 @@ def test_make_parse_duration_invalidformat():
     # Invalid unit
     with pytest.raises(RuntimeError):
         parse_duration({'t': '9hm'})
+
+    # Invalid count
+    with pytest.raises(RuntimeError):
+        parse_duration({'t': '0x3h m'})
+
+    # Invalid count
+    with pytest.raises(RuntimeError):
+        parse_duration({'t': '2 3h m'})
 
     # Negative count
     with pytest.raises(RuntimeError):

@@ -7,7 +7,8 @@ from jiraworklog.read_local_common import (
     make_maybe_parse_duration,
     make_maybe_parse_time_str,
     make_parse_field,
-    make_parse_tags
+    make_parse_tags,
+    smart_open
 )
 from jiraworklog.worklogs import WorklogCanon
 from typing import Any
@@ -37,7 +38,8 @@ def read_native_wkls_delimited(
     conf: Configuration
 ) -> list[dict[str, Any]]:
     dialect_args = construct_dialect_args(conf)
-    with open(worklogs_path, mode='r', newline='') as csv_file:
+    with smart_open(worklogs_path, mode='r', newline='') as csv_file:
+    # with open(worklogs_path, mode='r', newline='') as csv_file:
         entries = []
         reader = csv.DictReader(csv_file, **dialect_args)
         for row in reader:

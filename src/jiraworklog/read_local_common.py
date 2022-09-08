@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
+import contextlib
 from datetime import datetime, timedelta
 from jiraworklog.worklogs import WorklogCanon
 import pytz
 import re
+import sys
 from typing import Any, Callable, Optional
 
 
@@ -199,10 +201,10 @@ def make_parse_duration(key):
     def parse_duration(entry) -> int:
 
         params = [
-            (r'(\s*)?(\d+)w', 604800),  # 60 * 60 * 24 * 7
-            (r'(\s*)?(\d+)d',  86400),  # 60 * 60 * 24
-            (r'(\s*)?(\d+)h',   3600),  # 60 * 60
-            (r'(\s*)?(\d+)m',     60),  # 60
+            (r'(\s*)?(\d+)w', 604800),  # seconds in a week:   60 * 60 * 24 * 7
+            (r'(\s*)?(\d+)d',  86400),  # seconds in a day:    60 * 60 * 24
+            (r'(\s*)?(\d+)h',   3600),  # seconds in an hour:  60 * 60
+            (r'(\s*)?(\d+)m',     60),  # seconds in a minute: 60
             (r'(\s*)?(\d+)s',      1)
         ]
 
@@ -241,3 +243,17 @@ def micro_to_milli(time_str: str) -> str:
     pattern = r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3})\d{3}(-\d{4})'
     out = re.sub(pattern, "\\1\\2", time_str)
     return out
+
+
+# Adapted from https://stackoverflow.com/a/17603000/5518304
+@contextlib.contextmanager
+def smart_open(path, *args, **kargs):
+    if path:
+        fh = open(path, *args, **kargs)
+    else:
+        fh = sys.stdin
+    try:
+        yield fh
+    finally:
+        if fh is not sys.stdin:
+            fh.close()

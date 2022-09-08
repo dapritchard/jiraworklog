@@ -256,7 +256,7 @@ def perform_additional_checks(
     has_auth_token = raw.get('auth_token') is not None
     has_auth_openauth = raw.get('auth_openauth') is not None
     if not (has_auth_token or has_auth_openauth):
-        tl.append("must have either 'auth_token' or 'auth_openauth")
+        tl.append("must have either 'auth_token' or 'auth_openauth'")
     elif has_auth_token and has_auth_openauth:
         tl.append("cannot have both 'auth_token' and 'auth_openauth")
 
