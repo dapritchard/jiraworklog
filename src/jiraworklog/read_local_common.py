@@ -186,7 +186,7 @@ def make_parse_time_str(key, fmt_str, tz_maybestr):
     return parse_time_str
 
 
-def make_parse_duration(key):
+def make_parse_duration(key: str):
 
     def chomp(duration_str, re_str, unit_secs):
         match = re.match(re_str, duration_str)
@@ -198,7 +198,7 @@ def make_parse_duration(key):
         else:
             return (duration_str, 0)
 
-    def parse_duration(entry) -> int:
+    def parse_duration(entry) -> timedelta:
 
         params = [
             (r'(\s*)?(\d+)w', 604800),  # seconds in a week:   60 * 60 * 24 * 7
@@ -217,7 +217,7 @@ def make_parse_duration(key):
         if duration_str.lstrip():
             raise RuntimeError(f"Invalid duration entry format: '{entry[key]}'")
         else:
-            return total_secs
+            return timedelta(seconds=total_secs)
 
     return parse_duration
 

@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 
+from datetime import timedelta
 from jiraworklog.read_local_common import make_parse_duration
 import pytest
+
+def assert_timdelta(actual: timedelta, expected_secs: int):
+    expected = timedelta(seconds=expected_secs)
+    assert actual == expected
+
 
 units = {
     'w': 604800,  # number of seconds in a week
@@ -18,11 +24,11 @@ def test_make_parse_duration_empty():
 
     actual = parse_duration({'t': ''})
     expected = 0
-    assert actual == expected
+    assert_timdelta(actual, expected)
 
     actual = parse_duration({'t': '   '})
     expected = 0
-    assert actual == expected
+    assert_timdelta(actual, expected)
 
 
 def test_make_parse_duration_solo():
@@ -31,51 +37,51 @@ def test_make_parse_duration_solo():
     actual0 = parse_duration({'t': '0w'})
     actual1 = parse_duration({'t': '1w'})
     actual15 = parse_duration({'t': '15w'})
-    assert actual0 == 0 * units['w']
-    assert actual1 == 1 * units['w']
-    assert actual15 == 15 * units['w']
+    assert_timdelta(actual0, 0 * units['w'])
+    assert_timdelta(actual1, 1 * units['w'])
+    assert_timdelta(actual15, 15 * units['w'])
 
     actual0 = parse_duration({'t': '0d'})
     actual1 = parse_duration({'t': '1d'})
     actual15 = parse_duration({'t': '15d'})
-    assert actual0 == 0 * units['d']
-    assert actual1 == 1 * units['d']
-    assert actual15 == 15 * units['d']
+    assert_timdelta(actual0, 0 * units['d'])
+    assert_timdelta(actual1, 1 * units['d'])
+    assert_timdelta(actual15, 15 * units['d'])
 
     actual0 = parse_duration({'t': '0h'})
     actual1 = parse_duration({'t': '1h'})
     actual15 = parse_duration({'t': '15h'})
-    assert actual0 == 0 * units['h']
-    assert actual1 == 1 * units['h']
-    assert actual15 == 15 * units['h']
+    assert_timdelta(actual0, 0 * units['h'])
+    assert_timdelta(actual1, 1 * units['h'])
+    assert_timdelta(actual15, 15 * units['h'])
 
     actual0 = parse_duration({'t': '0m'})
     actual1 = parse_duration({'t': '1m'})
     actual15 = parse_duration({'t': '15m'})
-    assert actual0 == 0 * units['m']
-    assert actual1 == 1 * units['m']
-    assert actual15 == 15 * units['m']
+    assert_timdelta(actual0, 0 * units['m'])
+    assert_timdelta(actual1, 1 * units['m'])
+    assert_timdelta(actual15, 15 * units['m'])
 
     actual0 = parse_duration({'t': '0s'})
     actual1 = parse_duration({'t': '1s'})
     actual15 = parse_duration({'t': '15s'})
-    assert actual0 == 0 * units['s']
-    assert actual1 == 1 * units['s']
-    assert actual15 == 15 * units['s']
+    assert_timdelta(actual0, 0 * units['s'])
+    assert_timdelta(actual1, 1 * units['s'])
+    assert_timdelta(actual15, 15 * units['s'])
 
     actual_ws_left = parse_duration({'t': '  1w'})
     actual_ws_right = parse_duration({'t': '1w  '})
     actual_ws_both = parse_duration({'t': '  1w  '})
-    assert actual_ws_left == 1 * units['w']
-    assert actual_ws_right == 1 * units['w']
-    assert actual_ws_both == 1 * units['w']
+    assert_timdelta(actual_ws_left, 1 * units['w'])
+    assert_timdelta(actual_ws_right, 1 * units['w'])
+    assert_timdelta(actual_ws_both, 1 * units['w'])
 
     actual_ws_left = parse_duration({'t': '  1s'})
     actual_ws_right = parse_duration({'t': '1s  '})
     actual_ws_both = parse_duration({'t': '  1s  '})
-    assert actual_ws_left == 1 * units['s']
-    assert actual_ws_right == 1 * units['s']
-    assert actual_ws_both == 1 * units['s']
+    assert_timdelta(actual_ws_left, 1 * units['s'])
+    assert_timdelta(actual_ws_right, 1 * units['s'])
+    assert_timdelta(actual_ws_both, 1 * units['s'])
 
 
 def test_make_parse_duration_multipleunits():
@@ -88,18 +94,18 @@ def test_make_parse_duration_multipleunits():
     expected = (
         1*units['w'] + 2*units['d'] + 3*units['h'] + 10*units['m'] + 30*units['s']
     )
-    assert actual_0 == expected
-    assert actual_1 == expected
-    assert actual_2 == expected
+    assert_timdelta(actual_0, expected)
+    assert_timdelta(actual_1, expected)
+    assert_timdelta(actual_2, expected)
 
     # Some but not all units
     actual_0 = parse_duration({'t': '2d 10m'})
     actual_1 = parse_duration({'t': '  2d 10m  '})
     actual_2 = parse_duration({'t': '2d10m'})
     expected = 2*units['d'] + 10*units['m']
-    assert actual_0 == expected
-    assert actual_1 == expected
-    assert actual_2 == expected
+    assert_timdelta(actual_0, expected)
+    assert_timdelta(actual_1, expected)
+    assert_timdelta(actual_2, expected)
 
 
 def test_make_parse_duration_invalidkey():
