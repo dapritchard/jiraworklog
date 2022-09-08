@@ -9,9 +9,9 @@ from jiraworklog.sync_worklogs import sync_worklogs
 from jiraworklog.read_checkedin_worklogs import confirm_new_checkedin, unconditional_new_checkedin
 import sys
 
-parsed_args = parser.parse_args()
+cmdline_args = parser.parse_args()
 # TODO: this is also in `run_application.py`, let's extract it
-if parsed_args.auto_confirm:
+if cmdline_args.auto_confirm:
     actions = {
         'confirm_new_checkedin': unconditional_new_checkedin,
         'confirm_updates': unconditional_updates
@@ -22,8 +22,8 @@ else:
         'confirm_updates': confirm_updates
     }
 try:
-    conf = read_conf(parsed_args.config_path)
+    conf = read_conf(cmdline_args.config_path)
     jira = auth_jira(conf)
-    sync_worklogs(jira, conf, parsed_args, parsed_args.file, actions, True)
+    sync_worklogs(jira, conf, cmdline_args, cmdline_args.file, actions, True)
 except Exception as exc:
     sys.exit(str(exc))

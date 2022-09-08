@@ -74,7 +74,7 @@ def exercise_system(
 ) -> Tuple[JIRAMock, dict[str, Any], UpdateInstructions]:
     inpaths = resolve_inpaths(input_dir)
     upd_args = (
-        [inpaths['worklogs'], '--config-path', inpaths['config']]
+        ['--file', inpaths['worklogs'], '--config-path', inpaths['config']]
         + ([] if args is None else args)
     )
     out = run_application(
