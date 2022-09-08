@@ -11,6 +11,7 @@ test_02 = create_apptest('tests/data/02-add-to-empty/')
 test_03 = create_apptest('tests/data/03-remove-to-empty/')
 test_12 = create_apptest('tests/data/12-delim-start-duration/')
 test_13 = create_apptest('tests/data/13-delim-end-duration/')
+test_14 = create_apptest('tests/data/14-delim-start-end-duration/')
 test_99 = create_apptest('tests/data/99-excel-add-to-empty/')
 
 

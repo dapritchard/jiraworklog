@@ -1,0 +1,4 @@
+task,start,end,duration,tags
+Data pipeline,2021-01-12 10:00,2021-01-12 10:30,30m,p1
+Write specifications,2021-01-12 13:15,2021-01-12 14:15,1h,p1
+Add routines,2021-01-12 15:45,2021-01-12 17:00,1h 15m,p2
