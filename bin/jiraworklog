@@ -10,6 +10,12 @@ from jiraworklog.read_checkedin_worklogs import confirm_new_checkedin, unconditi
 import sys
 
 cmdline_args = parser.parse_args()
+
+is_need_response = not (cmdline_args.auto_confirm or cmdline_args.dry_run)
+if not cmdline_args.file and is_need_response:
+    msg = 'Error: must have set --auto-confirm when reading worklogs from standard input'
+    sys.exit(msg)
+
 # TODO: this is also in `run_application.py`, let's extract it
 if cmdline_args.auto_confirm:
     actions = {
