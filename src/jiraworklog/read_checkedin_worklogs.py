@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
-from jiraworklog.configuration import Configuration, resolve_checkedin_path
+from jiraworklog.configuration import Configuration, check_default_checkedin_path, resolve_checkedin_path
 # from jiraworklog.diff_worklogs import map_worklogs
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCheckedin
-import os.path
-from typing import Any, Callable
+from typing import Any
 
 def read_checkedin_worklogs(
-     conf: Configuration,
-     actions: dict[str, Callable[..., Any]]
+    conf: Configuration# ,
+    # actions: dict[str, Callable[..., Any]]
 ) -> dict[str, list[WorklogCheckedin]]:
-    is_default_path = conf.checked_in_path is None
     checkedin_path = resolve_checkedin_path(conf)
+    # TODO: there's actually two possible errors here, right? An error trying to
+    # read the file, and an invalid JSON format
     try:
         with open(checkedin_path) as checkedin_file:
             worklogs_raw = json.load(checkedin_file)
     except:
-        worklogs_raw = actions['confirm_new_checkedin'](
-            checkedin_path,
-            is_default_path # TODO: is this used?
-        )
+        worklogs_raw = confirm_new_checkedin(checkedin_path, conf)
     # TODO: validate contents
     align_checkedin_with_conf(worklogs_raw, conf)
     worklogs = map_worklogs_key(WorklogCheckedin, worklogs_raw)
@@ -58,11 +56,21 @@ def unconditional_new_checkedin(
 
 def confirm_new_checkedin(
     checkedin_path: str,
-    is_default_path: bool
-) -> dict[str, dict[str, str]]:
+    conf: Configuration,
+    cmdline_args: argparse.Namespace
+# ) -> dict[str, dict[str, str]]:
+) -> None:
+
+    # TODO: for --dry-run this effectively adds a file to the filesystem. Should
+    # we try to remove it afterwards or just refuse to do it in the first place?
+    if cmdline_args.auto_confirm or cmdline_args.dry_run:
+        return
+
     # TODO: see https://docs.python.org/3/library/textwrap.html for a way to
     # properly wrap these paragraphs
-    if is_default_path:
+    if check_default_checkedin_path(conf):
+        # TODO: there is lot's of duplication in these paragraphs, let's try to
+        # consolidate
         msg = (
             'jiraworklog stores a file on disk to track which worklogs that '
             'it is aware of, however it is unable to find the checked-in '

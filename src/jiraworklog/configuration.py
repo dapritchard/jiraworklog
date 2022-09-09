@@ -348,6 +348,11 @@ def resolve_checkedin_path(conf: Configuration) -> str:
     return checkedin_path
 
 
+def check_default_checkedin_path(conf: Configuration):
+    is_default_path = conf.checked_in_path is None
+    return is_default_path
+
+
 # Jira issues can be identified by either ID or by key. IDs are immutable but
 # # keys can change, for example when an issue moves to another project. See
 # # https://community.atlassian.com/t5/Agile-questions/Unique-Issue-ID-where-do-we-stand/qaq-p/586280?tempId=eyJvaWRjX2NvbnNlbnRfbGFuZ3VhZ2VfdmVyc2lvbiI6IjIuMCIsIm9pZGNfY29uc2VudF9ncmFudGVkX2F0IjoxNjMyMTU0MzIzNDMxfQ%3D%3D

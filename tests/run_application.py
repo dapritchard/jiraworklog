@@ -16,17 +16,7 @@ def run_application(
     mockremote_inpath: str
 ) -> Tuple[JIRAMock, dict[str, Any], UpdateInstructions]:
     parsed_args = parser.parse_args(args)
-    if parsed_args.auto_confirm:
-        actions = {
-            'confirm_new_checkedin': unconditional_new_checkedin,
-            'confirm_updates': unconditional_updates
-        }
-    else:
-        actions = {
-            'confirm_new_checkedin': confirm_new_checkedin,
-            'confirm_updates': confirm_updates
-        }
     conf = read_conf(parsed_args.config_path)
     conf.checked_in_path = checkedin_inpath
     jiramock = init_jira(mockremote_inpath)
-    return sync_worklogs(jiramock, conf, parsed_args, parsed_args.file, actions)
+    return sync_worklogs(jiramock, conf, parsed_args, parsed_args.file, False)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 from datetime import timedelta
 from jiraworklog.update_instructions import UpdateInstructions, calc_issue_max_strwidth, calc_n_updates, strptime_ptl
 
@@ -10,45 +11,61 @@ def unconditional_updates(_: UpdateInstructions) -> None:
 
 def confirm_updates(
     update_instrs: UpdateInstructions,
-    is_dry_run: bool
+    cmdline_args: argparse.Namespace
 ) -> None:
-    if is_dry_run:
-        confirm_updates_dryrun_yes(update_instrs)
+    update_msgs = fmt_updates(update_instrs, cmdline_args)
+    print('\n'.join(update_msgs))
+    is_noconfirm = (
+        cmdline_args.dry_run
+        or cmdline_args.auto_confirm
+        or calc_n_updates(update_instrs) == 0
+    )
+    if not is_noconfirm:
+        print('Do you want to proceed with the updates? [y/n]: ', end='')
+        while True:
+            response = input()
+            if response == 'y':
+                return
+            elif response == 'n':
+                raise RuntimeError('User specified exit')
+            msg = (
+                f"Invalid response '{response}'. Do you want to proceed with the "
+                'updates? [y/n]: '
+            )
+            print(msg, end='')
+
+
+def fmt_updates(
+    update_instrs: UpdateInstructions,
+    cmdline_args: argparse.Namespace
+) -> list[str]:
+
+    # TODO: maybe --auto-confirm has the same message as "regular" mode?
+    if cmdline_args.auto_confirm:
+        header_fragm = 'Auto-confirm. '
+        changes_fragm = 'The following changes will be made.'
+    elif cmdline_args.dry_run:
+        header_fragm = 'Dry run. '
+        changes_fragm = 'The following changes would be made.'
     else:
-        confirm_updates_dryrun_no(update_instrs)
+        header_fragm = ''
+        changes_fragm = 'The following changes will be made.'
 
-
-def confirm_updates_dryrun_no(update_instrs: UpdateInstructions) -> None:
     n_updates = calc_n_updates(update_instrs)
     if n_updates == 0:
-        print('There are no changes to be made')
-        return
-    print('\nThe following changes will be made')
-    print(fmt_changes(update_instrs))
-    print('Do you want to proceed with the updates? [y/n]: ', end='')
-    while True:
-        response = input()
-        if response == 'y':
-            return
-        elif response == 'n':
-            raise RuntimeError('User specified exit')
-        msg = (
-            f"Invalid response '{response}'. Do you want to proceed with the "
-            'updates? [y/n]: '
-        )
-        print(msg, end='')
+        update_msgs = [f'{header_fragm}There are no changes to be made']
+    else:
+        update_msgs = [
+            '',
+            f'{header_fragm}{changes_fragm}',
+            ''
+        ]
+        update_msgs.extend(fmt_changes(update_instrs))
+
+    return update_msgs
 
 
-def confirm_updates_dryrun_yes(update_instrs: UpdateInstructions) -> None:
-    n_updates = calc_n_updates(update_instrs)
-    if n_updates == 0:
-        print('Dry run. There are no changes to be made')
-        return
-    print('\nDry run. The following changes would be made')
-    print(fmt_changes(update_instrs))
-
-
-def fmt_changes(update_instr: UpdateInstructions) -> str:
+def fmt_changes(update_instr: UpdateInstructions) -> list[str]:
 
     def add_padding(s: str, w: int) -> str:
         padding = ' ' * (w - len(s))
@@ -99,7 +116,7 @@ def fmt_changes(update_instr: UpdateInstructions) -> str:
     issue_max_strwidth = calc_issue_max_strwidth(update_instr)
     pad = lambda x: add_padding(x, issue_max_strwidth)
     fmt_worklogs_ptl = lambda x: fmt_worklogs(x, pad)
-    changes = ['']
+    changes = []
     if len(update_instr.chk_add_listwkl) >= 1:
         changes.append('-- Add to checked-in worklogs only -------------------------')
         changes.extend(fmt_worklogs_ptl(update_instr.chk_add_listwkl))
@@ -116,4 +133,5 @@ def fmt_changes(update_instr: UpdateInstructions) -> str:
         changes.append('-- Remove from remote worklogs -----------------------------')
         changes.extend(fmt_worklogs_ptl(update_instr.rmt_remove_listwkl))
         changes.append('')
-    return '\n'.join(changes)
+
+    return changes
