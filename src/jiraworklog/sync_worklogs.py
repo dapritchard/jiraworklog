@@ -3,7 +3,7 @@
 # from datetime import datetime
 import argparse
 from jira import JIRA
-from jiraworklog.configuration import Configuration, ParseType
+from jiraworklog.configuration import Configuration, ParseType, resolve_checkedin_path
 from jiraworklog.confirm_updates import confirm_updates
 from jiraworklog.diff_worklogs import diff_local, diff_remote
 from jiraworklog.read_local_delimited import read_local_delimited
@@ -46,7 +46,7 @@ def sync_worklogs(
         checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
         if not cmdline_args.dry_run and write_checkedin:
             # FIXME
-            with open(conf.checked_in_path, "w") as file:
+            with open(resolve_checkedin_path(conf), "w") as file:
                 json.dump(obj=checkedin_full, fp=file, indent=4)
     return (jira, checkedin_full, update_instrs)
 

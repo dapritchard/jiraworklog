@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import json
-from jiraworklog.configuration import Configuration
+from jiraworklog.configuration import Configuration, resolve_checkedin_path
 # from jiraworklog.diff_worklogs import map_worklogs
 from jiraworklog.utils import map_worklogs_key
 from jiraworklog.worklogs import WorklogCheckedin
@@ -12,23 +12,15 @@ def read_checkedin_worklogs(
      conf: Configuration,
      actions: dict[str, Callable[..., Any]]
 ) -> dict[str, list[WorklogCheckedin]]:
-    if conf.checked_in_path is None:
-        is_default_path = True
-        raw_path = ''
-        checkedin_path = os.path.expanduser(
-            '~/.config/jira-worklog/checked-in-worklogs.json'
-        )
-    else:
-        is_default_path = False
-        raw_path = conf.checked_in_path
-        checkedin_path = os.path.expanduser(raw_path)
+    is_default_path = conf.checked_in_path is None
+    checkedin_path = resolve_checkedin_path(conf)
     try:
         with open(checkedin_path) as checkedin_file:
             worklogs_raw = json.load(checkedin_file)
     except:
         worklogs_raw = actions['confirm_new_checkedin'](
             checkedin_path,
-            is_default_path
+            is_default_path # TODO: is this used?
         )
     # TODO: validate contents
     align_checkedin_with_conf(worklogs_raw, conf)

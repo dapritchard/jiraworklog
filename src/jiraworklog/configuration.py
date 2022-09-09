@@ -31,7 +31,8 @@ class Configuration:
     auth_oath: None
     issues_map: dict[str, str]
     issue_nms: list[str]
-    checked_in_path: Optional[str]  # TODO: try to convert this to timezone here
+    checked_in_path: Optional[str]  # TODO: try to convert this to timezone here. <-- Huh?
+    # TODO: change to `checkedin_path` for consistency elsewhere
     parse_type: str
     parse_delimited: Optional[dict[str, Any]]
     parse_excel: Optional[dict[str, Any]]
@@ -338,6 +339,13 @@ def get_parse_type(raw: dict[str, Any]) -> ParseType:
         return ParseType.EXCEL
     else:
         raise RuntimeError('Internal logic error. Please file a bug report')
+
+
+def resolve_checkedin_path(conf: Configuration) -> str:
+    path = conf.checked_in_path
+    default = '~/.config/jira-worklog/checked-in-worklogs.json'
+    checkedin_path = os.path.expanduser(path if path else default)
+    return checkedin_path
 
 
 # Jira issues can be identified by either ID or by key. IDs are immutable but
