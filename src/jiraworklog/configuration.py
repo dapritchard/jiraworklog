@@ -10,27 +10,7 @@ import yaml
 from typing import Any, Optional
 
 ParseType = Enum('ParseType', ['DELIMITED', 'EXCEL'])
-
-
-class ConfigOSError(RuntimeError):
-
-    def __str__(self) -> str:
-        header = 'Error reading the configuration file\n\n'
-        msg = header + str(self.__cause__)
-        return msg
-
-
-class ConfigParseError(RuntimeError):
-
-    validator: Optional[Validator]
-
-    def __init__(
-        self,
-        message: str,
-        validator: Optional[Validator] = None
-    ) -> None:
-        self.validator = validator
-        super().__init__(message)
+ConfigResolveReason = Enum('ConfigResolveReason', ['DEFAULT', 'CMDLINE'])
 
 
 class Configuration:
@@ -64,6 +44,55 @@ class Configuration:
         self.parse_type = get_parse_type(raw)
         self.parse_delimited = raw.get('parse_delimited')
         self.parse_excel = raw.get('parse_excel')
+
+
+class ResolveConfPath:
+
+    def __init__(self, path: Optional[str]) -> None:
+
+        self.orig = path
+        self.resolve_reason = (
+            ConfigResolveReason.CMDLINE
+            if self.orig
+            else ConfigResolveReason.DEFAULT
+        )
+        self.resolved = (
+            self.orig
+            if self.orig
+            else '~/.jwconfig.yaml'
+        )
+        self.expanded = os.path.expanduser(self.resolved)
+        self.was_expanded = self.resolved == self.expanded
+
+
+class ConfigYAMLError(RuntimeError):
+
+    def __init__(
+        self,
+        resolved_path: ResolveConfPath
+    ) -> None:
+        self.resolved_path = resolved_path
+
+    def __str__(self) -> str:
+        header = (
+            "YAML parsing error when reading the configuration file "
+            f"'{self.resolved_path.resolved}'\n\n"
+        )
+        msg = header + str(self.__cause__)
+        return msg
+
+
+class ConfigParseError(RuntimeError):
+
+    validator: Optional[Validator]
+
+    def __init__(
+        self,
+        message: str,
+        validator: Optional[Validator] = None
+    ) -> None:
+        self.validator = validator
+        super().__init__(message)
 
 
 def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
@@ -333,12 +362,12 @@ def create_conferrmsg(msgs: list[str]) -> str:
 
 
 def read_conf(path: Optional[str]) -> Configuration:
-    path = path if path else '~/.jwconfig.yaml'
+    resolved_path = ResolveConfPath(path)
     try:
-        with open(os.path.expanduser(path), 'r') as yaml_file:
+        with open(resolved_path.expanded, 'r') as yaml_file:
             contents = yaml.safe_load(yaml_file.read())
     except yaml.parser.ParserError as exc:
-        raise ConfigOSError() from exc
+        raise ConfigYAMLError(resolved_path) from exc
     conf = Configuration(contents)
     return conf
 
