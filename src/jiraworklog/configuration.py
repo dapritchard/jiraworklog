@@ -64,6 +64,39 @@ class ResolveConfPath:
         self.expanded = os.path.expanduser(self.resolved)
         self.was_expanded = self.resolved == self.expanded
 
+    def fmt_reason(self):
+        if self.resolve_reason is ConfigResolveReason.DEFAULT:
+            msg = (
+                "This is the default path that is used when no '--config-path' "
+                "command-line argument is provided."
+            )
+        elif self.resolve_reason is ConfigResolveReason.CMDLINE:
+            msg = (
+                "This path was provided via the '--config-path' command-line "
+                "argument."
+            )
+        else:
+            raise RuntimeError('Internal logic error. Please file a bug report')
+        return msg
+
+
+class ConfigOSReadError(RuntimeError):
+
+    def __init__(
+        self,
+        resolved_path: ResolveConfPath
+    ) -> None:
+        self.resolved_path = resolved_path
+
+    def __str__(self) -> str:
+        msg = (
+            "Error attempting to read the configuration file:\n"
+            f"{str(self.__cause__)}.\n{self.resolved_path.fmt_reason()}"
+        )
+        # if self.resolved_path.was_expanded:
+        #     header += f"The path was expanded to '{self.resolved_path.expanded}'.\n"
+        return msg
+
 
 class ConfigYAMLError(RuntimeError):
 
@@ -368,6 +401,8 @@ def read_conf(path: Optional[str]) -> Configuration:
             contents = yaml.safe_load(yaml_file.read())
     except yaml.parser.ParserError as exc:
         raise ConfigYAMLError(resolved_path) from exc
+    except OSError as exc:
+        raise ConfigOSReadError(resolved_path) from exc
     conf = Configuration(contents)
     return conf
 
