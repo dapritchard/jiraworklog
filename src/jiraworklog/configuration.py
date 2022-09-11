@@ -5,10 +5,19 @@ import os.path
 from cerberus import Validator
 from enum import Enum
 import yaml
+import yaml
 
 from typing import Any, Optional
 
 ParseType = Enum('ParseType', ['DELIMITED', 'EXCEL'])
+
+
+class ConfigOSError(RuntimeError):
+
+    def __str__(self) -> str:
+        header = 'Error reading the configuration file\n\n'
+        msg = header + str(self.__cause__)
+        return msg
 
 
 class ConfigParseError(RuntimeError):
@@ -324,10 +333,12 @@ def create_conferrmsg(msgs: list[str]) -> str:
 
 
 def read_conf(path: Optional[str]) -> Configuration:
-    if path is None:
-        path='~/.jwconfig.yaml'
-    with open(os.path.expanduser(path), 'r') as yaml_file:
-        contents = yaml.safe_load(yaml_file.read())
+    path = path if path else '~/.jwconfig.yaml'
+    try:
+        with open(os.path.expanduser(path), 'r') as yaml_file:
+            contents = yaml.safe_load(yaml_file.read())
+    except yaml.parser.ParserError as exc:
+        raise ConfigOSError() from exc
     conf = Configuration(contents)
     return conf
 
