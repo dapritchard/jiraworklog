@@ -12,18 +12,20 @@ class AuthTokenMissingKeyError(RuntimeError):
         msg = (
             "Jira authentication error.\n"
             "Attempting to authenticate using an API token.\n"
-            f"The '{key}' value was not provided, nor was the {env_key} set."
+            f"The '{key}' value was not provided in the configuration file,\n"
+            " nor was the '{env_key}' environmental variable set."
         )
         super().__init__(msg)
 
 
 def auth_jira(conf: Configuration) -> JIRA:
-    if conf.auth_token:
+    auth_token = conf.auth_token
+    if auth_token:
         jira = JIRA(
-            server=conf.auth_token['server'],
+            server=get_auth_server(auth_token),
             basic_auth=(
-                conf.auth_token['user'],
-                conf.auth_token['api_token']
+                get_auth_user(auth_token),
+                get_auth_api_token(auth_token)
             )
         )
     else:
@@ -51,3 +53,8 @@ def make_get_auth_info(key):
         'api_token': 'JW_API_TOKEN'
     }
     return get_auth_info
+
+
+get_auth_server = make_get_auth_info('server')
+get_auth_user = make_get_auth_info('user')
+get_auth_api_token = make_get_auth_info('api_token')

@@ -5,7 +5,7 @@ import os.path
 from cerberus import Validator
 from enum import Enum
 import yaml
-import yaml
+import yaml.parser
 
 from typing import Any, Optional
 
@@ -16,7 +16,7 @@ ConfigResolveReason = Enum('ConfigResolveReason', ['DEFAULT', 'CMDLINE'])
 class Configuration:
 
     auth_type: str
-    auth_token: Optional[dict[str, str]]
+    auth_token: Optional[dict[str, Optional[str]]]
     auth_oath: None
     issues_map: dict[str, str]
     issue_nms: list[str]
