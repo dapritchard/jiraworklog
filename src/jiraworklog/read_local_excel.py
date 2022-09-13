@@ -33,7 +33,8 @@ def read_native_worklogs_excel(
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     else:
-        colnames = conf.parse_excel['col_labels'].values()
+        maybe_colnames = conf.parse_excel['col_labels'].values()
+        colnames = [v for v in maybe_colnames if v]
     for sheet_name in workbook.sheetnames:
         sheet = workbook[sheet_name]
         rowiter = sheet.rows
@@ -43,7 +44,7 @@ def read_native_worklogs_excel(
             continue
         col_map = {}
         for cell in header:
-            if cell.value in colnames:
+            if cell.value and cell.value in colnames:
                 col_map[cell.column_letter] = cell.value
         # TODO: ensure no header elements are None and that they are all strings
         for row in rowiter:
