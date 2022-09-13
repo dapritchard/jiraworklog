@@ -39,7 +39,6 @@ def read_native_wkls_delimited(
 ) -> list[dict[str, Any]]:
     dialect_args = construct_dialect_args(conf)
     with smart_open(worklogs_path, mode='r', newline='') as csv_file:
-    # with open(worklogs_path, mode='r', newline='') as csv_file:
         entries = []
         reader = csv.DictReader(csv_file, **dialect_args)
         for row in reader:
@@ -50,6 +49,7 @@ def read_native_wkls_delimited(
             # (which defaults to None). If a non-blank row has fewer fields than
             # fieldnames, the missing values are filled-in with the value of
             # restval (which defaults to None).
+            # TODO: what circumstances, if any, will cause an exception?
             entries.append(row)
     return entries
 
@@ -64,13 +64,18 @@ def construct_dialect_args(conf):
     # value (for that field, at least).
     if conf.parse_delimited is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
-    dialect = conf.parse_delimited.get('dialect')
     dialect_args = {'strict': True}
+    dialect = conf.parse_delimited.get('dialect')
     if dialect:
+        # We are assuming that 'strict' is not a valid field in the
+        # configuration file. If that ever changes we should remove this
+        # assertion
+        assert 'strict' not in dialect
         for k, v in dialect.items():
             if v:
                 dialect_args[k] = v
     return dialect_args
+
 
 def create_canon_wkls_delimited(worklogs_native, conf):
     if conf.parse_delimited is None:
