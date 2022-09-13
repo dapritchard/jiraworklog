@@ -19,9 +19,9 @@ from typing import Any, Tuple, Type, Union
 class ExcelInvalidCellType:
 
     def __init__(
-            self,
-            cell: openpyxl.cell.cell.Cell,
-            req_type: Union[Type[int], Type[float], Type[bool], Type[str], Type[datetime], None]
+        self,
+        cell: openpyxl.cell.cell.Cell,
+        req_type: Union[Type[int], Type[float], Type[bool], Type[str], Type[datetime], None]
     ):
         self.cell = cell
         self.req_type = req_type
@@ -59,14 +59,15 @@ def read_local_excel(
 def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
-) -> list[dict[str, Any]]:
-    workbook = load_workbook(filename = worklogs_path)
+) -> Tuple[list[dict[str, Any]], list[ExcelInvalidCellType]]:
+    workbook = openpyxl.load_workbook(filename=worklogs_path)
     entries = []
+    errors = []
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     else:
-        maybe_colnames = conf.parse_excel['col_labels'].values()
-        colnames = [v for v in maybe_colnames if v]
+        col_names, col_types = create_col_info(conf.parse_excel)
+        print(col_types)
     for sheet_name in workbook.sheetnames:
         sheet = workbook[sheet_name]
         rowiter = sheet.rows
@@ -76,18 +77,23 @@ def read_native_worklogs_excel(
             continue
         col_map = {}
         for cell in header:
-            if cell.value and cell.value in colnames:
+            if isinstance(cell.value, str) and cell.value in col_names:
                 col_map[cell.column_letter] = cell.value
-        # TODO: ensure no header elements are None and that they are all strings
+        # TODO: throw error if we don't have all columns
         for row in rowiter:
             new_row = {}
+            has_row_error = False
             for cell in row:
                 # print(f"{cell.column_letter}{cell.row} = {cell.value} ({type(cell.value)})")
                 if cell.column_letter in col_map:
+                    req_type = col_types[col_map[cell.column_letter]]
+                    if not isinstance(cell.value, req_type):
+                        has_row_error = True
+                        errors.append(ExcelInvalidCellType(cell, req_type))
                     new_row[col_map[cell.column_letter]] = cell.value
-                    # TODO: check type?
-            entries.append(new_row)
-    return entries
+            if not has_row_error:
+                entries.append(new_row)
+    return (entries, errors)
 
 
 def create_canon_wkls_excel(worklogs_native, conf):
@@ -106,3 +112,20 @@ def create_canon_wkls_excel(worklogs_native, conf):
         parse_tags=make_parse_tags(cl['tags'], pe.get('delimiter2'))
     )
     return canon_wkls
+
+
+def create_col_info(parse_excel):
+    col_names = []
+    col_types = {}
+    type_map = {
+        'description': str,
+        'start': datetime,
+        'end': datetime,
+        'duration': str,
+        'tags': str
+    }
+    for k, v in parse_excel['col_labels'].items():
+        if v:
+            col_names.append(v)
+            col_types[v] = type_map[k]
+    return (col_names, col_types)
