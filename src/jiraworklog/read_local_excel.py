@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 from jiraworklog.configuration import Configuration
 # from jiraworklog.read_local_delimited import read_local_general, read_worklogs_native
 from jiraworklog.read_local_common import (
@@ -10,15 +11,46 @@ from jiraworklog.read_local_common import (
     make_parse_tags
 )
 from jiraworklog.worklogs import WorklogCanon
-from openpyxl import load_workbook
-from typing import Any
+import openpyxl
+import openpyxl.cell.cell
+from typing import Any, Tuple, Type, Union
+
+
+class ExcelInvalidCellType:
+
+    def __init__(
+            self,
+            cell: openpyxl.cell.cell.Cell,
+            req_type: Union[Type[int], Type[float], Type[bool], Type[str], Type[datetime], None]
+    ):
+        self.cell = cell
+        self.req_type = req_type
+
+    def err_msg(self):
+        # https://support.microsoft.com/en-us/office/data-types-in-data-models-e2388f62-6122-4e2b-bcad-053e3da9ba90
+        stringify = {
+            int: 'an integer',
+            float: 'a decimal number',
+            bool: 'a Boolean value',
+            str: 'a string',
+            datetime: 'a datetime',
+            # FIXME: currency?
+            None: 'empty'
+        }
+        stringify[self.req_type]
+        msg = (
+            f"cell {self.cell.column_letter}{self.cell.row} in sheet "
+            f"{self.cell.parent.title} must be {stringify[self.req_type]} but "
+            f"is instead {stringify[type(self.cell.value)]}"
+        )
+        return msg
 
 
 def read_local_excel(
     worklogs_path: str,
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
-    worklogs_native = read_native_worklogs_excel(worklogs_path, conf)
+    worklogs_native, _ = read_native_worklogs_excel(worklogs_path, conf)
     canon_wkls = create_canon_wkls_excel(worklogs_native, conf)
     return canon_wkls
 
