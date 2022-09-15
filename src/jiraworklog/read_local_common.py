@@ -50,15 +50,11 @@ def create_interval(
 def create_canon_wkls(
         worklogs_native,
         issues_map,
-        parse_description,
-        parse_start,
-        parse_end,
-        parse_duration,
-        parse_tags
+        parse_entry
     ):
 
-    parse_interval = make_parse_interval(parse_start, parse_end, parse_duration)
-    parse_rawcanon = make_parse_rawcanon(parse_description, parse_interval)
+    # parse_interval = make_parse_interval(parse_start, parse_end, parse_duration)
+    # parse_rawcanon = make_parse_rawcanon(parse_description, parse_interval)
     global_tags_set = set(issues_map.keys())
 
     # Ensure that all issues have an entry in the dict, even those that don't
@@ -71,19 +67,28 @@ def create_canon_wkls(
     for nm in issues_map.values():
         worklogs[nm] = []
 
+    errors = []
     for entry in worklogs_native:
-        entry_tags_set = set(parse_tags(entry))
+
+        parsed_entry, entry_errors = parse_entry(entry)
+        errors.extend(entry_errors)
+
+        entry_tags_set = set(parsed_entry['tags'])
         tags_intersect = global_tags_set & entry_tags_set
         n_intersect = len(tags_intersect)
         if n_intersect == 0:
             pass
         elif n_intersect == 1:
             id = issues_map[list(tags_intersect)[0]]
-            raw_canon_wkl = parse_rawcanon(entry)
+            raw_canon_wkl = create_rawcanon(entry)
             worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
         else:
             # TODO: let's track these and throw an error after the loop
             raise RuntimeError('More than one tag matched')
+
+    if errors:
+        # TODO: throw error if errors is nonempty
+        pass
 
     return worklogs
 
@@ -114,33 +119,45 @@ def add_tzinfo(dt: datetime, tz_maybestr: str) -> datetime:
     return dt_aware
 
 
-def make_parse_interval(
-        parse_start,
-        parse_end,
-        parse_duration
-) -> Callable[[dict[str, Any]], Interval]:
-    def parse_interval(entry: dict[str, Any]) -> Interval:
-        maybe_start = parse_start(entry)
-        maybe_end = parse_end(entry)
-        maybe_duration = parse_duration(entry)
-        iv = create_interval(maybe_start, maybe_end, maybe_duration)
-        return iv
-    return parse_interval
+# def make_parse_interval(
+#         parse_start,
+#         parse_end,
+#         parse_duration
+# ) -> Callable[[dict[str, Any]], Interval]:
+#     def parse_interval(entry: dict[str, Any]) -> Interval:
+#         maybe_start = parse_start(entry)
+#         maybe_end = parse_end(entry)
+#         maybe_duration = parse_duration(entry)
+#         iv = create_interval(maybe_start, maybe_end, maybe_duration)
+#         return iv
+#     return parse_interval
 
 
-def make_parse_rawcanon(parse_description, parse_interval):
-    def parse_rawcanon(entry):
-        description = parse_description(entry)
-        iv = parse_interval(entry)
-        start_str = fmt_time(iv.start)
-        duration_str = str(int(iv.duration.total_seconds()))
-        worklog = {
-            'comment': description,
-            'started': start_str,
-            'timeSpentSeconds': duration_str
-        }
-        return worklog
-    return parse_rawcanon
+def create_rawcanon(entry):
+    iv = create_interval(entry['start'], entry['end'], entry['duration'])
+    start_str = fmt_time(iv.start)
+    duration_str = str(int(iv.duration.total_seconds()))
+    worklog = {
+        'comment': entry['description'],
+        'started': start_str,
+        'timeSpentSeconds': duration_str
+    }
+    return worklog
+
+
+# def make_parse_rawcanon(parse_description, parse_interval):
+#     def parse_rawcanon(entry):
+#         description = parse_description(entry)
+#         iv = parse_interval(entry)
+#         start_str = fmt_time(iv.start)
+#         duration_str = str(int(iv.duration.total_seconds()))
+#         worklog = {
+#             'comment': description,
+#             'started': start_str,
+#             'timeSpentSeconds': duration_str
+#         }
+#         return worklog
+#     return parse_rawcanon
 
 
 def make_parse_field(key):
