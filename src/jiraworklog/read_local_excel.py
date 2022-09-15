@@ -16,6 +16,12 @@ import openpyxl.cell.cell
 from typing import Any, Tuple, Type, Union
 
 
+class ExcelRow:
+
+    def __init__(self, row):
+        self.row = row
+
+
 class ExcelInvalidCellType:
 
     def __init__(
@@ -60,9 +66,10 @@ def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
 ) -> Tuple[list[dict[str, Any]], list[ExcelInvalidCellType]]:
+    # TODO: need a better error message if this fails?
     workbook = openpyxl.load_workbook(filename=worklogs_path)
     entries = []
-    errors = []
+    # errors = []
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     else:
@@ -82,18 +89,51 @@ def read_native_worklogs_excel(
         # TODO: throw error if we don't have all columns
         for row in rowiter:
             new_row = {}
-            has_row_error = False
             for cell in row:
                 # print(f"{cell.column_letter}{cell.row} = {cell.value} ({type(cell.value)})")
                 if cell.column_letter in col_map:
-                    req_type = col_types[col_map[cell.column_letter]]
-                    if not isinstance(cell.value, req_type):
-                        has_row_error = True
-                        errors.append(ExcelInvalidCellType(cell, req_type))
+                    # req_type = col_types[col_map[cell.column_letter]]
+                    # if isinstance(cell.value, req_type):
+                    #     new_row[col_map[cell.column_letter]] = cell.value
+                    # else:
+                    #     errors.append(ExcelInvalidCellType(cell, req_type))
                     new_row[col_map[cell.column_letter]] = cell.value
-            if not has_row_error:
-                entries.append(new_row)
-    return (entries, errors)
+            entries.append(ExcelRow(new_row))
+    return (entries, [])
+
+
+def make_parse_entry(
+    parse_description,
+    parse_start,
+    parse_end,
+    parse_duration,
+    parse_tags
+):
+    def parse_entry(entry):
+        parsed_entry = {}
+        entry_errors = []
+        try:
+            entry['description'] = parse_description(entry)
+        except Exception as exc:
+            entry_errors.append(exc)
+        try:
+            entry['start'] = parse_start(entry)
+        except Exception as exc:
+            entry_errors.append(exc)
+        try:
+            entry['end'] = parse_end(entry)
+        except Exception as exc:
+            entry_errors.append(exc)
+        try:
+            entry['duration'] = parse_duration(entry)
+        except Exception as exc:
+            entry_errors.append(exc)
+        try:
+            entry['tags'] = parse_tags(entry)
+        except Exception as exc:
+            entry_errors.append(exc)
+        return (parsed_entry, entry_errors)
+    return parse_entry
 
 
 def create_canon_wkls_excel(worklogs_native, conf):
