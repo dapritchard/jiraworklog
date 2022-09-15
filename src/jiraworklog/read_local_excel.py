@@ -4,9 +4,12 @@ from datetime import datetime
 from jiraworklog.configuration import Configuration
 # from jiraworklog.read_local_delimited import read_local_general, read_worklogs_native
 from jiraworklog.read_local_common import (
+    LeftError,
+    add_tzinfo,
     create_canon_wkls,
     make_maybe_parse_duration,
     make_maybe_parse_time_dt,
+    make_parse_entry,
     make_parse_field,
     make_parse_tags
 )
@@ -97,43 +100,10 @@ def read_native_worklogs_excel(
                     #     new_row[col_map[cell.column_letter]] = cell.value
                     # else:
                     #     errors.append(ExcelInvalidCellType(cell, req_type))
-                    new_row[col_map[cell.column_letter]] = cell.value
+                    # new_row[col_map[cell.column_letter]] = cell.value
+                    new_row[col_map[cell.column_letter]] = cell
             entries.append(ExcelRow(new_row))
     return (entries, [])
-
-
-def make_parse_entry(
-    parse_description,
-    parse_start,
-    parse_end,
-    parse_duration,
-    parse_tags
-):
-    def parse_entry(entry):
-        parsed_entry = {}
-        entry_errors = []
-        try:
-            entry['description'] = parse_description(entry)
-        except Exception as exc:
-            entry_errors.append(exc)
-        try:
-            entry['start'] = parse_start(entry)
-        except Exception as exc:
-            entry_errors.append(exc)
-        try:
-            entry['end'] = parse_end(entry)
-        except Exception as exc:
-            entry_errors.append(exc)
-        try:
-            entry['duration'] = parse_duration(entry)
-        except Exception as exc:
-            entry_errors.append(exc)
-        try:
-            entry['tags'] = parse_tags(entry)
-        except Exception as exc:
-            entry_errors.append(exc)
-        return (parsed_entry, entry_errors)
-    return parse_entry
 
 
 def create_canon_wkls_excel(worklogs_native, conf):
@@ -142,14 +112,17 @@ def create_canon_wkls_excel(worklogs_native, conf):
     pe = conf.parse_excel
     cl = pe['col_labels']
     maybe_tz = pe.get('timezone')
+    parse_entry = make_parse_entry(
+        parse_description=make_parse_description_excel(cl['description']),
+        parse_start=make_parse_dt_excel(cl.get('start'), maybe_tz),
+        parse_end=make_parse_dt_excel(cl.get('end'), maybe_tz),
+        parse_duration=make_maybe_parse_duration(cl.get('duration')),
+        parse_tags=make_parse_tags(cl['tags'], pe.get('delimiter2'))
+    )
     canon_wkls = create_canon_wkls(
         worklogs_native=worklogs_native,
         issues_map=conf.issues_map,
-        parse_description=make_parse_field(cl['description']),
-        parse_start=make_maybe_parse_time_dt(cl.get('start'), maybe_tz),
-        parse_end=make_maybe_parse_time_dt(cl.get('end'), maybe_tz),
-        parse_duration=make_maybe_parse_duration(cl.get('duration')),
-        parse_tags=make_parse_tags(cl['tags'], pe.get('delimiter2'))
+        parse_entry=parse_entry
     )
     return canon_wkls
 
@@ -169,3 +142,39 @@ def create_col_info(parse_excel):
             col_names.append(v)
             col_types[v] = type_map[k]
     return (col_names, col_types)
+
+
+def extract_value_excel(
+    cell: openpyxl.cell.cell.Cell,
+    req_type: Union[Type[str], Type[datetime]]
+):
+    if type(cell.value) == req_type:
+        return cell.value
+    else:
+        LeftError(ExcelInvalidCellType(cell, req_type))
+
+
+def make_parse_dt_excel(maybe_key, maybe_tz):
+    def parse_time_excel(cell):
+        dt = extract_value_excel(cell, datetime)
+        dt_aware = add_tzinfo(dt, maybe_tz)
+        return dt_aware
+    parse_dt_excel = make_parse_field(maybe_key, parse_time_excel)
+    return parse_dt_excel
+
+
+def make_parse_description_excel(key):
+    def parse_description(entry):
+        cell = entry[key]
+        descr = extract_value_excel(cell, str)
+        return descr
+    return parse_description
+
+
+def make_parse_duration_excel(key):
+    def parse_duration(entry):
+        cell = entry[key]
+        duration_str = extract_value_excel(cell, str)
+        duration = parse_duration(duration_str)
+        return duration
+    return parse_duration
