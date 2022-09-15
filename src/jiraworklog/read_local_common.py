@@ -23,6 +23,18 @@ class Interval:
         self.duration = duration
 
 
+class RawWorklogParseEntryError(RuntimeError):
+    pass
+
+
+# A hacky analogue to an Either Left
+class LeftError(RuntimeError):
+
+    def __init__(self, payload: Any) -> None:
+        self.payload = payload
+        super().__init__('Internal logic error. Please file a bug report')
+
+
 def create_interval(
     maybe_start: Optional[datetime],
     maybe_end: Optional[datetime],
@@ -70,27 +82,66 @@ def create_canon_wkls(
     errors = []
     for entry in worklogs_native:
 
+        # NOTE: In the event of a parse error in the description or tags we
+        # could improve this a little further by checking for errors in the
+        # calculation of the Interval before giving up
         parsed_entry, entry_errors = parse_entry(entry)
-        errors.extend(entry_errors)
-
-        entry_tags_set = set(parsed_entry['tags'])
-        tags_intersect = global_tags_set & entry_tags_set
-        n_intersect = len(tags_intersect)
-        if n_intersect == 0:
-            pass
-        elif n_intersect == 1:
-            id = issues_map[list(tags_intersect)[0]]
-            raw_canon_wkl = create_rawcanon(entry)
-            worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
+        if entry_errors:
+            errors.extend(entry_errors)
+            continue
         else:
-            # TODO: let's track these and throw an error after the loop
-            raise RuntimeError('More than one tag matched')
+            entry_tags_set = set(parsed_entry['tags'])
+            tags_intersect = global_tags_set & entry_tags_set
+            n_intersect = len(tags_intersect)
+            if n_intersect == 0:
+                pass
+            elif n_intersect == 1:
+                id = issues_map[list(tags_intersect)[0]]
+                raw_canon_wkl = create_rawcanon(entry)
+                worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
+            else:
+                # TODO: let's track these and throw an error after the loop
+                raise RuntimeError('More than one tag matched')
 
     if errors:
         # TODO: throw error if errors is nonempty
         pass
 
     return worklogs
+
+
+def make_parse_entry(
+    parse_description,
+    parse_start,
+    parse_end,
+    parse_duration,
+    parse_tags
+):
+    def parse_entry(entry):
+        parsed_entry = {}
+        entry_errors = []
+        try:
+            entry['description'] = parse_description(entry)
+        except LeftError as exc:
+            entry_errors.append(exc.payload)
+        try:
+            entry['start'] = parse_start(entry)
+        except LeftError as exc:
+            entry_errors.append(exc.payload)
+        try:
+            entry['end'] = parse_end(entry)
+        except LeftError as exc:
+            entry_errors.append(exc.payload)
+        try:
+            entry['duration'] = parse_duration(entry)
+        except LeftError as exc:
+            entry_errors.append(exc.payload)
+        try:
+            entry['tags'] = parse_tags(entry)
+        except LeftError as exc:
+            entry_errors.append(exc.payload)
+        return (parsed_entry, entry_errors)
+    return parse_entry
 
 
 def add_tzinfo(dt: datetime, tz_maybestr: str) -> datetime:
@@ -160,8 +211,20 @@ def create_rawcanon(entry):
 #     return parse_rawcanon
 
 
-def make_parse_field(key):
-    return lambda entry: entry[key]
+# def make_parse_field(key):
+#     return lambda entry: entry[key]
+
+
+def make_parse_field(
+    maybe_key: Optional[str],
+    parse_value
+):
+    def parse_field(entry):
+        if maybe_key:
+            return parse_value(entry[maybe_key])
+        else:
+            return None
+    return parse_field
 
 
 def make_maybe_parse_time_dt(maybe_key, maybe_tz):
@@ -201,7 +264,7 @@ def make_parse_time_str(key, fmt_str, tz_maybestr):
     return parse_time_str
 
 
-def make_parse_duration(key: str):
+def parse_duration(duration_str: str):
 
     def chomp(duration_str, re_str, unit_secs):
         match = re.match(re_str, duration_str)
@@ -213,28 +276,26 @@ def make_parse_duration(key: str):
         else:
             return (duration_str, 0)
 
-    def parse_duration(entry) -> timedelta:
+    params = [
+        (r'(\s*)?(\d+)w', 604800),  # seconds in a week:   60 * 60 * 24 * 7
+        (r'(\s*)?(\d+)d',  86400),  # seconds in a day:    60 * 60 * 24
+        (r'(\s*)?(\d+)h',   3600),  # seconds in an hour:  60 * 60
+        (r'(\s*)?(\d+)m',     60),  # seconds in a minute: 60
+        (r'(\s*)?(\d+)s',      1)
+    ]
 
-        params = [
-            (r'(\s*)?(\d+)w', 604800),  # seconds in a week:   60 * 60 * 24 * 7
-            (r'(\s*)?(\d+)d',  86400),  # seconds in a day:    60 * 60 * 24
-            (r'(\s*)?(\d+)h',   3600),  # seconds in an hour:  60 * 60
-            (r'(\s*)?(\d+)m',     60),  # seconds in a minute: 60
-            (r'(\s*)?(\d+)s',      1)
-        ]
+    total_secs = 0
+    for re_str, unit_secs in params:
+        duration_str, n_secs = chomp(duration_str, re_str, unit_secs)
+        total_secs += n_secs
 
-        total_secs = 0
-        duration_str = entry[key]
-        for re_str, unit_secs in params:
-            duration_str, n_secs = chomp(duration_str, re_str, unit_secs)
-            total_secs += n_secs
+    # FIXME: how to handle this?
+    if duration_str.lstrip():
+        raise RuntimeError(f"Invalid duration entry format: '{duration_str}'")
+    else:
+        duration = timedelta(seconds=total_secs)
 
-        if duration_str.lstrip():
-            raise RuntimeError(f"Invalid duration entry format: '{entry[key]}'")
-        else:
-            return timedelta(seconds=total_secs)
-
-    return parse_duration
+    return duration
 
 
 def make_parse_tags(tags_key: str, maybe_delimiter2: Optional[str]): # TODO: return type
