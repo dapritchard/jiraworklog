@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 
 import csv
+from datetime import datetime
 from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
     create_canon_wkls,
     make_maybe_parse_duration,
     make_maybe_parse_time_str,
-    make_parse_field,
+    make_parse_entry,
     make_parse_tags,
     smart_open
 )
 from jiraworklog.worklogs import WorklogCanon
-from typing import Any
+from typing import Any, Callable
 
 
 def read_local_delimited(
@@ -84,13 +85,38 @@ def create_canon_wkls_delimited(worklogs_native, conf):
     cl = pd['col_labels']
     cf = pd['col_formats']
     maybe_tz = pd.get('timezone')
-    canon_wkls = create_canon_wkls(
-        worklogs_native=worklogs_native,
-        issues_map=conf.issues_map,
-        parse_description=make_parse_field(cl['description']),
+    parse_entry = make_parse_entry(
+        parse_description=make_parse_string_delim(cl['description']),
         parse_start=make_maybe_parse_time_str(cl.get('start'), cf.get('start'), maybe_tz),
         parse_end=make_maybe_parse_time_str(cl.get('end'), cf.get('end'), maybe_tz),
         parse_duration=make_maybe_parse_duration(cl.get('duration')),
         parse_tags=make_parse_tags(cl['tags'], pd.get('delimiter2'))
     )
+    canon_wkls = create_canon_wkls(
+        worklogs_native=worklogs_native,
+        issues_map=conf.issues_map,
+        parse_entry=parse_entry
+    )
     return canon_wkls
+
+
+def make_parse_string_delim(key: str) -> Callable[[dict[str, str]], str]:
+    def parse_string(entry: dict[str, str]):
+        return entry[key]
+    return parse_string
+
+
+# def make_maybe_parse_time_delim(maybe_key, maybe_fmt_str, maybe_tz):
+#     def parse_time_str(entry):
+#         dt = datetime.strptime(entry[maybe_key], maybe_fmt_str)
+#         dt_aware = add_tzinfo(dt, maybe_tz)
+#         return dt_aware
+#     if maybe_key:
+#         if maybe_fmt_str:
+#             return parse_time_str
+#         else:
+#             # We assume that if the key is given that the format string is also
+#             # given and this is enforced as part of the configuration parsing
+#             raise RuntimeError('Internal logic error. Please file a bug report')
+#     else:
+#         return lambda _: None

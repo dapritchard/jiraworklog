@@ -227,11 +227,11 @@ def make_parse_field(
     return parse_field
 
 
-def make_maybe_parse_time_dt(maybe_key, maybe_tz):
-    if maybe_key is None:
-        return lambda _: None
-    else:
-        return make_parse_time_dt(maybe_key, maybe_tz)
+# def make_maybe_parse_time_dt(maybe_key, maybe_tz):
+#     if maybe_key is None:
+#         return lambda _: None
+#     else:
+#         return make_parse_time_dt(maybe_key, maybe_tz)
 
 
 def make_maybe_parse_time_str(maybe_key, maybe_fmt_str, maybe_tz):
@@ -245,15 +245,15 @@ def make_maybe_parse_duration(maybe_key):
     if maybe_key is None:
         return lambda _: None
     else:
-        return make_parse_duration(maybe_key)
+        return make_parse_duration
 
 
-def make_parse_time_dt(key, tz_maybestr):
-    def parse_time_dt(entry):
-        dt = entry[key]
-        dt_aware = add_tzinfo(dt, tz_maybestr)
-        return dt_aware
-    return parse_time_dt
+# def make_parse_time_dt(key, tz_maybestr):
+#     def parse_time_dt(entry):
+#         dt = entry[key]
+#         dt_aware = add_tzinfo(dt, tz_maybestr)
+#         return dt_aware
+#     return parse_time_dt
 
 
 def make_parse_time_str(key, fmt_str, tz_maybestr):
@@ -296,6 +296,10 @@ def parse_duration(duration_str: str):
         duration = timedelta(seconds=total_secs)
 
     return duration
+
+
+def make_parse_duration(key):
+    return lambda entry: parse_duration(entry[key])
 
 
 def make_parse_tags(tags_key: str, maybe_delimiter2: Optional[str]): # TODO: return type

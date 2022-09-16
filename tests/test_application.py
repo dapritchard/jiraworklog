@@ -17,11 +17,11 @@ test_99 = create_apptest('tests/data/99-excel-add-to-empty/')
 
 # Error-checking tests ---------------------------------------------------------
 
-test_50 = create_errortest(
-    'tests/data/50-config-doesnt-exist/',
-    FileNotFoundError,
-    "[Errno 2] No such file or directory: 'tests/data/50-config-doesnt-exist/config.yaml'"
-)
+# test_50 = create_errortest(
+#     'tests/data/50-config-doesnt-exist/',
+#     FileNotFoundError,
+#     "[Errno 2] No such file or directory: 'tests/data/50-config-doesnt-exist/config.yaml'"
+# )
 
 # test_51 = create_errortest(
 #     'tests/data/51-config-author-notprovided/',
@@ -30,6 +30,16 @@ test_50 = create_errortest(
 #         "The 'author' field is required but is not provided"
 #     ])
 # )
+
+# import jiraworklog
+# import jiraworklog.configuration
+# import jiraworklog.auth_jira
+# try:
+#     conf = jiraworklog.configuration.read_conf('tests/data/02-add-to-empty/config.yaml')
+#     jira = jiraworklog.auth_jira.auth_jira(conf)
+# except Exception as exc:
+#     e = exc
+
 
 # import jiraworklog.configuration
 # try:
