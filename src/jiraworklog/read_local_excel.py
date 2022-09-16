@@ -8,7 +8,7 @@ from jiraworklog.read_local_common import (
     add_tzinfo,
     create_canon_wkls,
     make_maybe_parse_duration,
-    make_maybe_parse_time_dt,
+    # make_maybe_parse_time_dt,
     make_parse_entry,
     make_parse_field,
     make_parse_tags
@@ -16,7 +16,7 @@ from jiraworklog.read_local_common import (
 from jiraworklog.worklogs import WorklogCanon
 import openpyxl
 import openpyxl.cell.cell
-from typing import Any, Tuple, Type, Union
+from typing import Any, Callable, Optional, Tuple, Type, Union
 
 
 class ExcelRow:
@@ -113,10 +113,10 @@ def create_canon_wkls_excel(worklogs_native, conf):
     cl = pe['col_labels']
     maybe_tz = pe.get('timezone')
     parse_entry = make_parse_entry(
-        parse_description=make_parse_description_excel(cl['description']),
+        parse_description=make_parse_string_excel(cl['description']),
         parse_start=make_parse_dt_excel(cl.get('start'), maybe_tz),
         parse_end=make_parse_dt_excel(cl.get('end'), maybe_tz),
-        parse_duration=make_maybe_parse_duration(cl.get('duration')),
+        parse_duration=make_parse_duration_excel(cl.get('duration')),
         parse_tags=make_parse_tags(cl['tags'], pe.get('delimiter2'))
     )
     canon_wkls = create_canon_wkls(
@@ -144,37 +144,69 @@ def create_col_info(parse_excel):
     return (col_names, col_types)
 
 
-def extract_value_excel(
-    cell: openpyxl.cell.cell.Cell,
-    req_type: Union[Type[str], Type[datetime]]
-):
-    if type(cell.value) == req_type:
+# # TODO: write a comment about `extract_value_excel` not working
+# def extract_value_excel(
+#     cell: openpyxl.cell.cell.Cell,
+#     req_type: Union[Type[str], Type[datetime]]
+# ) -> Union[str, datetime]:
+#     if type(cell.value) == req_type:
+#         return cell.value
+#     else:
+#         raise LeftError(ExcelInvalidCellType(cell, req_type))
+
+
+def extract_string_excel(
+    cell: openpyxl.cell.cell.Cell
+) -> str:
+    if type(cell.value) == str:
         return cell.value
     else:
-        LeftError(ExcelInvalidCellType(cell, req_type))
+        raise LeftError(ExcelInvalidCellType(cell, str))
+
+
+def extract_datetime_excel(
+    cell: openpyxl.cell.cell.Cell
+) -> datetime:
+    if type(cell.value) == datetime:
+        return cell.value
+    else:
+        raise LeftError(ExcelInvalidCellType(cell, datetime))
+
+
+def make_parse_string_excel(
+    key: str
+) -> Callable[[dict[str, openpyxl.cell.cell.Cell]], str]:
+    def parse_string(entry: dict[str, openpyxl.cell.cell.Cell]):
+        descr = extract_string_excel(entry[key])
+        return descr
+    return parse_string
 
 
 def make_parse_dt_excel(maybe_key, maybe_tz):
-    def parse_time_excel(cell):
-        dt = extract_value_excel(cell, datetime)
+    def parse_dt_excel(cell):
+        dt = extract_datetime_excel(cell)
         dt_aware = add_tzinfo(dt, maybe_tz)
         return dt_aware
-    parse_dt_excel = make_parse_field(maybe_key, parse_time_excel)
-    return parse_dt_excel
+    parse_maybe_dt_excel = make_parse_field(maybe_key, parse_dt_excel)
+    return parse_maybe_dt_excel
 
 
-def make_parse_description_excel(key):
-    def parse_description(entry):
-        cell = entry[key]
-        descr = extract_value_excel(cell, str)
-        return descr
-    return parse_description
-
-
-def make_parse_duration_excel(key):
-    def parse_duration(entry):
-        cell = entry[key]
-        duration_str = extract_value_excel(cell, str)
+def make_parse_duration_excel(maybe_key):
+    def parse_duration(cell):
+        duration_str = extract_string_excel(cell)
         duration = parse_duration(duration_str)
         return duration
-    return parse_duration
+    parse_maybe_duration = make_parse_field(maybe_key, parse_duration)
+    return parse_maybe_duration
+
+
+def make_parse_tags_excel(key, maybe_delimiter2: Optional[str]):
+    def parse_tags_excel(entry):
+        tags_string = parse_string(entry)
+        if maybe_delimiter2:
+            tags = set(tags_string.split(maybe_delimiter2))
+        else:
+            tags = set([tags_string])
+        return tags
+    parse_string = make_parse_string_excel(key)
+    return parse_tags_excel
