@@ -7,11 +7,12 @@ from jiraworklog.read_local_common import (
     LeftError,
     add_tzinfo,
     create_canon_wkls,
-    make_maybe_parse_duration,
+    # make_maybe_parse_duration,
     # make_maybe_parse_time_dt,
     make_parse_entry,
     make_parse_field,
-    make_parse_tags
+    # make_parse_tags
+    parse_duration
 )
 from jiraworklog.worklogs import WorklogCanon
 import openpyxl
@@ -19,10 +20,10 @@ import openpyxl.cell.cell
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
 
-class ExcelRow:
+# class ExcelRow:
 
-    def __init__(self, row):
-        self.row = row
+#     def __init__(self, row):
+#         self.row = row
 
 
 class ExcelInvalidCellType:
@@ -68,7 +69,8 @@ def read_local_excel(
 def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
-) -> Tuple[list[dict[str, Any]], list[ExcelInvalidCellType]]:
+# ) -> Tuple[list[dict[str, Any]], list[ExcelInvalidCellType]]:
+) -> list[dict[str, Any]]:
     # TODO: need a better error message if this fails?
     workbook = openpyxl.load_workbook(filename=worklogs_path)
     entries = []
@@ -76,8 +78,8 @@ def read_native_worklogs_excel(
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     else:
-        col_names, col_types = create_col_info(conf.parse_excel)
-        print(col_types)
+        # TODO: we don't need to return the types any more?
+        col_names, _ = create_col_info(conf.parse_excel)
     for sheet_name in workbook.sheetnames:
         sheet = workbook[sheet_name]
         rowiter = sheet.rows
@@ -102,8 +104,8 @@ def read_native_worklogs_excel(
                     #     errors.append(ExcelInvalidCellType(cell, req_type))
                     # new_row[col_map[cell.column_letter]] = cell.value
                     new_row[col_map[cell.column_letter]] = cell
-            entries.append(ExcelRow(new_row))
-    return (entries, [])
+            entries.append(new_row)
+    return entries
 
 
 def create_canon_wkls_excel(worklogs_native, conf):
@@ -117,7 +119,7 @@ def create_canon_wkls_excel(worklogs_native, conf):
         parse_start=make_parse_dt_excel(cl.get('start'), maybe_tz),
         parse_end=make_parse_dt_excel(cl.get('end'), maybe_tz),
         parse_duration=make_parse_duration_excel(cl.get('duration')),
-        parse_tags=make_parse_tags(cl['tags'], pe.get('delimiter2'))
+        parse_tags=make_parse_tags_excel(cl['tags'], pe.get('delimiter2'))
     )
     canon_wkls = create_canon_wkls(
         worklogs_native=worklogs_native,
@@ -177,8 +179,8 @@ def make_parse_string_excel(
     key: str
 ) -> Callable[[dict[str, openpyxl.cell.cell.Cell]], str]:
     def parse_string(entry: dict[str, openpyxl.cell.cell.Cell]):
-        descr = extract_string_excel(entry[key])
-        return descr
+        val = extract_string_excel(entry[key])
+        return val
     return parse_string
 
 
@@ -192,11 +194,11 @@ def make_parse_dt_excel(maybe_key, maybe_tz):
 
 
 def make_parse_duration_excel(maybe_key):
-    def parse_duration(cell):
+    def parse_duration_excel(cell):
         duration_str = extract_string_excel(cell)
         duration = parse_duration(duration_str)
         return duration
-    parse_maybe_duration = make_parse_field(maybe_key, parse_duration)
+    parse_maybe_duration = make_parse_field(maybe_key, parse_duration_excel)
     return parse_maybe_duration
 
 
