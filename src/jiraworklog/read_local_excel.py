@@ -20,10 +20,10 @@ import openpyxl.cell.cell
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
 
-# class ExcelRow:
+class ExcelRow:
 
-#     def __init__(self, row):
-#         self.row = row
+    def __init__(self, row):
+        self.row = row
 
 
 class ExcelInvalidCellType:
@@ -60,7 +60,7 @@ def read_local_excel(
     worklogs_path: str,
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
-    worklogs_native, _ = read_native_worklogs_excel(worklogs_path, conf)
+    worklogs_native = read_native_worklogs_excel(worklogs_path, conf)
     canon_wkls = create_canon_wkls_excel(worklogs_native, conf)
     return canon_wkls
 
@@ -104,7 +104,7 @@ def read_native_worklogs_excel(
                     #     errors.append(ExcelInvalidCellType(cell, req_type))
                     # new_row[col_map[cell.column_letter]] = cell.value
                     new_row[col_map[cell.column_letter]] = cell
-            entries.append(new_row)
+            entries.append(ExcelRow(new_row))
     return entries
 
 
@@ -177,15 +177,22 @@ def extract_datetime_excel(
 
 def make_parse_string_excel(
     key: str
-) -> Callable[[dict[str, openpyxl.cell.cell.Cell]], str]:
-    def parse_string(entry: dict[str, openpyxl.cell.cell.Cell]):
-        val = extract_string_excel(entry[key])
+# ) -> Callable[[dict[str, openpyxl.cell.cell.Cell]], str]:
+) -> Callable[[ExcelRow], str]:
+    # def parse_string(entry: dict[str, openpyxl.cell.cell.Cell]):
+    def parse_string(entry: ExcelRow):
+        cell = extract_cell_excel(entry, key)
+        val = extract_string_excel(cell)
         return val
     return parse_string
 
 
-def make_parse_dt_excel(maybe_key, maybe_tz):
-    def parse_dt_excel(cell):
+def make_parse_dt_excel(
+    maybe_key: Optional[str],
+    maybe_tz: Optional[str]
+) -> Callable[[ExcelRow], Optional[datetime]]:
+    def parse_dt_excel(entry, key):
+        cell = extract_cell_excel(entry, key)
         dt = extract_datetime_excel(cell)
         dt_aware = add_tzinfo(dt, maybe_tz)
         return dt_aware
@@ -193,8 +200,9 @@ def make_parse_dt_excel(maybe_key, maybe_tz):
     return parse_maybe_dt_excel
 
 
-def make_parse_duration_excel(maybe_key):
-    def parse_duration_excel(cell):
+def make_parse_duration_excel(maybe_key: Optional[str]):
+    def parse_duration_excel(entry, key):
+        cell = extract_cell_excel(entry, key)
         duration_str = extract_string_excel(cell)
         duration = parse_duration(duration_str)
         return duration
@@ -212,3 +220,7 @@ def make_parse_tags_excel(key, maybe_delimiter2: Optional[str]):
         return tags
     parse_string = make_parse_string_excel(key)
     return parse_tags_excel
+
+
+def extract_cell_excel(row: ExcelRow, key: str) -> openpyxl.cell.cell.Cell:
+    return row.row[key]

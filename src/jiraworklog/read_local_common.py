@@ -97,7 +97,7 @@ def create_canon_wkls(
                 pass
             elif n_intersect == 1:
                 id = issues_map[list(tags_intersect)[0]]
-                raw_canon_wkl = create_rawcanon(entry)
+                raw_canon_wkl = create_rawcanon(parsed_entry)
                 worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
             else:
                 # TODO: let's track these and throw an error after the loop
@@ -121,32 +121,32 @@ def make_parse_entry(
         parsed_entry = {}
         entry_errors = []
         try:
-            entry['description'] = parse_description(entry)
+            parsed_entry['description'] = parse_description(entry)
         except LeftError as exc:
             entry_errors.append(exc.payload)
         try:
-            entry['start'] = parse_start(entry)
+            parsed_entry['start'] = parse_start(entry)
         except LeftError as exc:
             entry_errors.append(exc.payload)
         try:
-            entry['end'] = parse_end(entry)
+            parsed_entry['end'] = parse_end(entry)
         except LeftError as exc:
             entry_errors.append(exc.payload)
         try:
-            entry['duration'] = parse_duration(entry)
+            parsed_entry['duration'] = parse_duration(entry)
         except LeftError as exc:
             entry_errors.append(exc.payload)
         try:
-            entry['tags'] = parse_tags(entry)
+            parsed_entry['tags'] = parse_tags(entry)
         except LeftError as exc:
             entry_errors.append(exc.payload)
         return (parsed_entry, entry_errors)
     return parse_entry
 
 
-def add_tzinfo(dt: datetime, tz_maybestr: str) -> datetime:
+def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
 
-    specified_tz = pytz.timezone(tz_maybestr) if tz_maybestr else None
+    specified_tz = pytz.timezone(maybe_tz) if maybe_tz else None
     has_tz = not check_tz_naive(dt)
 
     # Case: didn't specify the timezone and the parsed datetime isn't
@@ -184,7 +184,7 @@ def add_tzinfo(dt: datetime, tz_maybestr: str) -> datetime:
 #     return parse_interval
 
 
-def create_rawcanon(entry):
+def create_rawcanon(entry: dict[str, Any]):
     iv = create_interval(entry['start'], entry['end'], entry['duration'])
     start_str = fmt_time(iv.start)
     duration_str = str(int(iv.duration.total_seconds()))
@@ -221,7 +221,7 @@ def make_parse_field(
 ):
     def parse_field(entry):
         if maybe_key:
-            return parse_value(entry[maybe_key])
+            return parse_value(entry, maybe_key)
         else:
             return None
     return parse_field
@@ -248,18 +248,18 @@ def make_maybe_parse_duration(maybe_key):
         return make_parse_duration
 
 
-# def make_parse_time_dt(key, tz_maybestr):
+# def make_parse_time_dt(key, maybe_tz):
 #     def parse_time_dt(entry):
 #         dt = entry[key]
-#         dt_aware = add_tzinfo(dt, tz_maybestr)
+#         dt_aware = add_tzinfo(dt, maybe_tz)
 #         return dt_aware
 #     return parse_time_dt
 
 
-def make_parse_time_str(key, fmt_str, tz_maybestr):
+def make_parse_time_str(key, fmt_str, maybe_tz):
     def parse_time_str(entry):
         dt = datetime.strptime(entry[key], fmt_str)
-        dt_aware = add_tzinfo(dt, tz_maybestr)
+        dt_aware = add_tzinfo(dt, maybe_tz)
         return dt_aware
     return parse_time_str
 
