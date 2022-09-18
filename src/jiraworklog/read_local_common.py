@@ -24,7 +24,23 @@ class Interval:
 
 
 class RawWorklogParseEntryError(RuntimeError):
-    pass
+
+    def __init__(self, errors) -> None:
+        self.errors = errors
+
+    def __str__(self) -> None:
+        for e in self.errors:
+            print(e.err_msg())
+
+
+class InvalidRawElement:
+
+    def __init__(self):
+        pass
+
+    # TODO: make this an abstract class/method
+    def err_msg(self) -> str:
+        return ''
 
 
 # A hacky analogue to an Either Left
@@ -32,7 +48,12 @@ class LeftError(RuntimeError):
 
     def __init__(self, payload: Any) -> None:
         self.payload = payload
+        # TODO: Update message to say that this is expected to always be caught
         super().__init__('Internal logic error. Please file a bug report')
+
+
+# class TZInfoError(RuntimeError):
+
 
 
 def create_interval(
@@ -104,8 +125,7 @@ def create_canon_wkls(
                 raise RuntimeError('More than one tag matched')
 
     if errors:
-        # TODO: throw error if errors is nonempty
-        pass
+        raise RawWorklogParseEntryError(errors)
 
     return worklogs
 

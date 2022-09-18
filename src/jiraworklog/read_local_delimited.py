@@ -4,6 +4,8 @@ import csv
 from datetime import datetime
 from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
+    InvalidRawElement,
+    LeftError,
     add_tzinfo,
     create_canon_wkls,
     make_parse_field,
@@ -27,6 +29,29 @@ class DelimitedRow:
     ):
         self.row = row
         self.index = index
+
+
+class DelimitedInvalidStrptime(InvalidRawElement):
+
+    def __init__(
+        self,
+        entry: DelimitedRow,
+        elem: str,
+        fmt_str: str
+    ):
+        self.entry = entry
+        self.elem = elem
+        self.fmt_str = fmt_str
+
+    def err_msg(self) -> str:
+        msg = (
+            "Failed to parse the "
+        )
+        return msg
+
+
+class StrptimeError(Exception):
+    pass
 
 
 def read_local_delimited(
@@ -138,7 +163,11 @@ def make_parse_dt_delim(
             raise RuntimeError('Internal logic error. Please file a bug report')
         # dt_str = delim_row.row[maybe_key]
         dt_str = extract_string_delim(delim_row, key)
-        dt = parse_time_str(dt_str, maybe_fmt_str, maybe_tz)
+        try:
+            dt = parse_time_str(dt_str, maybe_fmt_str, maybe_tz)
+        except StrptimeError:
+            invalid = DelimitedInvalidStrptime(delim_row, key, maybe_fmt_str)
+            raise LeftError(invalid)
         return dt
     parse_maybe_dt_delim = make_parse_field(maybe_key, parse_dt_delim)
     return parse_maybe_dt_delim
@@ -175,7 +204,10 @@ def extract_string_delim(
 
 
 def parse_time_str(time_str, fmt_str, tz_maybestr):
-    dt = datetime.strptime(time_str, fmt_str)
+    try:
+        dt = datetime.strptime(time_str, fmt_str)
+    except Exception as exc:
+        raise StrptimeError() from exc
     dt_aware = add_tzinfo(dt, tz_maybestr)
     return dt_aware
 
