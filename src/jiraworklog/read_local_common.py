@@ -26,11 +26,13 @@ class Interval:
 class RawWorklogParseEntryError(RuntimeError):
 
     def __init__(self, errors) -> None:
-        self.errors = errors
+        self.errors = sorted(errors)
 
-    def __str__(self) -> None:
+    def __str__(self) -> str:
+        msg = []
         for e in self.errors:
-            print(e.err_msg())
+            msg.append(e.err_msg())
+        return '\n'.join(msg)
 
 
 class InvalidRawElement:
@@ -41,6 +43,10 @@ class InvalidRawElement:
     # TODO: make this an abstract class/method
     def err_msg(self) -> str:
         return ''
+
+
+class DurationJiraStyleError(Exception):
+    pass
 
 
 # A hacky analogue to an Either Left
@@ -311,7 +317,8 @@ def parse_duration(duration_str: str):
 
     # FIXME: how to handle this?
     if duration_str.lstrip():
-        raise RuntimeError(f"Invalid duration entry format: '{duration_str}'")
+        # raise RuntimeError(f"Invalid duration entry format: '{duration_str}'")
+        raise DurationJiraStyleError()
     else:
         duration = timedelta(seconds=total_secs)
 

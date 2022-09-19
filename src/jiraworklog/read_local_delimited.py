@@ -127,9 +127,9 @@ def create_canon_wkls_delimited(worklogs_native, conf):
     maybe_tz = pd.get('timezone')
     parse_entry = make_parse_entry(
         parse_description=make_parse_string_delim(cl['description']),
-        parse_start=make_parse_dt_delim(cl.get('start'), cf.get('start'), maybe_tz),
-        parse_end=make_parse_dt_delim(cl.get('end'), cf.get('end'), maybe_tz),
-        parse_duration=make_parse_duration_delim(cl.get('duration')),
+        parse_start=make_parse_dt_delim(cl.get('start'), cf.get('start'), maybe_tz, conf),
+        parse_end=make_parse_dt_delim(cl.get('end'), cf.get('end'), maybe_tz, conf),
+        parse_duration=make_parse_duration_delim(cl.get('duration'), conf),
         parse_tags=make_parse_tags_delim(cl['tags'], pd.get('delimiter2'))
     )
     canon_wkls = create_canon_wkls(
@@ -153,7 +153,8 @@ def make_parse_string_delim(key: str) -> Callable[[DelimitedRow], str]:
 def make_parse_dt_delim(
     maybe_key: Optional[str],
     maybe_fmt_str: Optional[str],
-    maybe_tz: Optional[str]
+    maybe_tz: Optional[str],
+    conf: Configuration
 ):
     def parse_dt_delim(delim_row: DelimitedRow, key: str):
         if not maybe_fmt_str:
@@ -174,12 +175,16 @@ def make_parse_dt_delim(
 
 
 # TODO
-def make_parse_duration_delim(maybe_key):
+def make_parse_duration_delim(maybe_key, conf):
     def parse_duration_delim(delim_row: DelimitedRow, key: str):
         duration_str = extract_string_delim(delim_row, key)
-        duration = parse_duration(duration_str)
+        try:
+            duration = parse_duration(duration_str)
+        except DurationJiraStyleError as exc:
+            pass
         return duration
     parse_maybe_duration = make_parse_field(maybe_key, parse_duration_delim)
+    rev_col_map = create_rev_col_map(conf)
     return parse_maybe_duration
 
 
@@ -226,3 +231,15 @@ def parse_time_str(time_str, fmt_str, tz_maybestr):
 #             raise RuntimeError('Internal logic error. Please file a bug report')
 #     else:
 #         return lambda _: None
+
+def create_rev_col_map(conf: Configuration) -> dict[str, str]:
+    if not conf.parse_delimited:
+        raise RuntimeError('Internal logic error. Please file a bug report')
+    col_labels = conf.parse_delimited['col_labels']
+    # This assumes that the configuration parses has ensured that no two values
+    # in `col_labels` are the same
+    rev_col_map = {}
+    for k, v in col_labels.items():
+        if v:
+            rev_col_map[v] = k
+    return rev_col_map

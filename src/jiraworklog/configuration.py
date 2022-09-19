@@ -359,6 +359,7 @@ def perform_additional_checks(
             msg = "no formatting information provided for the 'end' column"
             tl.append(msg)
 
+    # TODO: `col_labels` is 1-to-1
     # TODO: ensure delimiter2 isn't empty if non-None (has exactly one character?)
     # TODO: check that start/end format doesn't exist if column not provided
 
