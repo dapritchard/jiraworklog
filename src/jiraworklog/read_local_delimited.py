@@ -2,8 +2,10 @@
 
 import csv
 from datetime import datetime
+from functools import total_ordering
 from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
+    DurationJiraStyleError,
     InvalidRawElement,
     LeftError,
     add_tzinfo,
@@ -31,21 +33,38 @@ class DelimitedRow:
         self.index = index
 
 
-class DelimitedInvalidStrptime(InvalidRawElement):
+@total_ordering
+class DelimitedInvalid(InvalidRawElement):
+
+    def __init__(self, entry: DelimitedRow) -> None:
+        self.entry = entry
+
+    def __lt__(self, other) -> bool:
+        is_lt = (
+            isinstance(other, DelimitedInvalid)
+            and self.entry.index < other.entry.index
+        )
+        return is_lt
+
+
+class DelimitedInvalidStrptime(DelimitedInvalid):
 
     def __init__(
         self,
         entry: DelimitedRow,
-        elem: str,
+        value: str,
+        col_label: str,
         fmt_str: str
     ):
         self.entry = entry
-        self.elem = elem
+        self.value = value
+        self.col_label = col_label
         self.fmt_str = fmt_str
 
     def err_msg(self) -> str:
         msg = (
-            "Failed to parse the "
+            f"row {self.entry.index} '{self.col_label}' field: '{self.value}' "
+            f"didn't satisfy the parse format '{self.fmt_str}'"
         )
         return msg
 
@@ -167,10 +186,11 @@ def make_parse_dt_delim(
         try:
             dt = parse_time_str(dt_str, maybe_fmt_str, maybe_tz)
         except StrptimeError:
-            invalid = DelimitedInvalidStrptime(delim_row, key, maybe_fmt_str)
+            invalid = DelimitedInvalidStrptime(delim_row, dt_str, rev_col_map[key], maybe_fmt_str)
             raise LeftError(invalid)
         return dt
     parse_maybe_dt_delim = make_parse_field(maybe_key, parse_dt_delim)
+    rev_col_map = create_rev_col_map(conf)
     return parse_maybe_dt_delim
 
 
