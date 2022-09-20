@@ -48,11 +48,17 @@ class DelimitedInvalid(InvalidRawElement):
 
 
 class DelimitedInvalidTooFewElems(DelimitedInvalid):
-    pass
+
+    def err_msg(self) -> str:
+        msg = f"row {self.entry.index}: not enough entries"
+        return msg
 
 
 class DelimitedInvalidTooManyElems(DelimitedInvalid):
-    pass
+
+    def err_msg(self) -> str:
+        msg = f"row {self.entry.index}: too many entries"
+        return msg
 
 
 class DelimitedInvalidStrptime(DelimitedInvalid):
@@ -120,9 +126,9 @@ def read_native_wkls_delimited(
                 # restval (which defaults to None).
                 delim_row = DelimitedRow(row, i)
                 if None in row:
-                    entries.append(DelimitedInvalidTooManyElems(delim_row))
+                    errors.append(DelimitedInvalidTooManyElems(delim_row))
                 elif None in row.values():
-                    entries.append(DelimitedInvalidTooFewElems(delim_row))
+                    errors.append(DelimitedInvalidTooFewElems(delim_row))
                 else:
                     entries.append(delim_row)
         # See https://docs.python.org/3/library/csv.html#csv.Error
