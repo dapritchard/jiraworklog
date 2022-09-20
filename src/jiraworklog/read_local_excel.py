@@ -124,7 +124,8 @@ def create_canon_wkls_excel(worklogs_native, conf):
     canon_wkls = create_canon_wkls(
         worklogs_native=worklogs_native,
         issues_map=conf.issues_map,
-        parse_entry=parse_entry
+        parse_entry=parse_entry,
+        errors=[]
     )
     return canon_wkls
 

@@ -30,6 +30,7 @@ class RawWorklogParseEntryError(RuntimeError):
 
     def __str__(self) -> str:
         msg = []
+        # FIXME: typing
         for e in self.errors:
             msg.append(e.err_msg())
         return '\n'.join(msg)
@@ -89,7 +90,8 @@ def create_interval(
 def create_canon_wkls(
         worklogs_native,
         issues_map,
-        parse_entry
+        parse_entry,
+        errors
     ):
 
     # parse_interval = make_parse_interval(parse_start, parse_end, parse_duration)
@@ -106,7 +108,6 @@ def create_canon_wkls(
     for nm in issues_map.values():
         worklogs[nm] = []
 
-    errors = []
     for entry in worklogs_native:
 
         # NOTE: In the event of a parse error in the description or tags we
@@ -259,6 +260,8 @@ def make_parse_field(
 #     else:
 #         return make_parse_time_dt(maybe_key, maybe_tz)
 
+# TODO: which functions in this module are unused anywhere?
+
 
 def make_maybe_parse_time_str(maybe_key, maybe_fmt_str, maybe_tz):
     if maybe_key is None:
@@ -315,9 +318,7 @@ def parse_duration(duration_str: str):
         duration_str, n_secs = chomp(duration_str, re_str, unit_secs)
         total_secs += n_secs
 
-    # FIXME: how to handle this?
     if duration_str.lstrip():
-        # raise RuntimeError(f"Invalid duration entry format: '{duration_str}'")
         raise DurationJiraStyleError()
     else:
         duration = timedelta(seconds=total_secs)

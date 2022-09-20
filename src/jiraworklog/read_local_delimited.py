@@ -47,6 +47,14 @@ class DelimitedInvalid(InvalidRawElement):
         return is_lt
 
 
+class DelimitedInvalidTooFewElems(DelimitedInvalid):
+    pass
+
+
+class DelimitedInvalidTooManyElems(DelimitedInvalid):
+    pass
+
+
 class DelimitedInvalidStrptime(DelimitedInvalid):
 
     def __init__(
@@ -64,7 +72,7 @@ class DelimitedInvalidStrptime(DelimitedInvalid):
     def err_msg(self) -> str:
         msg = (
             f"row {self.entry.index} '{self.col_label}' field: '{self.value}' "
-            f"didn't satisfy the parse format '{self.fmt_str}'"
+            f"doesn't satisfy the parse format '{self.fmt_str}'"
         )
         return msg
 
@@ -77,8 +85,8 @@ def read_local_delimited(
     worklogs_path: str,
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
-    worklogs_native = read_native_wkls_delimited(worklogs_path, conf)
-    canon_wkls = create_canon_wkls_delimited(worklogs_native, conf)
+    worklogs_native, errors = read_native_wkls_delimited(worklogs_path, conf)
+    canon_wkls = create_canon_wkls_delimited(worklogs_native, conf, errors)
     return canon_wkls
 
 
@@ -96,22 +104,32 @@ def read_native_wkls_delimited(
     worklogs_path: str,
     conf: Configuration
 # ) -> list[dict[str, str]]:
-) -> list[DelimitedRow]:
+) -> tuple[list[DelimitedRow], list[DelimitedInvalid]]:
     dialect_args = construct_dialect_args(conf)
     with smart_open(worklogs_path, mode='r', newline='') as csv_file:
         entries = []
+        errors = []
         reader = csv.DictReader(csv_file, **dialect_args)
-        for i, row in enumerate(reader):
-            # TODO: check that we have the right number of columns
-            # https://docs.python.org/3/library/csv.html
-            # If a row has more fields than fieldnames, the remaining data is
-            # put in a list and stored with the fieldname specified by restkey
-            # (which defaults to None). If a non-blank row has fewer fields than
-            # fieldnames, the missing values are filled-in with the value of
-            # restval (which defaults to None).
-            # TODO: what circumstances, if any, will cause an exception?
-            entries.append(DelimitedRow(row, i))
-    return entries
+        try:
+            for i, row in enumerate(reader):
+                # From https://docs.python.org/3/library/csv.html: if a row has
+                # more fields than fieldnames, the remaining data is put in a
+                # list and stored with the fieldname specified by restkey (which
+                # defaults to None). If a non-blank row has fewer fields than
+                # fieldnames, the missing values are filled-in with the value of
+                # restval (which defaults to None).
+                delim_row = DelimitedRow(row, i)
+                if None in row:
+                    entries.append(DelimitedInvalidTooManyElems(delim_row))
+                elif None in row.values():
+                    entries.append(DelimitedInvalidTooFewElems(delim_row))
+                else:
+                    entries.append(delim_row)
+        # See https://docs.python.org/3/library/csv.html#csv.Error
+        except csv.Error as exc:
+            # FIXME
+            raise RuntimeError('Error parsing the CSV file') from exc
+    return (entries, errors)
 
 
 def construct_dialect_args(conf):
@@ -137,7 +155,7 @@ def construct_dialect_args(conf):
     return dialect_args
 
 
-def create_canon_wkls_delimited(worklogs_native, conf):
+def create_canon_wkls_delimited(worklogs_native, conf, errors):
     if conf.parse_delimited is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     pd = conf.parse_delimited
@@ -154,7 +172,8 @@ def create_canon_wkls_delimited(worklogs_native, conf):
     canon_wkls = create_canon_wkls(
         worklogs_native=worklogs_native,
         issues_map=conf.issues_map,
-        parse_entry=parse_entry
+        parse_entry=parse_entry,
+        errors=errors
     )
     return canon_wkls
 
