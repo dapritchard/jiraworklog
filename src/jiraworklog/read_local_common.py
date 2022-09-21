@@ -21,6 +21,7 @@ class Interval:
     ) -> None:
         self.start = start
         self.duration = duration
+        # FIXME: check for negative duration
 
 
 class RawWorklogParseEntryError(RuntimeError):
@@ -197,20 +198,6 @@ def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
     return dt_aware
 
 
-# def make_parse_interval(
-#         parse_start,
-#         parse_end,
-#         parse_duration
-# ) -> Callable[[dict[str, Any]], Interval]:
-#     def parse_interval(entry: dict[str, Any]) -> Interval:
-#         maybe_start = parse_start(entry)
-#         maybe_end = parse_end(entry)
-#         maybe_duration = parse_duration(entry)
-#         iv = create_interval(maybe_start, maybe_end, maybe_duration)
-#         return iv
-#     return parse_interval
-
-
 def create_rawcanon(entry: dict[str, Any]):
     iv = create_interval(entry['start'], entry['end'], entry['duration'])
     start_str = fmt_time(iv.start)
@@ -223,25 +210,6 @@ def create_rawcanon(entry: dict[str, Any]):
     return worklog
 
 
-# def make_parse_rawcanon(parse_description, parse_interval):
-#     def parse_rawcanon(entry):
-#         description = parse_description(entry)
-#         iv = parse_interval(entry)
-#         start_str = fmt_time(iv.start)
-#         duration_str = str(int(iv.duration.total_seconds()))
-#         worklog = {
-#             'comment': description,
-#             'started': start_str,
-#             'timeSpentSeconds': duration_str
-#         }
-#         return worklog
-#     return parse_rawcanon
-
-
-# def make_parse_field(key):
-#     return lambda entry: entry[key]
-
-
 def make_parse_field(
     maybe_key: Optional[str],
     parse_value
@@ -252,45 +220,6 @@ def make_parse_field(
         else:
             return None
     return parse_field
-
-
-# def make_maybe_parse_time_dt(maybe_key, maybe_tz):
-#     if maybe_key is None:
-#         return lambda _: None
-#     else:
-#         return make_parse_time_dt(maybe_key, maybe_tz)
-
-# TODO: which functions in this module are unused anywhere?
-
-
-def make_maybe_parse_time_str(maybe_key, maybe_fmt_str, maybe_tz):
-    if maybe_key is None:
-        return lambda _: None
-    else:
-        return make_parse_time_str(maybe_key, maybe_fmt_str, maybe_tz)
-
-
-def make_maybe_parse_duration(maybe_key):
-    if maybe_key is None:
-        return lambda _: None
-    else:
-        return make_parse_duration
-
-
-# def make_parse_time_dt(key, maybe_tz):
-#     def parse_time_dt(entry):
-#         dt = entry[key]
-#         dt_aware = add_tzinfo(dt, maybe_tz)
-#         return dt_aware
-#     return parse_time_dt
-
-
-def make_parse_time_str(key, fmt_str, maybe_tz):
-    def parse_time_str(entry):
-        dt = datetime.strptime(entry[key], fmt_str)
-        dt_aware = add_tzinfo(dt, maybe_tz)
-        return dt_aware
-    return parse_time_str
 
 
 def parse_duration(duration_str: str):
@@ -324,17 +253,6 @@ def parse_duration(duration_str: str):
         duration = timedelta(seconds=total_secs)
 
     return duration
-
-
-def make_parse_duration(key):
-    return lambda entry: parse_duration(entry[key])
-
-
-def make_parse_tags(tags_key: str, maybe_delimiter2: Optional[str]): # TODO: return type
-    if maybe_delimiter2 is None:
-        return lambda entry: set([entry[tags_key]])
-    else:
-        return lambda entry: set(entry[tags_key].split(maybe_delimiter2))
 
 
 def fmt_time(dt: datetime) -> str:
