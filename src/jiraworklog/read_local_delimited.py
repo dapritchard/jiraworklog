@@ -2,7 +2,6 @@
 
 import csv
 from datetime import datetime, timedelta
-# from functools import total_ordering
 from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
     DurationJiraStyleError,
@@ -40,8 +39,9 @@ class DelimitedRow(NativeRow):
         return self.index
 
 
-
 class DelimitedInvalid(NativeInvalidElement):
+
+    entry: DelimitedRow
 
     def __init__(self, entry: DelimitedRow) -> None:
         self.entry = entry
@@ -53,18 +53,23 @@ class DelimitedInvalid(NativeInvalidElement):
 class DelimitedInvalidTooFewElems(DelimitedInvalid):
 
     def err_msg(self) -> str:
-        msg = f"row {self.entry.index}: not enough entries"
+        msg = f"row {self.row_index()}: not enough entries"
         return msg
 
 
 class DelimitedInvalidTooManyElems(DelimitedInvalid):
 
     def err_msg(self) -> str:
-        msg = f"row {self.entry.index}: too many entries"
+        msg = f"row {self.row_index()}: too many entries"
         return msg
 
 
 class DelimitedInvalidStrptime(DelimitedInvalid):
+
+    entry: DelimitedRow
+    value: str
+    col_label: str
+    fmt_str: str
 
     def __init__(
         self,
@@ -80,8 +85,30 @@ class DelimitedInvalidStrptime(DelimitedInvalid):
 
     def err_msg(self) -> str:
         msg = (
-            f"row {self.entry.index} '{self.col_label}' field: '{self.value}' "
+            f"row {self.row_index()} '{self.col_label}' field: '{self.value}' "
             f"doesn't satisfy the parse format '{self.fmt_str}'"
+        )
+        return msg
+
+
+class DelimitedInvalidDurationJiraStyle(DelimitedInvalid):
+
+    entry: DelimitedRow
+
+    def __init__(
+        self,
+        entry: DelimitedRow,
+        value: str,
+        col_label: str
+    ) -> None:
+        self.entry = entry
+        self.value = value
+        self.col_label = col_label
+
+    def err_msg(self) -> str:
+        msg = (
+            f"row {self.row_index()} '{self.col_label}' field: '{self.value}' "
+            f"doesn't satisfy the Jira-style parse format"
         )
         return msg
 
@@ -104,15 +131,9 @@ def read_local_delimited(
 # # Get the values provides by the CSV reader default (i.e. `excel`)
 # # Note that the `quoting` attribute corresponds to `csv.QUOTE_MINIMAL`
 # # https://docs.python.org/3/library/csv.html#csv.QUOTE_MINIMAL
-# excel_options = {
-#     x: getattr(csv.excel, x)
-#     for x in dir(csv.excel)
-#     if not x.startswith('_')
-# }
 def read_native_wkls_delimited(
     worklogs_path: str,
     conf: Configuration
-# ) -> list[dict[str, str]]:
 ) -> tuple[list[DelimitedRow], list[DelimitedInvalid]]:
     dialect_args = construct_dialect_args(conf)
     with smart_open(worklogs_path, mode='r', newline='') as csv_file:
@@ -139,11 +160,11 @@ def read_native_wkls_delimited(
             # FIXME: understand better how an error can actually be thrown. This
             # doesn't throw the original message. Does it even need to be caught
             # since there's probably not much we can do with it?
-            raise RuntimeError('Error parsing the CSV file') from exc
+            raise RuntimeError('Error reading the worklogs CSV file') from exc
     return (entries, errors)
 
 
-def construct_dialect_args(conf):
+def construct_dialect_args(conf) -> dict[str, Any]:
     # Note that the `escapechar` option has a valid value of `None`. In general
     # the configuration schema allows for values of `None` to have the same
     # meaning as omitting the field, which for the fields in `dialect`
@@ -166,7 +187,7 @@ def construct_dialect_args(conf):
     return dialect_args
 
 
-def create_canon_wkls_delimited(worklogs_native, conf, errors):
+def create_canon_wkls_delimited(worklogs_native, conf, errors) -> dict[str, Any]:
     if conf.parse_delimited is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     pd = conf.parse_delimited
@@ -190,10 +211,8 @@ def create_canon_wkls_delimited(worklogs_native, conf, errors):
 
 
 def make_parse_string_delim(key: str) -> Callable[[DelimitedRow], str]:
-# def make_parse_string_delim(key: str) -> Callable[[dict[str, str]], str]:
     # TODO: use functools?
     def parse_string(entry: DelimitedRow):
-    # def parse_string(entry: dict[str, str]):
         value = extract_string_delim(entry, key)
         return value
     return parse_string
@@ -211,7 +230,6 @@ def make_parse_dt_delim(
             # if `maybe_key` is non-None then `maybe_fmt_str` must also be
             # non-None
             raise RuntimeError('Internal logic error. Please file a bug report')
-        # dt_str = delim_row.row[maybe_key]
         dt_str = extract_string_delim(delim_row, key)
         try:
             dt = parse_time_str(dt_str, maybe_fmt_str, maybe_tz)
@@ -224,7 +242,6 @@ def make_parse_dt_delim(
     return parse_maybe_dt_delim
 
 
-# TODO
 def make_parse_duration_delim(
     maybe_key: Optional[str],
     conf: Configuration
@@ -233,15 +250,15 @@ def make_parse_duration_delim(
         duration_str = extract_string_delim(delim_row, key)
         try:
             duration = parse_duration(duration_str)
-        except DurationJiraStyleError as exc:
-            raise RuntimeError('') # FIXME
+        except DurationJiraStyleError:
+            invalid = DelimitedInvalidDurationJiraStyle(delim_row, duration_str, rev_col_map[key])
+            raise LeftError(invalid)
         return duration
     parse_maybe_duration = make_parse_field(maybe_key, parse_duration_delim)
-    rev_col_map = create_rev_col_map(conf) # FIXME
+    rev_col_map = create_rev_col_map(conf)
     return parse_maybe_duration
 
 
-# TODO
 def make_parse_tags_delim(
     key: str,
     maybe_delimiter2: Optional[str]

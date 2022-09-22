@@ -8,7 +8,9 @@ from jiraworklog.worklogs import WorklogCanon
 import pytz
 import re
 import sys
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence, TypeVar
+
+NativeRowSubcl = TypeVar('NativeRowSubcl', bound='NativeRow')
 
 
 class Interval:
@@ -111,13 +113,12 @@ class LeftError(Exception):
 
 
 
-# TODO: typing
 def create_canon_wkls(
         worklogs_native: Sequence[NativeRow],
         issues_map: dict[str, str],
-        parse_entry: Callable[[NativeRow], tuple[dict[str, Any], list[NativeInvalidElement]]],
+        parse_entry: Callable[[NativeRowSubcl], tuple[dict[str, Any], list[NativeInvalidElement]]],
         errors: list[NativeInvalidElement]
-    ):
+    ) -> dict[str, Any]:
 
     global_tags_set = set(issues_map.keys())
 
@@ -164,12 +165,12 @@ def create_canon_wkls(
 
 
 def make_parse_entry(
-    parse_description: Callable[[NativeRow], str],
-    parse_start: Callable[[NativeRow], Optional[datetime]],
-    parse_end: Callable[[NativeRow], Optional[datetime]],
-    parse_duration: Callable[[NativeRow], Optional[timedelta]],
-    parse_tags: Callable[[NativeRow], set[str]]
-) -> Callable[[NativeRow], tuple[dict[str, Any], list[NativeInvalidElement]]]:
+    parse_description: Callable[[NativeRowSubcl], str],
+    parse_start: Callable[[NativeRowSubcl], Optional[datetime]],
+    parse_end: Callable[[NativeRowSubcl], Optional[datetime]],
+    parse_duration: Callable[[NativeRowSubcl], Optional[timedelta]],
+    parse_tags: Callable[[NativeRowSubcl], set[str]]
+) -> Callable[[NativeRowSubcl], tuple[dict[str, Any], list[NativeInvalidElement]]]:
     def parse_entry(entry):
         parsed_entry = {}
         entry_errors = []
