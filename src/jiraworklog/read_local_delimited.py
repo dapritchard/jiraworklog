@@ -6,8 +6,9 @@ from functools import total_ordering
 from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
     DurationJiraStyleError,
-    InvalidRawElement,
+    NativeInvalidElement,
     LeftError,
+    NativeRow,
     add_tzinfo,
     create_canon_wkls,
     make_parse_field,
@@ -22,29 +23,28 @@ from jiraworklog.worklogs import WorklogCanon
 from typing import Any, Callable, Optional
 
 
-class DelimitedRow:
+class DelimitedRow(NativeRow):
 
     def __init__(
         self,
         row: dict[str, str],
         index: int
-    ):
+    ) -> None:
         self.row = row
         self.index = index
 
+    def row_index(self) -> int:
+        return self.index
 
-@total_ordering
-class DelimitedInvalid(InvalidRawElement):
+
+
+class DelimitedInvalid(NativeInvalidElement):
 
     def __init__(self, entry: DelimitedRow) -> None:
         self.entry = entry
 
-    def __lt__(self, other) -> bool:
-        is_lt = (
-            isinstance(other, DelimitedInvalid)
-            and self.entry.index < other.entry.index
-        )
-        return is_lt
+    def row_index(self) -> int:
+        return self.entry.index
 
 
 class DelimitedInvalidTooFewElems(DelimitedInvalid):
@@ -133,7 +133,9 @@ def read_native_wkls_delimited(
                     entries.append(delim_row)
         # See https://docs.python.org/3/library/csv.html#csv.Error
         except csv.Error as exc:
-            # FIXME
+            # FIXME: understand better how an error can actually be thrown. This
+            # doesn't throw the original message. Does it even need to be caught
+            # since there's probably not much we can do with it?
             raise RuntimeError('Error parsing the CSV file') from exc
     return (entries, errors)
 
@@ -226,10 +228,10 @@ def make_parse_duration_delim(maybe_key, conf):
         try:
             duration = parse_duration(duration_str)
         except DurationJiraStyleError as exc:
-            pass
+            pass # FIXME
         return duration
     parse_maybe_duration = make_parse_field(maybe_key, parse_duration_delim)
-    rev_col_map = create_rev_col_map(conf)
+    rev_col_map = create_rev_col_map(conf) # FIXME
     return parse_maybe_duration
 
 

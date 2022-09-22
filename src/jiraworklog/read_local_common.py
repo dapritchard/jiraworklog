@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
+from abc import ABC, abstractmethod
 import contextlib
 from datetime import datetime, timedelta
+from functools import total_ordering
 from jiraworklog.worklogs import WorklogCanon
 import pytz
 import re
 import sys
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Sequence
 
 
 class Interval:
@@ -20,31 +22,76 @@ class Interval:
         duration: timedelta
     ) -> None:
         self.start = start
+        if duration.total_seconds() < 0:
+            raise NegativeTimedeltaError()
         self.duration = duration
-        # FIXME: check for negative duration
 
 
-class RawWorklogParseEntryError(RuntimeError):
+class NativeRow(ABC):
 
-    def __init__(self, errors) -> None:
+    @abstractmethod
+    def row_index(self) -> int:
+        pass
+
+
+@total_ordering
+class NativeInvalidElement(ABC):
+    """Abstract base class used to record a single parsing issue that was found
+    while parsing the raw worklogs.
+    """
+
+    def __lt__(self, other) -> bool:
+        is_lt = (
+            isinstance(other, NativeInvalidElement)
+            and self.row_index() < other.row_index()
+        )
+        return is_lt
+
+    @abstractmethod
+    def row_index(self) -> int:
+        pass
+
+    @abstractmethod
+    def err_msg(self) -> str:
+        pass
+
+
+class NativeInvalidMultipleTagMatches(NativeInvalidElement):
+
+    def __init__(self, index: int, tag_matches: list['str']):
+        self.index = index
+        self.tag_matches = tag_matches
+
+    def row_index(self) -> int:
+        return self.index
+
+    def err_msg(self) -> str:
+        tag_str = "', '".join(self.tag_matches)
+        msg = f"row {self.row_index()}: multiple tag matches '{tag_str}'"
+        return msg
+
+
+class NativeWorklogParseEntryError(RuntimeError):
+    """Class used to throw an error if any parsing issues were found while
+    parsing the raw worklogs.
+    """
+
+    def __init__(self, errors: list[NativeInvalidElement]) -> None:
         self.errors = sorted(errors)
 
     def __str__(self) -> str:
         msg = []
-        # FIXME: typing
         for e in self.errors:
             msg.append(e.err_msg())
         return '\n'.join(msg)
 
 
-class InvalidRawElement:
+class InconsistentStartEndDurationError(Exception):
+    pass
 
-    def __init__(self):
-        pass
 
-    # TODO: make this an abstract class/method
-    def err_msg(self) -> str:
-        return ''
+class NegativeTimedeltaError(Exception):
+    pass
 
 
 class DurationJiraStyleError(Exception):
@@ -52,7 +99,7 @@ class DurationJiraStyleError(Exception):
 
 
 # A hacky analogue to an Either Left
-class LeftError(RuntimeError):
+class LeftError(Exception):
 
     def __init__(self, payload: Any) -> None:
         self.payload = payload
@@ -74,7 +121,7 @@ def create_interval(
         iv = Interval(maybe_start, maybe_end - maybe_start)
         diff = iv.duration.total_seconds() - maybe_duration.total_seconds()
         if abs(diff) > 1.0:
-            raise RuntimeError('Inconsistent start, end, and duration entries.')
+            raise InconsistentStartEndDurationError()
     elif maybe_start and maybe_end:
         iv = Interval(maybe_start, maybe_end - maybe_start)
     elif maybe_start and maybe_duration:
@@ -88,15 +135,14 @@ def create_interval(
     return iv
 
 
+# TODO: typing
 def create_canon_wkls(
-        worklogs_native,
-        issues_map,
+        worklogs_native: Sequence[NativeRow],
+        issues_map: dict[str, str],
         parse_entry,
-        errors
+        errors: list[NativeInvalidElement]
     ):
 
-    # parse_interval = make_parse_interval(parse_start, parse_end, parse_duration)
-    # parse_rawcanon = make_parse_rawcanon(parse_description, parse_interval)
     global_tags_set = set(issues_map.keys())
 
     # Ensure that all issues have an entry in the dict, even those that don't
@@ -113,7 +159,8 @@ def create_canon_wkls(
 
         # NOTE: In the event of a parse error in the description or tags we
         # could improve this a little further by checking for errors in the
-        # calculation of the Interval before giving up
+        # calculation of the Interval before giving up. But would we have to
+        # know which elements we're supposed to have though?
         parsed_entry, entry_errors = parse_entry(entry)
         if entry_errors:
             errors.extend(entry_errors)
@@ -129,11 +176,13 @@ def create_canon_wkls(
                 raw_canon_wkl = create_rawcanon(parsed_entry)
                 worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
             else:
-                # TODO: let's track these and throw an error after the loop
-                raise RuntimeError('More than one tag matched')
+                index = entry.row_index()
+                tag_matches = sorted(list(tags_intersect))
+                invalid = NativeInvalidMultipleTagMatches(index, tag_matches)
+                errors.append(invalid)
 
     if errors:
-        raise RawWorklogParseEntryError(errors)
+        raise NativeWorklogParseEntryError(errors)
 
     return worklogs
 

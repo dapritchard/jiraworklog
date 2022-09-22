@@ -22,7 +22,10 @@ from typing import Any, Callable, Optional, Tuple, Type, Union
 
 class ExcelRow:
 
-    def __init__(self, row):
+    def __init__(
+        self,
+        row: dict[str, openpyxl.cell.cell.Cell]
+    ) -> None:
         self.row = row
 
 
@@ -70,7 +73,8 @@ def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
 # ) -> Tuple[list[dict[str, Any]], list[ExcelInvalidCellType]]:
-) -> list[dict[str, Any]]:
+# ) -> list[dict[str, Any]]:
+) -> list[ExcelRow]:
     # TODO: need a better error message if this fails?
     workbook = openpyxl.load_workbook(filename=worklogs_path)
     entries = []
