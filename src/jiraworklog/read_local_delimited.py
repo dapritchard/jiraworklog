@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import csv
-from datetime import datetime
-from functools import total_ordering
+from datetime import datetime, timedelta
+# from functools import total_ordering
 from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
     DurationJiraStyleError,
@@ -24,6 +24,9 @@ from typing import Any, Callable, Optional
 
 
 class DelimitedRow(NativeRow):
+
+    row: dict[str, str]
+    index: int
 
     def __init__(
         self,
@@ -201,7 +204,7 @@ def make_parse_dt_delim(
     maybe_fmt_str: Optional[str],
     maybe_tz: Optional[str],
     conf: Configuration
-):
+) -> Callable[[DelimitedRow], datetime]:
     def parse_dt_delim(delim_row: DelimitedRow, key: str):
         if not maybe_fmt_str:
             # We're assuming that the configuration file parser has ensured that
@@ -222,13 +225,16 @@ def make_parse_dt_delim(
 
 
 # TODO
-def make_parse_duration_delim(maybe_key, conf):
+def make_parse_duration_delim(
+    maybe_key: Optional[str],
+    conf: Configuration
+) -> Callable[[DelimitedRow], Optional[timedelta]]:
     def parse_duration_delim(delim_row: DelimitedRow, key: str):
         duration_str = extract_string_delim(delim_row, key)
         try:
             duration = parse_duration(duration_str)
         except DurationJiraStyleError as exc:
-            pass # FIXME
+            raise RuntimeError('') # FIXME
         return duration
     parse_maybe_duration = make_parse_field(maybe_key, parse_duration_delim)
     rev_col_map = create_rev_col_map(conf) # FIXME
@@ -236,7 +242,10 @@ def make_parse_duration_delim(maybe_key, conf):
 
 
 # TODO
-def make_parse_tags_delim(key, maybe_delimiter2: Optional[str]):
+def make_parse_tags_delim(
+    key: str,
+    maybe_delimiter2: Optional[str]
+) -> Callable[[DelimitedRow], set[str]]:
     def parse_tags_delim(entry):
         tags_string = extract_string_delim(entry, key)
         if maybe_delimiter2:
@@ -255,7 +264,11 @@ def extract_string_delim(
     return value
 
 
-def parse_time_str(time_str, fmt_str, tz_maybestr):
+def parse_time_str(
+    time_str: str,
+    fmt_str: str,
+    tz_maybestr: Optional[str]
+) -> datetime:
     try:
         dt = datetime.strptime(time_str, fmt_str)
     except Exception as exc:

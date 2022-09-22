@@ -58,7 +58,7 @@ class NativeInvalidElement(ABC):
 
 class NativeInvalidMultipleTagMatches(NativeInvalidElement):
 
-    def __init__(self, index: int, tag_matches: list['str']):
+    def __init__(self, index: int, tag_matches: list['str']) -> None:
         self.index = index
         self.tag_matches = tag_matches
 
@@ -111,35 +111,11 @@ class LeftError(Exception):
 
 
 
-def create_interval(
-    maybe_start: Optional[datetime],
-    maybe_end: Optional[datetime],
-    maybe_duration: Optional[timedelta]
-) -> Interval:
-
-    if maybe_start and maybe_end and maybe_duration:
-        iv = Interval(maybe_start, maybe_end - maybe_start)
-        diff = iv.duration.total_seconds() - maybe_duration.total_seconds()
-        if abs(diff) > 1.0:
-            raise InconsistentStartEndDurationError()
-    elif maybe_start and maybe_end:
-        iv = Interval(maybe_start, maybe_end - maybe_start)
-    elif maybe_start and maybe_duration:
-        iv = Interval(maybe_start, maybe_duration)
-    elif maybe_end and maybe_duration:
-        iv = Interval(maybe_end - maybe_duration, maybe_duration)
-    else:
-        # This case should already be caught at configuration file parse time
-        raise RuntimeError('Internal logic error. Please file a bug report')
-
-    return iv
-
-
 # TODO: typing
 def create_canon_wkls(
         worklogs_native: Sequence[NativeRow],
         issues_map: dict[str, str],
-        parse_entry,
+        parse_entry: Callable[[NativeRow], tuple[dict[str, Any], list[NativeInvalidElement]]],
         errors: list[NativeInvalidElement]
     ):
 
@@ -188,12 +164,12 @@ def create_canon_wkls(
 
 
 def make_parse_entry(
-    parse_description,
-    parse_start,
-    parse_end,
-    parse_duration,
-    parse_tags
-):
+    parse_description: Callable[[NativeRow], str],
+    parse_start: Callable[[NativeRow], Optional[datetime]],
+    parse_end: Callable[[NativeRow], Optional[datetime]],
+    parse_duration: Callable[[NativeRow], Optional[timedelta]],
+    parse_tags: Callable[[NativeRow], set[str]]
+) -> Callable[[NativeRow], tuple[dict[str, Any], list[NativeInvalidElement]]]:
     def parse_entry(entry):
         parsed_entry = {}
         entry_errors = []
@@ -219,6 +195,30 @@ def make_parse_entry(
             entry_errors.append(exc.payload)
         return (parsed_entry, entry_errors)
     return parse_entry
+
+
+def create_interval(
+    maybe_start: Optional[datetime],
+    maybe_end: Optional[datetime],
+    maybe_duration: Optional[timedelta]
+) -> Interval:
+
+    if maybe_start and maybe_end and maybe_duration:
+        iv = Interval(maybe_start, maybe_end - maybe_start)
+        diff = iv.duration.total_seconds() - maybe_duration.total_seconds()
+        if abs(diff) > 1.0:
+            raise InconsistentStartEndDurationError()
+    elif maybe_start and maybe_end:
+        iv = Interval(maybe_start, maybe_end - maybe_start)
+    elif maybe_start and maybe_duration:
+        iv = Interval(maybe_start, maybe_duration)
+    elif maybe_end and maybe_duration:
+        iv = Interval(maybe_end - maybe_duration, maybe_duration)
+    else:
+        # This case should already be caught at configuration file parse time
+        raise RuntimeError('Internal logic error. Please file a bug report')
+
+    return iv
 
 
 def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
