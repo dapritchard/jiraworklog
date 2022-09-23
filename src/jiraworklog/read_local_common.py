@@ -204,16 +204,34 @@ def create_interval(
     maybe_duration: Optional[timedelta]
 ) -> Interval:
 
-    if maybe_start and maybe_end and maybe_duration:
-        iv = Interval(maybe_start, maybe_end - maybe_start)
-        diff = iv.duration.total_seconds() - maybe_duration.total_seconds()
+    def calc_duration(start, end):
+        startend_diff = end - start
+        if startend_diff.total_seconds() < 0:
+            raise StartAfterEndError()
+        return startend_diff
+
+    def assert_pos_duration(duration):
+        if duration.total_seconds() < 0:
+            raise NegativeDurationError()
+
+    def assert_consistent_triplet(startend_dur, duration):
+        diff = startend_dur.total_seconds() - duration.total_seconds()
         if abs(diff) > 1.0:
             raise InconsistentStartEndDurationError()
+
+    if maybe_start and maybe_end and maybe_duration:
+        startend_dur = calc_duration(maybe_start, maybe_end)
+        assert_pos_duration(maybe_duration)
+        assert_consistent_triplet(startend_dur, maybe_duration)
+        iv = Interval(maybe_start, startend_dur)
     elif maybe_start and maybe_end:
-        iv = Interval(maybe_start, maybe_end - maybe_start)
+        startend_dur = calc_duration(maybe_start, maybe_end)
+        iv = Interval(maybe_start, startend_dur)
     elif maybe_start and maybe_duration:
+        assert_pos_duration(maybe_duration)
         iv = Interval(maybe_start, maybe_duration)
     elif maybe_end and maybe_duration:
+        assert_pos_duration(maybe_duration)
         iv = Interval(maybe_end - maybe_duration, maybe_duration)
     else:
         # This case should already be caught at configuration file parse time
@@ -224,6 +242,7 @@ def create_interval(
 
 def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
 
+    # TODO: this could throw an error, right?
     specified_tz = pytz.timezone(maybe_tz) if maybe_tz else None
     has_tz = not check_tz_naive(dt)
 
@@ -239,7 +258,6 @@ def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
     # Case: specified the timezone and the parsed datetime isn't
     # timezone-aware
     if specified_tz is not None and not has_tz:
-        # TODO: have to add time zone
         dt_aware = specified_tz.localize(dt)
     # Case: specified the timezone and the parsed datetime is timezone-aware
     else:
