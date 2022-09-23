@@ -164,7 +164,7 @@ def read_native_wkls_delimited(
     return (entries, errors)
 
 
-def construct_dialect_args(conf) -> dict[str, Any]:
+def construct_dialect_args(conf: Configuration) -> dict[str, Any]:
     # Note that the `escapechar` option has a valid value of `None`. In general
     # the configuration schema allows for values of `None` to have the same
     # meaning as omitting the field, which for the fields in `dialect`
@@ -187,6 +187,7 @@ def construct_dialect_args(conf) -> dict[str, Any]:
     return dialect_args
 
 
+# TODO: typing arguments
 def create_canon_wkls_delimited(worklogs_native, conf, errors) -> dict[str, Any]:
     if conf.parse_delimited is None:
         raise RuntimeError('Internal logic error. Please file a bug report')

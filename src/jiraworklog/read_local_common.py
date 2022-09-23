@@ -24,8 +24,6 @@ class Interval:
         duration: timedelta
     ) -> None:
         self.start = start
-        if duration.total_seconds() < 0:
-            raise NegativeTimedeltaError()
         self.duration = duration
 
 
@@ -58,6 +56,19 @@ class NativeInvalidElement(ABC):
         pass
 
 
+class NativeInvalidBasic(NativeInvalidElement):
+
+    def __init__(self, index: int, msg: str):
+        self.index = index
+        self.msg = msg
+
+    def row_index(self) -> int:
+        return self.index
+
+    def err_msg(self) -> str:
+        return f"row {self.row_index()}: {self.msg}"
+
+
 class NativeInvalidMultipleTagMatches(NativeInvalidElement):
 
     def __init__(self, index: int, tag_matches: list['str']) -> None:
@@ -88,12 +99,52 @@ class NativeWorklogParseEntryError(RuntimeError):
         return '\n'.join(msg)
 
 
-class InconsistentStartEndDurationError(Exception):
-    pass
+def make_append_invalid_elem(msg: str):
+    def append_invalid_elem(
+        _,
+        errors: list[NativeInvalidElement],
+        entry: NativeRow
+    ) -> None:
+        errors.append(NativeInvalidBasic(entry.row_index(), msg))
+    return append_invalid_elem
 
 
-class NegativeTimedeltaError(Exception):
-    pass
+class IntervalParseError(Exception):
+
+    def __init__(self, msg: str):
+        self.msg = msg
+        super().__init__(msg)
+
+    def append_invalid_elem(
+        self,
+        errors: list[NativeInvalidElement],
+        entry: NativeRow
+    ) -> None:
+        errors.append(NativeInvalidBasic(entry.row_index(), self.msg))
+
+
+class StartAfterEndError(IntervalParseError):
+
+    def __init__(self):
+        msg = 'the start datetime wasn\'t after the end datetime'
+        super().__init__(msg)
+
+
+class NegativeDurationError(IntervalParseError):
+
+    def __init__(self):
+        msg = 'the duration was negative'
+        super().__init__(msg)
+
+
+class InconsistentStartEndDurationError(IntervalParseError):
+
+    def __init__(self):
+        msg = (
+            'the difference between the start and end time did not '
+            'match the duration'
+        )
+        super().__init__(msg)
 
 
 class DurationJiraStyleError(Exception):
@@ -150,8 +201,16 @@ def create_canon_wkls(
                 pass
             elif n_intersect == 1:
                 id = issues_map[list(tags_intersect)[0]]
-                raw_canon_wkl = create_rawcanon(parsed_entry)
-                worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
+                try:
+                    raw_canon_wkl = create_rawcanon(parsed_entry)
+                except StartAfterEndError as exc:
+                    exc.append_invalid_elem(errors, entry)
+                except NegativeDurationError as exc:
+                    exc.append_invalid_elem(errors, entry)
+                except InconsistentStartEndDurationError as exc:
+                    exc.append_invalid_elem(errors, entry)
+                else:
+                    worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
             else:
                 index = entry.row_index()
                 tag_matches = sorted(list(tags_intersect))
