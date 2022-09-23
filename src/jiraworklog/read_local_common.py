@@ -151,6 +151,20 @@ class DurationJiraStyleError(Exception):
     pass
 
 
+class TimeZoneParseError(Exception):
+
+    def __init__(self, tz: str):
+        self.tz = tz
+
+    # TODO: provide command-line option to pretty-print the available timezones?
+    #
+    #    pytz.common_timezones
+    #    pytz.all_timezones
+    def __str__(self):
+        msg = f"unknown timezone '{self.tz}'\n"
+        return msg
+
+
 # A hacky analogue to an Either Left
 class LeftError(Exception):
 
@@ -188,7 +202,8 @@ def create_canon_wkls(
         # NOTE: In the event of a parse error in the description or tags we
         # could improve this a little further by checking for errors in the
         # calculation of the Interval before giving up. But would we have to
-        # know which elements we're supposed to have though?
+        # know which elements we're supposed to have though? Is it possible to
+        # have a parse error in the description or tags?
         parsed_entry, entry_errors = parse_entry(entry)
         if entry_errors:
             errors.extend(entry_errors)
@@ -203,11 +218,7 @@ def create_canon_wkls(
                 id = issues_map[list(tags_intersect)[0]]
                 try:
                     raw_canon_wkl = create_rawcanon(parsed_entry)
-                except StartAfterEndError as exc:
-                    exc.append_invalid_elem(errors, entry)
-                except NegativeDurationError as exc:
-                    exc.append_invalid_elem(errors, entry)
-                except InconsistentStartEndDurationError as exc:
+                except IntervalParseError as exc:
                     exc.append_invalid_elem(errors, entry)
                 else:
                     worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
@@ -325,7 +336,44 @@ def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
     return dt_aware
 
 
+def make_add_tzinfo(maybe_tz: Optional[str]):
+
+    def add_tzinfo(dt: datetime,):
+
+        has_tz = not check_tz_naive(dt)
+
+        # Case: didn't specify the timezone and the parsed datetime isn't
+        # timezone-aware
+        if specified_tz is None and not has_tz:
+            # TODO: better error type / message
+            raise RuntimeError('TODO')
+        # Case: didn't specify the timezone and the parsed datetime is
+        # timezone-aware
+        if specified_tz is None and has_tz:
+            dt_aware = dt
+        # Case: specified the timezone and the parsed datetime isn't
+        # timezone-aware
+        if specified_tz is not None and not has_tz:
+            dt_aware = specified_tz.localize(dt)
+        # Case: specified the timezone and the parsed datetime is timezone-aware
+        else:
+            # TODO: better error type / message
+            raise RuntimeError('TODO')
+        return dt_aware
+
+    if maybe_tz:
+        try:
+            specified_tz = pytz.timezone(maybe_tz)
+        except pytz.exceptions.UnknownTimeZoneError as exc:
+            raise TimeZoneParseError(maybe_tz) from exc
+    else:
+        specified_tz = None
+
+    return add_tzinfo
+
+
 def create_rawcanon(entry: dict[str, Any]):
+    # Note that we can throw an error in `create_interval`
     iv = create_interval(entry['start'], entry['end'], entry['duration'])
     start_str = fmt_time(iv.start)
     duration_str = str(int(iv.duration.total_seconds()))
@@ -376,8 +424,7 @@ def parse_duration(duration_str: str):
 
     if duration_str.lstrip():
         raise DurationJiraStyleError()
-    else:
-        duration = timedelta(seconds=total_secs)
+    duration = timedelta(seconds=total_secs)
 
     return duration
 
