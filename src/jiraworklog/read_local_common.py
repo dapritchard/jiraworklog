@@ -69,19 +69,32 @@ class NativeInvalidBasic(NativeInvalidElement):
         return f"row {self.row_index()}: {self.msg}"
 
 
-class NativeInvalidMultipleTagMatches(NativeInvalidElement):
+class NativeInvalidMultipleTagMatches(NativeInvalidBasic):
 
     def __init__(self, index: int, tag_matches: list['str']) -> None:
-        self.index = index
-        self.tag_matches = tag_matches
+        tag_str = "', '".join(tag_matches)
+        msg = f"multiple tag matches '{tag_str}'"
+        super().__init__(index, msg)
 
-    def row_index(self) -> int:
-        return self.index
 
-    def err_msg(self) -> str:
-        tag_str = "', '".join(self.tag_matches)
-        msg = f"row {self.row_index()}: multiple tag matches '{tag_str}'"
-        return msg
+class NativeInvalidMissingTZInfo(NativeInvalidBasic):
+
+    def __init__(self, index: int) -> None:
+        msg = (
+            'must provide either a timezone-aware datetime or a timezone '
+            'specification in the configuration file'
+        )
+        super().__init__(index, msg)
+
+
+class NativeInvalidDualTZInfo(NativeInvalidBasic):
+
+    def __init__(self, index: int) -> None:
+        msg = (
+            "can't provide both a timezone-aware datetime and a timezone "
+            "specification in the configuration file"
+        )
+        super().__init__(index, msg)
 
 
 class NativeWorklogParseEntryError(RuntimeError):
@@ -97,16 +110,6 @@ class NativeWorklogParseEntryError(RuntimeError):
         for e in self.errors:
             msg.append(e.err_msg())
         return '\n'.join(msg)
-
-
-def make_append_invalid_elem(msg: str):
-    def append_invalid_elem(
-        _,
-        errors: list[NativeInvalidElement],
-        entry: NativeRow
-    ) -> None:
-        errors.append(NativeInvalidBasic(entry.row_index(), msg))
-    return append_invalid_elem
 
 
 class IntervalParseError(Exception):
@@ -151,7 +154,7 @@ class DurationJiraStyleError(Exception):
     pass
 
 
-class TimeZoneParseError(Exception):
+class TimeZoneUnkownTZInfoError(Exception):
 
     def __init__(self, tz: str):
         self.tz = tz
@@ -163,6 +166,14 @@ class TimeZoneParseError(Exception):
     def __str__(self):
         msg = f"unknown timezone '{self.tz}'\n"
         return msg
+
+
+class TimeZoneMissingTZInfo(Exception):
+    pass
+
+
+class TimeZoneDualTZInfo(Exception):
+    pass
 
 
 # A hacky analogue to an Either Left
@@ -338,15 +349,14 @@ def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
 
 def make_add_tzinfo(maybe_tz: Optional[str]):
 
-    def add_tzinfo(dt: datetime,):
+    def add_tzinfo(dt: datetime):
 
         has_tz = not check_tz_naive(dt)
 
         # Case: didn't specify the timezone and the parsed datetime isn't
         # timezone-aware
         if specified_tz is None and not has_tz:
-            # TODO: better error type / message
-            raise RuntimeError('TODO')
+            raise TimeZoneMissingTZInfo()
         # Case: didn't specify the timezone and the parsed datetime is
         # timezone-aware
         if specified_tz is None and has_tz:
@@ -357,15 +367,14 @@ def make_add_tzinfo(maybe_tz: Optional[str]):
             dt_aware = specified_tz.localize(dt)
         # Case: specified the timezone and the parsed datetime is timezone-aware
         else:
-            # TODO: better error type / message
-            raise RuntimeError('TODO')
+            raise TimeZoneDualTZInfo()
         return dt_aware
 
     if maybe_tz:
         try:
             specified_tz = pytz.timezone(maybe_tz)
         except pytz.exceptions.UnknownTimeZoneError as exc:
-            raise TimeZoneParseError(maybe_tz) from exc
+            raise TimeZoneUnkownTZInfoError(maybe_tz) from exc
     else:
         specified_tz = None
 
