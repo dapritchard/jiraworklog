@@ -6,10 +6,14 @@ from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
     DurationJiraStyleError,
     NativeInvalidElement,
+    NativeInvalidMissingTZInfo,
+    NativeInvalidDualTZInfo,
     LeftError,
     NativeRow,
-    add_tzinfo,
+    TimeZoneMissingTZInfo,
+    TimeZoneDualTZInfo,
     create_canon_wkls,
+    make_add_tzinfo,
     make_parse_field,
     # make_maybe_parse_duration,
     # make_maybe_parse_time_str,
@@ -219,6 +223,11 @@ def make_parse_string_delim(key: str) -> Callable[[DelimitedRow], str]:
     return parse_string
 
 
+# FIXME: maybe_key and maybe_fmt_str are both either maybe or not. But it is
+# hard to represent that in the type system. For instance, we would like to have
+# `make_parse_time_str` take `maybe_tz` as an argument as well, but we can't
+# convince the type-checker that it will be non-None. It would probably be
+# better to make these a Maybe ProductType.
 def make_parse_dt_delim(
     maybe_key: Optional[str],
     maybe_fmt_str: Optional[str],
@@ -233,11 +242,16 @@ def make_parse_dt_delim(
             raise RuntimeError('Internal logic error. Please file a bug report')
         dt_str = extract_string_delim(delim_row, key)
         try:
-            dt = parse_time_str(dt_str, maybe_fmt_str, maybe_tz)
+            dt = parse_time_str(dt_str, maybe_fmt_str)
         except StrptimeError:
             invalid = DelimitedInvalidStrptime(delim_row, dt_str, rev_col_map[key], maybe_fmt_str)
             raise LeftError(invalid)
+        except TimeZoneMissingTZInfo:
+            raise LeftError(NativeInvalidMissingTZInfo(delim_row.row_index()))
+        except TimeZoneDualTZInfo:
+            raise LeftError(NativeInvalidDualTZInfo(delim_row.row_index()))
         return dt
+    parse_time_str = make_parse_time_str(maybe_tz)
     parse_maybe_dt_delim = make_parse_field(maybe_key, parse_dt_delim)
     rev_col_map = create_rev_col_map(conf)
     return parse_maybe_dt_delim
@@ -282,17 +296,18 @@ def extract_string_delim(
     return value
 
 
-def parse_time_str(
-    time_str: str,
-    fmt_str: str,
-    tz_maybestr: Optional[str]
-) -> datetime:
-    try:
-        dt = datetime.strptime(time_str, fmt_str)
-    except Exception as exc:
-        raise StrptimeError() from exc
-    dt_aware = add_tzinfo(dt, tz_maybestr)
-    return dt_aware
+def make_parse_time_str(maybe_tz: Optional[str]):
+    def parse_time_str(time_str: str, fmt_str: str) -> datetime:
+        try:
+            dt = datetime.strptime(time_str, fmt_str)
+        # TODO: should we use a more fine-grained exception class? Can we?
+        except Exception as exc:
+            raise StrptimeError() from exc
+        # Note that `add_tzinfo` can throw an error but we let it bubble up
+        dt_aware = add_tzinfo(dt)
+        return dt_aware
+    add_tzinfo = make_add_tzinfo(maybe_tz)
+    return parse_time_str
 
 
 # def make_maybe_parse_time_delim(maybe_key, maybe_fmt_str, maybe_tz):
