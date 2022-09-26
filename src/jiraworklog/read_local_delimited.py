@@ -223,7 +223,7 @@ def make_parse_string_delim(key: str) -> Callable[[DelimitedRow], str]:
     return parse_string
 
 
-# FIXME: maybe_key and maybe_fmt_str are both either maybe or not. But it is
+# TODO: maybe_key and maybe_fmt_str are both either maybe or not. But it is
 # hard to represent that in the type system. For instance, we would like to have
 # `make_parse_time_str` take `maybe_tz` as an argument as well, but we can't
 # convince the type-checker that it will be non-None. It would probably be

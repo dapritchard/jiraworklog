@@ -5,10 +5,10 @@ from jiraworklog.configuration import Configuration
 # from jiraworklog.read_local_delimited import read_local_general, read_worklogs_native
 from jiraworklog.read_local_common import (
     LeftError,
-    add_tzinfo,
     create_canon_wkls,
     # make_maybe_parse_duration,
     # make_maybe_parse_time_dt,
+    make_add_tzinfo,
     make_parse_entry,
     make_parse_field,
     # make_parse_tags
@@ -59,6 +59,17 @@ class ExcelInvalidCellType:
         return msg
 
 
+class ExcelMissingHeader(Exception):
+
+    def __init__(self, missing_colnames):
+        msg = (
+            "Error parsing the worklogs file. The following column names are "
+            "specified in the configuration file but are not present in the "
+            f"worklogs header line: '{', '.join(missing_colnames)}'"
+        )
+        super().__init__(msg)
+
+
 def read_local_excel(
     worklogs_path: str,
     conf: Configuration
@@ -72,8 +83,6 @@ def read_local_excel(
 def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
-# ) -> Tuple[list[dict[str, Any]], list[ExcelInvalidCellType]]:
-# ) -> list[dict[str, Any]]:
 ) -> list[ExcelRow]:
     # TODO: need a better error message if this fails?
     workbook = openpyxl.load_workbook(filename=worklogs_path)
@@ -92,21 +101,19 @@ def read_native_worklogs_excel(
         except:
             continue
         col_map = {}
+        # TODO: what about if two cells in the header row have the same column
+        # name?
         for cell in header:
             if isinstance(cell.value, str) and cell.value in col_names:
                 col_map[cell.column_letter] = cell.value
-        # TODO: throw error if we don't have all columns
+        missing_headers = set(col_names) - set(col_map.values())
+        if missing_headers:
+            raise ExcelMissingHeader(missing_headers)
         for row in rowiter:
             new_row = {}
             for cell in row:
                 # print(f"{cell.column_letter}{cell.row} = {cell.value} ({type(cell.value)})")
                 if cell.column_letter in col_map:
-                    # req_type = col_types[col_map[cell.column_letter]]
-                    # if isinstance(cell.value, req_type):
-                    #     new_row[col_map[cell.column_letter]] = cell.value
-                    # else:
-                    #     errors.append(ExcelInvalidCellType(cell, req_type))
-                    # new_row[col_map[cell.column_letter]] = cell.value
                     new_row[col_map[cell.column_letter]] = cell
             entries.append(ExcelRow(new_row))
     return entries
@@ -199,8 +206,9 @@ def make_parse_dt_excel(
     def parse_dt_excel(entry, key):
         cell = extract_cell_excel(entry, key)
         dt = extract_datetime_excel(cell)
-        dt_aware = add_tzinfo(dt, maybe_tz)
+        dt_aware = add_tzinfo(dt)
         return dt_aware
+    add_tzinfo = make_add_tzinfo(maybe_tz)
     parse_maybe_dt_excel = make_parse_field(maybe_key, parse_dt_excel)
     return parse_maybe_dt_excel
 

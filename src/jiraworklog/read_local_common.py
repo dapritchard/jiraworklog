@@ -97,7 +97,7 @@ class NativeInvalidDualTZInfo(NativeInvalidBasic):
         super().__init__(index, msg)
 
 
-class NativeWorklogParseEntryError(RuntimeError):
+class NativeWorklogParseEntryError(Exception):
     """Class used to throw an error if any parsing issues were found while
     parsing the raw worklogs.
     """
@@ -183,10 +183,6 @@ class LeftError(Exception):
         self.payload = payload
         # TODO: Update message to say that this is expected to always be caught
         super().__init__('Internal logic error. Please file a bug report')
-
-
-# class TZInfoError(RuntimeError):
-
 
 
 def create_canon_wkls(
@@ -355,15 +351,15 @@ def make_add_tzinfo(maybe_tz: Optional[str]):
 
         # Case: didn't specify the timezone and the parsed datetime isn't
         # timezone-aware
-        if specified_tz is None and not has_tz:
+        if not specified_tz and not has_tz:
             raise TimeZoneMissingTZInfo()
         # Case: didn't specify the timezone and the parsed datetime is
         # timezone-aware
-        if specified_tz is None and has_tz:
+        elif not specified_tz and has_tz:
             dt_aware = dt
         # Case: specified the timezone and the parsed datetime isn't
         # timezone-aware
-        if specified_tz is not None and not has_tz:
+        elif specified_tz and not has_tz:
             dt_aware = specified_tz.localize(dt)
         # Case: specified the timezone and the parsed datetime is timezone-aware
         else:
