@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
+# from abc import abstractmethod
 from datetime import datetime
+from functools import total_ordering
 from jiraworklog.configuration import Configuration
 # from jiraworklog.read_local_delimited import read_local_general, read_worklogs_native
 from jiraworklog.read_local_common import (
     LeftError,
+    NativeInvalidElement,
     create_canon_wkls,
     # make_maybe_parse_duration,
     # make_maybe_parse_time_dt,
@@ -17,6 +20,7 @@ from jiraworklog.read_local_common import (
 from jiraworklog.worklogs import WorklogCanon
 import openpyxl
 import openpyxl.cell.cell
+import openpyxl.worksheet.worksheet
 from typing import Any, Callable, Optional, Tuple, Type, Union
 
 
@@ -29,13 +33,115 @@ class ExcelRow:
         self.row = row
 
 
-class ExcelInvalidCellType:
+@total_ordering
+class ExcelInvalidBase(NativeInvalidElement):
+
+    sheet: openpyxl.worksheet.worksheet.Worksheet
+    cell: Optional[openpyxl.cell.cell.Cell]
+
+    def __lt__(self, other) -> bool:
+
+        if not isinstance(other, ExcelInvalidBase):
+            return False
+
+        # The sheet title takes first priority in ordering
+        if self.sheet.title < other.sheet.title:
+            return True
+        if self.sheet.title > other.sheet.title:
+            return False
+
+        # 1. Sheets without an associated cell "tie" sheets with an associated
+        # cell
+        if not self.cell and not other.cell:
+            return False
+        # 2. Sheets without an associated cell come before sheets with an
+        # associated cell
+        if not self.cell and other.cell:
+            return True
+        # 3. Sheets with an associated cell come after sheets without an
+        # associated cell
+        if self.cell and not other.cell:
+            return False
+        # 4. If both sheets have an associated cell then compare the cells
+        if self.cell and other.cell:
+            if self.cell.row < other.cell.row:
+                return True
+            if self.cell.row > other.cell.row:
+                return False
+            # FIXME: this doesn't work right if we have say B and AA
+            if self.cell.column_letter < other.cell.column_letter:
+                return True
+            if self.cell.column_letter > other.cell.column_letter:
+                return False
+        return False
+
+    # FIXME: it doesn't feel right that we should need this
+    def row_index(self) -> int:
+        return 1
+
+
+class ExcelInvalidMissingHeader(ExcelInvalidBase):
+
+    cell: None
+
+    def __init__(
+        self,
+        sheet: openpyxl.worksheet.worksheet.Worksheet,
+        missing_headers: list[str]
+    ):
+        self.sheet = sheet
+        self.cell = None
+        self.missing_headers = missing_headers
+
+    def row_index(self) -> int:
+        return 1
+
+    def err_msg(self) -> str:
+        # TODO: format paragraph?
+        msg = (
+            f"Worksheet {self.sheet.title} header row: the following column "
+            "names are specified in the configuration file but are not present "
+            f"in the worklogs header line: '{', '.join(self.missing_headers)}'"
+        )
+        return msg
+
+
+class ExcelInvalidDuplicateHeader(ExcelInvalidBase):
+
+    cell: None
+
+    def __init__(
+        self,
+        sheet: openpyxl.worksheet.worksheet.Worksheet,
+        duplicate_colnames: list[str]
+    ):
+        self.sheet = sheet
+        self.cell = None
+        self.duplicate_colnames = duplicate_colnames
+
+    def row_index(self) -> int:
+        return 1
+
+    def err_msg(self) -> str:
+        # TODO: format paragraph?
+        msg = (
+            # TODO: format paragraph?
+            f"Worksheet {self.sheet.title} header row: the following duplicate "
+            f"column names were found: '{', '.join(self.duplicate_colnames)}'"
+        )
+        return msg
+
+
+class ExcelInvalidCellType(ExcelInvalidBase):
+
+    cell: openpyxl.cell.cell.Cell
 
     def __init__(
         self,
         cell: openpyxl.cell.cell.Cell,
         req_type: Union[Type[int], Type[float], Type[bool], Type[str], Type[datetime], None]
     ):
+        self.sheet = cell.parent
         self.cell = cell
         self.req_type = req_type
 
@@ -52,30 +158,44 @@ class ExcelInvalidCellType:
         }
         stringify[self.req_type]
         msg = (
-            f"cell {self.cell.column_letter}{self.cell.row} in sheet "
-            f"{self.cell.parent.title} must be {stringify[self.req_type]} but "
-            f"is instead {stringify[type(self.cell.value)]}"
+            f"Worksheet {self.sheet.title} cell "
+            f"{self.cell.column_letter}{self.cell.row}: expected a"
+            f"{stringify[self.req_type]} but instead observed a "
+            f"{stringify[type(self.cell.value)]}"
         )
         return msg
 
 
-class ExcelMissingHeader(Exception):
+# class ExcelMissingHeader(Exception):
 
-    def __init__(self, missing_colnames):
-        msg = (
-            "Error parsing the worklogs file. The following column names are "
-            "specified in the configuration file but are not present in the "
-            f"worklogs header line: '{', '.join(missing_colnames)}'"
-        )
-        super().__init__(msg)
+#     def __init__(self, missing_colnames):
+#         msg = (
+#             # TODO: format paragraph?
+#             "Error parsing the worklogs file. The following column names are "
+#             "specified in the configuration file but are not present in the "
+#             f"worklogs header line: '{', '.join(missing_colnames)}'"
+#         )
+#         super().__init__(msg)
+
+
+# class ExcelDuplicateHeader(Exception):
+
+#     def __init__(self, missing_colnames):
+#         msg = (
+#             # TODO: format paragraph?
+#             "Error parsing the worklogs file. The following column names are "
+#             "specified in the configuration file but are not present in the "
+#             f"worklogs header line: '{', '.join(missing_colnames)}'"
+#         )
+#         super().__init__(msg)
 
 
 def read_local_excel(
     worklogs_path: str,
     conf: Configuration
 ) -> dict[str, list[WorklogCanon]]:
-    worklogs_native = read_native_worklogs_excel(worklogs_path, conf)
-    canon_wkls = create_canon_wkls_excel(worklogs_native, conf)
+    worklogs_native, errors = read_native_worklogs_excel(worklogs_path, conf)
+    canon_wkls = create_canon_wkls_excel(worklogs_native, conf, errors)
     return canon_wkls
 
 
@@ -83,32 +203,45 @@ def read_local_excel(
 def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
-) -> list[ExcelRow]:
+) -> Tuple[list[ExcelRow], list[ExcelInvalidBase]]:
+
     # TODO: need a better error message if this fails?
     workbook = openpyxl.load_workbook(filename=worklogs_path)
-    entries = []
+
     # errors = []
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
-    else:
-        # TODO: we don't need to return the types any more?
-        col_names, _ = create_col_info(conf.parse_excel)
+    col_names, _ = create_col_info(conf.parse_excel)
+
+    entries = []
+    errors = []
     for sheet_name in workbook.sheetnames:
+
         sheet = workbook[sheet_name]
         rowiter = sheet.rows
         try:
             header = next(rowiter)
         except:
             continue
+
         col_map = {}
-        # TODO: what about if two cells in the header row have the same column
-        # name?
+        header_values = []
+        duplicate_headers = []
         for cell in header:
             if isinstance(cell.value, str) and cell.value in col_names:
+                if cell.value in header_values:
+                    duplicate_headers.append(cell.value)
                 col_map[cell.column_letter] = cell.value
         missing_headers = set(col_names) - set(col_map.values())
-        if missing_headers:
-            raise ExcelMissingHeader(missing_headers)
+        if missing_headers or duplicate_headers:
+            if missing_headers:
+                err = ExcelInvalidMissingHeader(sheet, list(missing_headers))
+                errors.append(err)
+            if duplicate_headers:
+                err = ExcelInvalidDuplicateHeader(sheet, duplicate_headers)
+                errors.append(err)
+            continue
+
         for row in rowiter:
             new_row = {}
             for cell in row:
@@ -116,10 +249,12 @@ def read_native_worklogs_excel(
                 if cell.column_letter in col_map:
                     new_row[col_map[cell.column_letter]] = cell
             entries.append(ExcelRow(new_row))
-    return entries
+
+    return (entries, errors)
 
 
-def create_canon_wkls_excel(worklogs_native, conf):
+# FIXME: typing
+def create_canon_wkls_excel(worklogs_native, conf, _):
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     pe = conf.parse_excel
