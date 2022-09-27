@@ -21,7 +21,7 @@ from jiraworklog.worklogs import WorklogCanon
 import openpyxl
 import openpyxl.cell.cell
 import openpyxl.worksheet.worksheet
-from typing import Any, Callable, Optional, Tuple, Type, Union
+from typing import Callable, Optional, Tuple, Type, Union
 
 
 class ExcelRow:
@@ -93,13 +93,10 @@ class ExcelInvalidMissingHeader(ExcelInvalidBase):
         self.cell = None
         self.missing_headers = missing_headers
 
-    def row_index(self) -> int:
-        return 1
-
     def err_msg(self) -> str:
         # TODO: format paragraph?
         msg = (
-            f"Worksheet {self.sheet.title} header row: the following column "
+            f"Worksheet '{self.sheet.title}' header row: the following column "
             "names are specified in the configuration file but are not present "
             f"in the worklogs header line: '{', '.join(self.missing_headers)}'"
         )
@@ -119,15 +116,13 @@ class ExcelInvalidDuplicateHeader(ExcelInvalidBase):
         self.cell = None
         self.duplicate_colnames = duplicate_colnames
 
-    def row_index(self) -> int:
-        return 1
-
     def err_msg(self) -> str:
         # TODO: format paragraph?
         msg = (
             # TODO: format paragraph?
-            f"Worksheet {self.sheet.title} header row: the following duplicate "
-            f"column names were found: '{', '.join(self.duplicate_colnames)}'"
+            f"Worksheet '{self.sheet.title}' header row: the following "
+            "duplicate column names were found: "
+            f"'{', '.join(self.duplicate_colnames)}'"
         )
         return msg
 
@@ -158,9 +153,9 @@ class ExcelInvalidCellType(ExcelInvalidBase):
         }
         stringify[self.req_type]
         msg = (
-            f"Worksheet {self.sheet.title} cell "
-            f"{self.cell.column_letter}{self.cell.row}: expected a"
-            f"{stringify[self.req_type]} but instead observed a "
+            f"Worksheet '{self.sheet.title}' cell "
+            f"{self.cell.column_letter}{self.cell.row}: expected "
+            f"{stringify[self.req_type]} but instead observed "
             f"{stringify[type(self.cell.value)]}"
         )
         return msg
@@ -231,7 +226,9 @@ def read_native_worklogs_excel(
             if isinstance(cell.value, str) and cell.value in col_names:
                 if cell.value in header_values:
                     duplicate_headers.append(cell.value)
-                col_map[cell.column_letter] = cell.value
+                else:
+                    header_values.append(cell.value)
+                    col_map[cell.column_letter] = cell.value
         missing_headers = set(col_names) - set(col_map.values())
         if missing_headers or duplicate_headers:
             if missing_headers:
@@ -254,7 +251,7 @@ def read_native_worklogs_excel(
 
 
 # FIXME: typing
-def create_canon_wkls_excel(worklogs_native, conf, _):
+def create_canon_wkls_excel(worklogs_native, conf, errors):
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     pe = conf.parse_excel
@@ -271,7 +268,7 @@ def create_canon_wkls_excel(worklogs_native, conf, _):
         worklogs_native=worklogs_native,
         issues_map=conf.issues_map,
         parse_entry=parse_entry,
-        errors=[]
+        errors=errors
     )
     return canon_wkls
 
