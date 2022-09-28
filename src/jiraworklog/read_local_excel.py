@@ -140,8 +140,8 @@ class ExcelInvalidCellType(ExcelInvalidBase):
         self.cell = cell
         self.req_type = req_type
 
+    # https://support.microsoft.com/en-us/office/data-types-in-data-models-e2388f62-6122-4e2b-bcad-053e3da9ba90
     def err_msg(self):
-        # https://support.microsoft.com/en-us/office/data-types-in-data-models-e2388f62-6122-4e2b-bcad-053e3da9ba90
         stringify = {
             int: 'an integer',
             float: 'a decimal number',
@@ -203,7 +203,7 @@ def read_native_worklogs_excel(
     # TODO: need a better error message if this fails?
     workbook = openpyxl.load_workbook(filename=worklogs_path)
 
-    # errors = []
+    # TODO: we only need the `col_names` out of `create_col_info`
     if conf.parse_excel is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     col_names, _ = create_col_info(conf.parse_excel)
@@ -212,6 +212,8 @@ def read_native_worklogs_excel(
     errors = []
     for sheet_name in workbook.sheetnames:
 
+        # Grab the sheet and try to read the header row. If there is no header
+        # row then give up on the sheet
         sheet = workbook[sheet_name]
         rowiter = sheet.rows
         try:
@@ -219,6 +221,8 @@ def read_native_worklogs_excel(
         except:
             continue
 
+        # Map the column letters to the internal column names. If errors are
+        # discovered in the header then give up on the sheet
         col_map = {}
         header_values = []
         duplicate_headers = []
@@ -239,9 +243,12 @@ def read_native_worklogs_excel(
                 errors.append(err)
             continue
 
+        # Read through the remaining rows. Note that at this point no checking
+        # is done on the content of the row elements
         for row in rowiter:
             new_row = {}
             for cell in row:
+                # Useful to see what is going on:
                 # print(f"{cell.column_letter}{cell.row} = {cell.value} ({type(cell.value)})")
                 if cell.column_letter in col_map:
                     new_row[col_map[cell.column_letter]] = cell

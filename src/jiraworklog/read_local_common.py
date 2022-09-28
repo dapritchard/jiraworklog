@@ -36,7 +36,7 @@ class NativeRow(ABC):
 
 @total_ordering
 class NativeInvalidElement(ABC):
-    """Abstract base class used to record a single parsing issue that was found
+    """Abstract base class used to record an individual parsing issue found
     while parsing the raw worklogs.
     """
 
@@ -315,32 +315,6 @@ def create_interval(
         raise RuntimeError('Internal logic error. Please file a bug report')
 
     return iv
-
-
-def add_tzinfo(dt: datetime, maybe_tz: Optional[str]) -> datetime:
-
-    # TODO: this could throw an error, right?
-    specified_tz = pytz.timezone(maybe_tz) if maybe_tz else None
-    has_tz = not check_tz_naive(dt)
-
-    # Case: didn't specify the timezone and the parsed datetime isn't
-    # timezone-aware
-    if specified_tz is None and not has_tz:
-        # TODO: better error type / message
-        raise RuntimeError('TODO')
-    # Case: didn't specify the timezone and the parsed datetime is
-    # timezone-aware
-    if specified_tz is None and has_tz:
-        dt_aware = dt
-    # Case: specified the timezone and the parsed datetime isn't
-    # timezone-aware
-    if specified_tz is not None and not has_tz:
-        dt_aware = specified_tz.localize(dt)
-    # Case: specified the timezone and the parsed datetime is timezone-aware
-    else:
-        # TODO: better error type / message
-        raise RuntimeError('TODO')
-    return dt_aware
 
 
 def make_add_tzinfo(maybe_tz: Optional[str]):

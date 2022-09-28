@@ -117,6 +117,23 @@ class DelimitedInvalidDurationJiraStyle(DelimitedInvalid):
         return msg
 
 
+class CSVStructuralError(Exception):
+
+    def __init__(self, worklogs_path: str) -> None:
+        self.worklogs_path = worklogs_path
+
+    def __str__(self) -> str:
+        if self.worklogs_path:
+            input_fragm = "'{self.worklogs_path:}'"
+        else:
+            input_fragm = 'standard input'
+        msg = (
+            f"Error attempting to parse the worklogs from {input_fragm}:\n\n"
+            f"{str(self.__cause__)}"
+        )
+        return msg
+
+
 class StrptimeError(Exception):
     pass
 
@@ -140,6 +157,7 @@ def read_native_wkls_delimited(
     conf: Configuration
 ) -> tuple[list[DelimitedRow], list[DelimitedInvalid]]:
     dialect_args = construct_dialect_args(conf)
+    # FIXME: catch this and rethrow?
     with smart_open(worklogs_path, mode='r', newline='') as csv_file:
         entries = []
         errors = []
@@ -152,6 +170,8 @@ def read_native_wkls_delimited(
                 # defaults to None). If a non-blank row has fewer fields than
                 # fieldnames, the missing values are filled-in with the value of
                 # restval (which defaults to None).
+                # TODO: these values can't be changed by the user via
+                # `construct_dialect_args`, right?
                 delim_row = DelimitedRow(row, i)
                 if None in row:
                     errors.append(DelimitedInvalidTooManyElems(delim_row))
@@ -161,10 +181,9 @@ def read_native_wkls_delimited(
                     entries.append(delim_row)
         # See https://docs.python.org/3/library/csv.html#csv.Error
         except csv.Error as exc:
-            # FIXME: understand better how an error can actually be thrown. This
-            # doesn't throw the original message. Does it even need to be caught
-            # since there's probably not much we can do with it?
-            raise RuntimeError('Error reading the worklogs CSV file') from exc
+            # TODO: understand better how an error can actually be thrown. Does
+            # this effect how the error message should be presented?
+            raise CSVStructuralError(worklogs_path) from exc
     return (entries, errors)
 
 
