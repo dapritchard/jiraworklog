@@ -21,7 +21,7 @@ from jiraworklog.worklogs import WorklogCanon
 import openpyxl
 import openpyxl.cell.cell
 import openpyxl.worksheet.worksheet
-from typing import Callable, Optional, Tuple, Type, Union
+from typing import Callable, Optional, Tuple, Type, Sequence, Union
 
 
 class ExcelRow:
@@ -34,14 +34,16 @@ class ExcelRow:
 
 
 @total_ordering
-class ExcelInvalidBase(NativeInvalidElement):
+class ExcelInvalid(NativeInvalidElement):
 
     sheet: openpyxl.worksheet.worksheet.Worksheet
     cell: Optional[openpyxl.cell.cell.Cell]
+    row: int
 
+    # TODO: update this for the case where we have a row
     def __lt__(self, other) -> bool:
 
-        if not isinstance(other, ExcelInvalidBase):
+        if not isinstance(other, ExcelInvalid):
             return False
 
         # The sheet title takes first priority in ordering
@@ -75,14 +77,8 @@ class ExcelInvalidBase(NativeInvalidElement):
                 return False
         return False
 
-    # FIXME: it doesn't feel right that we should need this
-    def row_index(self) -> int:
-        return 1
 
-
-class ExcelInvalidMissingHeader(ExcelInvalidBase):
-
-    cell: None
+class ExcelInvalidMissingHeader(ExcelInvalid):
 
     def __init__(
         self,
@@ -91,6 +87,7 @@ class ExcelInvalidMissingHeader(ExcelInvalidBase):
     ):
         self.sheet = sheet
         self.cell = None
+        self.row = 1
         self.missing_headers = missing_headers
 
     def err_msg(self) -> str:
@@ -103,9 +100,7 @@ class ExcelInvalidMissingHeader(ExcelInvalidBase):
         return msg
 
 
-class ExcelInvalidDuplicateHeader(ExcelInvalidBase):
-
-    cell: None
+class ExcelInvalidDuplicateHeader(ExcelInvalid):
 
     def __init__(
         self,
@@ -114,6 +109,7 @@ class ExcelInvalidDuplicateHeader(ExcelInvalidBase):
     ):
         self.sheet = sheet
         self.cell = None
+        self.row = 1
         self.duplicate_colnames = duplicate_colnames
 
     def err_msg(self) -> str:
@@ -127,7 +123,7 @@ class ExcelInvalidDuplicateHeader(ExcelInvalidBase):
         return msg
 
 
-class ExcelInvalidCellType(ExcelInvalidBase):
+class ExcelInvalidCellType(ExcelInvalid):
 
     cell: openpyxl.cell.cell.Cell
 
@@ -138,6 +134,7 @@ class ExcelInvalidCellType(ExcelInvalidBase):
     ):
         self.sheet = cell.parent
         self.cell = cell
+        self.row = cell.row
         self.req_type = req_type
 
     # https://support.microsoft.com/en-us/office/data-types-in-data-models-e2388f62-6122-4e2b-bcad-053e3da9ba90
@@ -154,10 +151,86 @@ class ExcelInvalidCellType(ExcelInvalidBase):
         stringify[self.req_type]
         msg = (
             f"Worksheet '{self.sheet.title}' cell "
-            f"{self.cell.column_letter}{self.cell.row}: expected "
+            f"{self.cell.column_letter}{self.row}: expected "
             f"{stringify[self.req_type]} but instead observed "
             f"{stringify[type(self.cell.value)]}"
         )
+        return msg
+
+
+# TODO: opportunity to DRY up these next four classes?
+class ExcelInvalidIntervalStartAfterEnd(ExcelInvalid):
+
+    def __init__(
+        self,
+        entry: ExcelRow
+    ):
+        self.sheet = entry.row['description'].parent
+        self.cell = None
+        self.row = entry.row['description'].row
+
+    def err_msg(self) -> str:
+        # TODO: format paragraph?
+        msg = (
+            f"Worksheet '{self.sheet.title}' row {self.row}: the duration was "
+            "negative"
+        )
+        return msg
+
+
+class ExcelInvalidIntervalNegativeDuration(ExcelInvalid):
+
+    def __init__(
+        self,
+        entry: ExcelRow
+    ):
+        self.sheet = entry.row['description'].parent
+        self.cell = None
+        self.row = entry.row['description'].row
+
+    def err_msg(self) -> str:
+        # TODO: format paragraph?
+        msg = (
+            f"Worksheet '{self.sheet.title}' row {self.row}: the start "
+            "datetime wasn't after the end  datetime"
+        )
+        return msg
+
+
+class ExcelInvalidInconsistentStartEndDuration(ExcelInvalid):
+
+    def __init__(
+        self,
+        entry: ExcelRow
+    ):
+        self.sheet = entry.row['description'].parent
+        self.cell = None
+        self.row = entry.row['description'].row
+
+    def err_msg(self) -> str:
+        # TODO: format paragraph?
+        msg = (
+            f"Worksheet '{self.sheet.title}' row {self.row}: the difference "
+            "between the start and end time did not match the duration"
+        )
+        return msg
+
+
+class ExcelInvalidMultipleTagMatches(ExcelInvalid):
+
+    def __init__(
+        self,
+        entry: ExcelRow,
+        tag_matches: Sequence['str']
+    ):
+        self.sheet = entry.row['description'].parent
+        self.cell = None
+        self.row = entry.row['description'].row
+        self.tag_matches = tag_matches
+
+    def err_msg(self) -> str:
+        tag_str = "', '".join(self.tag_matches)
+        msg = f"row {self.row}: multiple tag matches '{tag_str}'"
         return msg
 
 
@@ -198,7 +271,7 @@ def read_local_excel(
 def read_native_worklogs_excel(
     worklogs_path: str,
     conf: Configuration
-) -> Tuple[list[ExcelRow], list[ExcelInvalidBase]]:
+) -> Tuple[list[ExcelRow], list[ExcelInvalid]]:
 
     # TODO: need a better error message if this fails?
     workbook = openpyxl.load_workbook(filename=worklogs_path)
@@ -275,7 +348,11 @@ def create_canon_wkls_excel(worklogs_native, conf, errors):
         worklogs_native=worklogs_native,
         issues_map=conf.issues_map,
         parse_entry=parse_entry,
-        errors=errors
+        errors=errors,
+        mk_start_after_end=ExcelInvalidIntervalStartAfterEnd,
+        mk_negative_duration_error=ExcelInvalidIntervalStartAfterEnd,
+        mk_inconsistent_start_end_duration=ExcelInvalidInconsistentStartEndDuration,
+        mk_multiple_tag_matches=ExcelInvalidMultipleTagMatches
     )
     return canon_wkls
 
