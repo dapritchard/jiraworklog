@@ -12,6 +12,8 @@ from typing import Any, Callable, Optional, Sequence, TypeVar
 
 NativeRowSubcl = TypeVar('NativeRowSubcl', bound='NativeRow')
 
+NativeInvalidElementSubcl = TypeVar('NativeInvalidElementSubcl', bound='NativeInvalidElement')
+
 
 class Interval:
 
@@ -27,11 +29,8 @@ class Interval:
         self.duration = duration
 
 
-class NativeRow(ABC):
-
-    @abstractmethod
-    def row_index(self) -> int:
-        pass
+class NativeRow:
+    pass
 
 
 @total_ordering
@@ -40,16 +39,10 @@ class NativeInvalidElement(ABC):
     while parsing the raw worklogs.
     """
 
-    def __lt__(self, other) -> bool:
-        is_lt = (
-            isinstance(other, NativeInvalidElement)
-            and self.row_index() < other.row_index()
-        )
-        return is_lt
-
-    @abstractmethod
-    def row_index(self) -> int:
-        pass
+    # We expect subclasses to override this definition
+    # TODO: see if we can get rid of this
+    def __lt__(self, _) -> bool:
+        return False
 
     @abstractmethod
     def err_msg(self) -> str:
@@ -69,12 +62,12 @@ class NativeInvalidBasic(NativeInvalidElement):
         return f"row {self.row_index()}: {self.msg}"
 
 
-class NativeInvalidMultipleTagMatches(NativeInvalidBasic):
+# class NativeInvalidMultipleTagMatches(NativeInvalidBasic):
 
-    def __init__(self, index: int, tag_matches: list['str']) -> None:
-        tag_str = "', '".join(tag_matches)
-        msg = f"multiple tag matches '{tag_str}'"
-        super().__init__(index, msg)
+#     def __init__(self, index: int, tag_matches: list['str']) -> None:
+#         tag_str = "', '".join(tag_matches)
+#         msg = f"multiple tag matches '{tag_str}'"
+#         super().__init__(index, msg)
 
 
 class NativeInvalidMissingTZInfo(NativeInvalidBasic):
@@ -102,7 +95,7 @@ class NativeWorklogParseEntryError(Exception):
     parsing the raw worklogs.
     """
 
-    def __init__(self, errors: list[NativeInvalidElement]) -> None:
+    def __init__(self, errors: Sequence[NativeInvalidElementSubcl]) -> None:
         self.errors = sorted(errors)
 
     def __str__(self) -> str:
@@ -112,42 +105,42 @@ class NativeWorklogParseEntryError(Exception):
         return '\n'.join(msg)
 
 
-class IntervalParseError(Exception):
+# class IntervalParseError(Exception):
 
-    def __init__(self, msg: str):
-        self.msg = msg
-        super().__init__(msg)
+#     def __init__(self, msg: str):
+#         self.msg = msg
+#         super().__init__(msg)
 
-    def append_invalid_elem(
-        self,
-        errors: list[NativeInvalidElement],
-        entry: NativeRow
-    ) -> None:
-        errors.append(NativeInvalidBasic(entry.row_index(), self.msg))
-
-
-class StartAfterEndError(IntervalParseError):
-
-    def __init__(self):
-        msg = 'the start datetime wasn\'t after the end datetime'
-        super().__init__(msg)
+#     def append_invalid_elem(
+#         self,
+#         errors: list[NativeInvalidElementSubcl],
+#         entry: NativeRow
+#     ) -> None:
+#         errors.append(NativeInvalidBasic(entry.row_index(), self.msg))
 
 
-class NegativeDurationError(IntervalParseError):
+class StartAfterEndError(Exception):
+    pass
+    # def __init__(self):
+    #     msg = 'the start datetime wasn\'t after the end datetime'
+    #     super().__init__(msg)
 
-    def __init__(self):
-        msg = 'the duration was negative'
-        super().__init__(msg)
+
+class NegativeDurationError(Exception):
+    pass
+    # def __init__(self):
+    #     msg = 'the duration was negative'
+    #     super().__init__(msg)
 
 
-class InconsistentStartEndDurationError(IntervalParseError):
-
-    def __init__(self):
-        msg = (
-            'the difference between the start and end time did not '
-            'match the duration'
-        )
-        super().__init__(msg)
+class InconsistentStartEndDurationError(Exception):
+    pass
+    # def __init__(self):
+    #     msg = (
+    #         'the difference between the start and end time did not '
+        #     'match the duration'
+        # )
+        # super().__init__(msg)
 
 
 class DurationJiraStyleError(Exception):
@@ -186,10 +179,14 @@ class LeftError(Exception):
 
 
 def create_canon_wkls(
-        worklogs_native: Sequence[NativeRow],
+        worklogs_native: Sequence[NativeRowSubcl],
         issues_map: dict[str, str],
-        parse_entry: Callable[[NativeRowSubcl], tuple[dict[str, Any], list[NativeInvalidElement]]],
-        errors: list[NativeInvalidElement]
+        parse_entry: Callable[[NativeRowSubcl], tuple[dict[str, Any], list[NativeInvalidElementSubcl]]],
+        errors: list[NativeInvalidElementSubcl],
+        mk_start_after_end: Callable[[NativeRowSubcl], NativeInvalidElementSubcl],
+        mk_negative_duration_error: Callable[[NativeRowSubcl], NativeInvalidElementSubcl],
+        mk_inconsistent_start_end_duration: Callable[[NativeRowSubcl], NativeInvalidElementSubcl],
+        mk_multiple_tag_matches: Callable[[NativeRowSubcl, Sequence[str]], NativeInvalidElementSubcl],
     ) -> dict[str, Any]:
 
     global_tags_set = set(issues_map.keys())
@@ -225,14 +222,20 @@ def create_canon_wkls(
                 id = issues_map[list(tags_intersect)[0]]
                 try:
                     raw_canon_wkl = create_rawcanon(parsed_entry)
-                except IntervalParseError as exc:
-                    exc.append_invalid_elem(errors, entry)
+                except StartAfterEndError:
+                    invalid = mk_start_after_end(entry)
+                    errors.append(invalid)
+                except NegativeDurationError:
+                    invalid = mk_negative_duration_error(entry)
+                    errors.append(invalid)
+                except InconsistentStartEndDurationError:
+                    invalid = mk_inconsistent_start_end_duration(entry)
+                    errors.append(invalid)
                 else:
                     worklogs[id].append(WorklogCanon(raw_canon_wkl, id))
             else:
-                index = entry.row_index()
                 tag_matches = sorted(list(tags_intersect))
-                invalid = NativeInvalidMultipleTagMatches(index, tag_matches)
+                invalid = mk_multiple_tag_matches(entry, tag_matches)
                 errors.append(invalid)
 
     if errors:
