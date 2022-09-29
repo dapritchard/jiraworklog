@@ -39,8 +39,7 @@ class NativeInvalidElement(ABC):
     while parsing the raw worklogs.
     """
 
-    # We expect subclasses to override this definition
-    # TODO: see if we can get rid of this
+    @abstractmethod
     def __lt__(self, _) -> bool:
         return False
 
@@ -114,6 +113,14 @@ class DurationJiraStyleError(Exception):
     pass
 
 
+class TimeZoneMissingTZInfo(Exception):
+    pass
+
+
+class TimeZoneDualTZInfo(Exception):
+    pass
+
+
 class TimeZoneUnkownTZInfoError(Exception):
 
     def __init__(self, tz: str):
@@ -128,12 +135,20 @@ class TimeZoneUnkownTZInfoError(Exception):
         return msg
 
 
-class TimeZoneMissingTZInfo(Exception):
-    pass
+class WorklogsOSReadError(RuntimeError):
 
+    def __init__(
+        self,
+        location: str
+    ) -> None:
+        self.location = location
 
-class TimeZoneDualTZInfo(Exception):
-    pass
+    def __str__(self) -> str:
+        msg = (
+            f"Error attempting to read worklogs from {self.location}:\n"
+            f"{str(self.__cause__)}"
+        )
+        return msg
 
 
 # A hacky analogue to an Either Left
@@ -398,9 +413,15 @@ def micro_to_milli(time_str: str) -> str:
 @contextlib.contextmanager
 def smart_open(path, *args, **kargs):
     if path:
-        fh = open(path, *args, **kargs)
+        try:
+            fh = open(path, *args, **kargs)
+        except Exception as exc:
+            raise WorklogsOSReadError(f"'{path}'") from exc
     else:
-        fh = sys.stdin
+        try:
+            fh = sys.stdin
+        except Exception as exc:
+            raise WorklogsOSReadError('standard input') from exc
     try:
         yield fh
     finally:
