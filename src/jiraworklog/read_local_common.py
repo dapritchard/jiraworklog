@@ -49,47 +49,6 @@ class NativeInvalidElement(ABC):
         pass
 
 
-class NativeInvalidBasic(NativeInvalidElement):
-
-    def __init__(self, index: int, msg: str):
-        self.index = index
-        self.msg = msg
-
-    def row_index(self) -> int:
-        return self.index
-
-    def err_msg(self) -> str:
-        return f"row {self.row_index()}: {self.msg}"
-
-
-# class NativeInvalidMultipleTagMatches(NativeInvalidBasic):
-
-#     def __init__(self, index: int, tag_matches: list['str']) -> None:
-#         tag_str = "', '".join(tag_matches)
-#         msg = f"multiple tag matches '{tag_str}'"
-#         super().__init__(index, msg)
-
-
-class NativeInvalidMissingTZInfo(NativeInvalidBasic):
-
-    def __init__(self, index: int) -> None:
-        msg = (
-            'must provide either a timezone-aware datetime or a timezone '
-            'specification in the configuration file'
-        )
-        super().__init__(index, msg)
-
-
-class NativeInvalidDualTZInfo(NativeInvalidBasic):
-
-    def __init__(self, index: int) -> None:
-        msg = (
-            "can't provide both a timezone-aware datetime and a timezone "
-            "specification in the configuration file"
-        )
-        super().__init__(index, msg)
-
-
 class NativeWorklogParseEntryError(Exception):
     """Class used to throw an error if any parsing issues were found while
     parsing the raw worklogs.
@@ -103,6 +62,14 @@ class NativeWorklogParseEntryError(Exception):
         for e in self.errors:
             msg.append(e.err_msg())
         return '\n'.join(msg)
+
+
+# class NativeInvalidMultipleTagMatches(NativeInvalidBasic):
+
+#     def __init__(self, index: int, tag_matches: list['str']) -> None:
+#         tag_str = "', '".join(tag_matches)
+#         msg = f"multiple tag matches '{tag_str}'"
+#         super().__init__(index, msg)
 
 
 # class IntervalParseError(Exception):

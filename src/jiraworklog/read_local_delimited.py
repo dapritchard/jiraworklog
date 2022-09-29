@@ -2,12 +2,11 @@
 
 import csv
 from datetime import datetime, timedelta
+from functools import total_ordering
 from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
     DurationJiraStyleError,
     NativeInvalidElement,
-    NativeInvalidMissingTZInfo,
-    NativeInvalidDualTZInfo,
     LeftError,
     NativeRow,
     TimeZoneMissingTZInfo,
@@ -23,7 +22,7 @@ from jiraworklog.read_local_common import (
     smart_open
 )
 from jiraworklog.worklogs import WorklogCanon
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Sequence
 
 
 class DelimitedRow(NativeRow):
@@ -43,12 +42,20 @@ class DelimitedRow(NativeRow):
         return self.index
 
 
+@total_ordering
 class DelimitedInvalid(NativeInvalidElement):
 
     entry: DelimitedRow
 
     def __init__(self, entry: DelimitedRow) -> None:
         self.entry = entry
+
+    def __lt__(self, other) -> bool:
+        is_lt = (
+            isinstance(other, DelimitedInvalid)
+            and self.row_index() < other.row_index()
+        )
+        return is_lt
 
     def row_index(self) -> int:
         return self.entry.index
@@ -114,6 +121,79 @@ class DelimitedInvalidDurationJiraStyle(DelimitedInvalid):
             f"row {self.row_index()} '{self.col_label}' field: '{self.value}' "
             f"doesn't satisfy the Jira-style parse format"
         )
+        return msg
+
+
+class DelimitedInvalidIntervalStartAfterEnd(DelimitedInvalid):
+
+    def err_msg(self) -> str:
+        msg = (
+            f"row {self.row_index()}: the start datetime wasn't after the end "
+            "datetime"
+        )
+        return msg
+
+
+class DelimitedInvalidIntervalNegativeDuration(DelimitedInvalid):
+
+    def err_msg(self) -> str:
+        msg = f"row {self.row_index()}: the duration was negative"
+        return msg
+
+
+class DelimitedInvalidInconsistentStartEndDuration(DelimitedInvalid):
+
+    def err_msg(self) -> str:
+        msg = (
+            f"row {self.row_index()}: the difference between the start and end "
+            "time did not match the duration"
+        )
+        return msg
+
+
+# TODO: use this for all invalid entries?
+class DelimitedInvalidBasic(NativeInvalidElement):
+
+    def __init__(self, index: int, msg: str):
+        self.index = index
+        self.msg = msg
+
+    def row_index(self) -> int:
+        return self.index
+
+    def err_msg(self) -> str:
+        return f"row {self.row_index()}: {self.msg}"
+
+
+class DelimitedInvalidMissingTZInfo(DelimitedInvalidBasic):
+
+    def __init__(self, index: int) -> None:
+        msg = (
+            'must provide either a timezone-aware datetime or a timezone '
+            'specification in the configuration file'
+        )
+        super().__init__(index, msg)
+
+
+class DelimitedInvalidDualTZInfo(DelimitedInvalidBasic):
+
+    def __init__(self, index: int) -> None:
+        msg = (
+            "can't provide both a timezone-aware datetime and a timezone "
+            "specification in the configuration file"
+        )
+        super().__init__(index, msg)
+
+
+class DelimitedInvalidMultipleTagMatches(DelimitedInvalid):
+
+    def __init__(self, entry: DelimitedRow, tag_matches: Sequence['str']) -> None:
+        super().__init__(entry)
+        self.tag_matches = tag_matches
+
+    def err_msg(self) -> str:
+        tag_str = "', '".join(self.tag_matches)
+        msg = f"row {self.row_index()}: multiple tag matches '{tag_str}'"
         return msg
 
 
@@ -229,7 +309,11 @@ def create_canon_wkls_delimited(worklogs_native, conf, errors) -> dict[str, Any]
         worklogs_native=worklogs_native,
         issues_map=conf.issues_map,
         parse_entry=parse_entry,
-        errors=errors
+        errors=errors,
+        mk_start_after_end = DelimitedInvalidIntervalStartAfterEnd,
+        mk_negative_duration_error = DelimitedInvalidIntervalNegativeDuration,
+        mk_inconsistent_start_end_duration = DelimitedInvalidInconsistentStartEndDuration,
+        mk_multiple_tag_matches = DelimitedInvalidMultipleTagMatches
     )
     return canon_wkls
 
@@ -266,9 +350,9 @@ def make_parse_dt_delim(
             invalid = DelimitedInvalidStrptime(delim_row, dt_str, rev_col_map[key], maybe_fmt_str)
             raise LeftError(invalid)
         except TimeZoneMissingTZInfo:
-            raise LeftError(NativeInvalidMissingTZInfo(delim_row.row_index()))
+            raise LeftError(DelimitedInvalidMissingTZInfo(delim_row.row_index()))
         except TimeZoneDualTZInfo:
-            raise LeftError(NativeInvalidDualTZInfo(delim_row.row_index()))
+            raise LeftError(DelimitedInvalidDualTZInfo(delim_row.row_index()))
         return dt
     parse_time_str = make_parse_time_str(maybe_tz)
     parse_maybe_dt_delim = make_parse_field(maybe_key, parse_dt_delim)
