@@ -7,6 +7,7 @@ from jiraworklog.configuration import Configuration
 from jiraworklog.read_local_common import (
     DurationJiraStyleError,
     NativeInvalidElement,
+    # NativeInvalidElementSubcl,
     LeftError,
     NativeRow,
     TimeZoneMissingTZInfo,
@@ -22,7 +23,9 @@ from jiraworklog.read_local_common import (
     smart_open
 )
 from jiraworklog.worklogs import WorklogCanon
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence, TypeVar
+
+# DelimitedInvalidElementSubcl = TypeVar('DelimitedInvalidElementSubcl', bound='DelimitedInvalid')
 
 
 class DelimitedRow(NativeRow):
@@ -290,8 +293,18 @@ def construct_dialect_args(conf: Configuration) -> dict[str, Any]:
     return dialect_args
 
 
-# TODO: typing arguments
-def create_canon_wkls_delimited(worklogs_native, conf, errors) -> dict[str, Any]:
+# TODO: We use `errors: list[Any]` instead of (I think) `errors:
+# list[DelimitedInvalid]` to subvert the type-checker. The issue is that
+# `make_parse_entry` returns a tuple with a NativeInvalidElement when what we
+# need it to return is a DelimitedInvalid. Maybe we could rework it to accept a
+# NativeInvalidElementSubcl? Perhaps if the parse function inputs returned a
+# pseudo-Either type with the Left returning an Optional[DelimitedInvalid]?
+def create_canon_wkls_delimited(
+        worklogs_native: Sequence[DelimitedRow],
+        conf: Configuration,
+        # errors: list[DelimitedInvalid]
+        errors: list[Any]
+) -> dict[str, Any]:
     if conf.parse_delimited is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
     pd = conf.parse_delimited
@@ -310,10 +323,10 @@ def create_canon_wkls_delimited(worklogs_native, conf, errors) -> dict[str, Any]
         issues_map=conf.issues_map,
         parse_entry=parse_entry,
         errors=errors,
-        mk_start_after_end = DelimitedInvalidIntervalStartAfterEnd,
-        mk_negative_duration_error = DelimitedInvalidIntervalNegativeDuration,
-        mk_inconsistent_start_end_duration = DelimitedInvalidInconsistentStartEndDuration,
-        mk_multiple_tag_matches = DelimitedInvalidMultipleTagMatches
+        mk_start_after_end=DelimitedInvalidIntervalStartAfterEnd,
+        mk_negative_duration_error=DelimitedInvalidIntervalNegativeDuration,
+        mk_inconsistent_start_end_duration=DelimitedInvalidInconsistentStartEndDuration,
+        mk_multiple_tag_matches=DelimitedInvalidMultipleTagMatches
     )
     return canon_wkls
 
