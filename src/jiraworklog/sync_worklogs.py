@@ -29,7 +29,7 @@ def sync_worklogs(
     write_checkedin: bool = False
 ) -> Tuple[JiraSubcl, dict[str, Any], UpdateInstructions]:
     local_wkls = read_local_worklogs(worklogs_path, conf)
-    checkedin_wkls = read_checkedin_worklogs(conf)
+    checkedin_wkls = read_checkedin_worklogs(conf, cmdline_args)
     remote_wkls = read_remote_worklogs(jira, conf)
     update_instrs = process_worklogs_pure(
         local_wkls,

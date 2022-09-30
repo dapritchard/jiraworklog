@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 
+class CheckedinOSError(Exception):
+
+    def __init__(self, checkedin_path: str) -> None:
+        msg = (
+            "Error reading the checked-in worklogs file at "
+            f"'{checkedin_path}'\n\n{self.__cause__}"
+        )
+        super().__init__(msg)
+
+
+
 import argparse
 import json
 from jiraworklog.configuration import Configuration, check_default_checkedin_path, resolve_checkedin_path
@@ -9,18 +20,19 @@ from jiraworklog.worklogs import WorklogCheckedin
 from typing import Any
 
 def read_checkedin_worklogs(
-    conf: Configuration# ,
+    conf: Configuration,
+    cmdline_args: argparse.Namespace
     # actions: dict[str, Callable[..., Any]]
 ) -> dict[str, list[WorklogCheckedin]]:
     checkedin_path = resolve_checkedin_path(conf)
-    # TODO: there's actually two possible errors here, right? An error trying to
-    # read the file, and an invalid JSON format
     try:
         with open(checkedin_path) as checkedin_file:
             worklogs_raw = json.load(checkedin_file)
-    except:
-        worklogs_raw = confirm_new_checkedin(checkedin_path, conf)
-    # TODO: validate contents
+    except FileNotFoundError:
+        worklogs_raw = confirm_new_checkedin(checkedin_path, conf, cmdline_args)
+    except OSError as exc:
+        raise CheckedinOSError(checkedin_path) from exc
+    # TODO: validate contents (i.e. the form of the checkedin worklogs)
     align_checkedin_with_conf(worklogs_raw, conf)
     worklogs = map_worklogs_key(WorklogCheckedin, worklogs_raw)
     return worklogs
@@ -61,8 +73,8 @@ def confirm_new_checkedin(
 # ) -> dict[str, dict[str, str]]:
 ) -> None:
 
-    # TODO: for --dry-run this effectively adds a file to the filesystem. Should
-    # we try to remove it afterwards or just refuse to do it in the first place?
+    # FIXME: for --dry-run this adds a file to the filesystem. Should we try to
+    # remove it afterwards or just refuse to do it in the first place?
     if cmdline_args.auto_confirm or cmdline_args.dry_run:
         return
 
@@ -99,7 +111,7 @@ def confirm_new_checkedin(
     while True:
         response = input()
         if response == 'y':
-            return {}
+            return
         elif response == 'n':
             raise RuntimeError('User specified exit')
         msg = (
