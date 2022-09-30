@@ -8,7 +8,7 @@ import prettyprinter
 prettyprinter.install_extras(frozenset({'requests'}))
 
 
-class AuthTokenMissingKeyError(RuntimeError):
+class AuthTokenMissingKeyError(Exception):
 
     def __init__(self, key: str, env_key: str):
         msg = (
@@ -20,7 +20,7 @@ class AuthTokenMissingKeyError(RuntimeError):
         super().__init__(msg)
 
 
-class AuthTokenAuthError(RuntimeError):
+class AuthTokenAuthError(Exception):
 
     auth_params: dict[str, str]
     jira_error: JIRAError
