@@ -274,6 +274,8 @@ def read_native_worklogs_excel(
 ) -> Tuple[list[ExcelRow], list[ExcelInvalid]]:
 
     # TODO: need a better error message if this fails?
+    # TODO: Is it possible to read the file from standard input? See
+    # https://openpyxl.readthedocs.io/en/stable/api/openpyxl.reader.excel.html#openpyxl.reader.excel.ExcelReader
     workbook = openpyxl.load_workbook(filename=worklogs_path)
 
     # TODO: we only need the `col_names` out of `create_col_info`

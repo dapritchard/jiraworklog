@@ -3,7 +3,7 @@
 jiraworklog is a command line application that synchronizes worklog entries between your local machine and a Jira server. The main functionality that it provides is:
 <!-- jiraworklog enables a workflow where you can track your worklogs using your favorite effort tracking system or Excel spreadsheet and then upload the relevant portion of the worklogs to Jira without any manual entry of the worklogs. -->
 
-* Reading your worklogs on your local machine from either a [delimiter-separated values](delimiter-separated values) format such as CSV or an Excel format.
+* Reading your worklogs on your local machine from either a [delimiter-separated values](https://en.wikipedia.org/wiki/Delimiter-separated_values) format such as CSV or an Excel format.
 * Tracking any additions, modifications, or deletions of worklogs on your local machine and uploading the appropriate changes to your worklogs on the Jira server.
 
 Once you have a configuration file set up then uploading worklogs to the Jira server is as simple as providing the worklogs to the `jiraworklog` application through standard input or via the `--file` argument.
@@ -11,9 +11,8 @@ Once you have a configuration file set up then uploading worklogs to the Jira se
 ```
 > cat worklogs.csv
 description,start,end,tags
-Data pipeline,2021-01-12 10:00,2021-01-12 10:30,p1
-Write specifications,2021-01-12 13:15,2021-01-12 14:15,p1
-Add routines,2021-01-12 15:45,2021-01-12 17:00,p2
+Data pipeline,2021-01-12 10:00,2021-01-12 10:30,P9992-3
+Write specifications,2021-01-12 13:15,2021-01-12 14:15,P9992-3
 
 > jiraworklog --file worklogs.csv
 
@@ -38,18 +37,59 @@ python -m pip install jiraworklog --user
 
 ## Basic usage
 
+### Overview
+
+jiraworklog requires a configuration file to be set up (located by default at `~/.jwconfig.yaml`) providing information about how to parse local worklog entries and Jira server authentication, among other things. See the [Configuration file setup](#configuration-file-setup) Section for further details on this step.
+
+Once the configuration file has been set up, provide your worklogs to the `jiraworklog` application either through standard input or via the `--file` argument. The application determines whether there have been any additions, modifications, or deletions of worklogs on your local machine and uploads the appropriate changes to your worklogs on the Jira server. When all of the worklogs that appear in the Jira server have been uploaded via jiraworklog, this amounts to synchronizing the worklogs from your local worklogs with the Jira server.
+
+The other ways that worklogs can appear on the Jira server are through the Jira web application or web API. When worklogs are placed on the Jira server that jiraworklog isn't aware of, it effectively ignores those worklogs with the one exception that if an identical worklog is added to the local worklogs then it is considered to correspond to the appropriate remote worklog. This prevents jiraworklog from uploading the worklog a second time, but also links the local and remote worklogs so that a future change in the local worklog will result in a corresponding change to the remote worklog.
+
+
+### Viewing the available command-line options
+
+Use the `--help` option to view the available command-line options.
+```
+jiraworklog --help
+```
+
+
+### Reading in worklogs
+
+If the local worklogs are stored in a file `worklogs.csv` then you can use a command like the following to upload your worklogs to the Jira server.
+```
+jiraworklog --file worklogs.csv
+```
+
+Similarly you can pass the local worklogs in via standard input.
+```
+cat worklogs.csv | jiraworklog
+```
+
+If you have an Excel file then you can also read it in using the `--file` option. Reading Excel files from standard input is currently not supported. 
+```
+jiraworklog --file worklogs.xlsx
+```
+
+
+### Specifying the configuration file location
+
+By default the `jiraworklog` application looks for the configuration file at `~/.jwconfig.yaml`. If your configuration file is in a different location then you can specify it by using the `--config-path` command-line option.
+```
+jiraworklog --config-path path/to/jwconfig.yaml --file worklogs.csv
+```
+
+
+## Jira authentication
+
+
+
+
+## Configuration file setup
+
 TODO
 
 
-## Supported worklog formats
-
-Currently delimiter-separated values formats such as CSV or Excel format is supported.
-
-
-## Configuration setup
-
-TODO
-
-### Jira authentication
+## Related software
 
 TODO

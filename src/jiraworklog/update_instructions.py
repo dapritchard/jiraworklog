@@ -120,6 +120,7 @@ def strptime_ptl(datetime_str: str) -> datetime:
     return datetime.strptime(datetime_str, '%Y-%m-%dT%H:%M:%S.%f%z')
 
 
+# TODO: move this? Maybe `calc_n_updates` too?
 def calc_issue_max_strwidth(update_instr):
     def update_maxlen(maxlen, listwkl):
         for x in listwkl:
