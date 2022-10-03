@@ -4,6 +4,7 @@
 build
 htmlcov
 env
+dist
 
 # Excel litters the filesystem with stub files prepended by `~$`
 ~$*
