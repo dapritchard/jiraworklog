@@ -24,6 +24,7 @@ build-backend = "poetry.core.masonry.api"
 # Define an "entry point", i.e. a shim script that gets placed into `bin` and
 # calls jiraworklog.application.main(). See the following for details:
 # https://python-poetry.org/docs/pyproject/#scripts
+# https://setuptools.pypa.io/en/latest/userguide/entry_point.html
 # https://python-packaging.readthedocs.io/en/latest/command-line-scripts.html#the-console-scripts-entry-point
 [tool.poetry.scripts]
 jiraworklog = 'jiraworklog.application:main'
