@@ -85,19 +85,101 @@ Authentication to Jira via basic authentication requires the use of an API token
 jiraworklog requires a configuration file to be set up providing information about how to parse local worklog entries and Jira server authentication, among other things. The configuration file setup is the most complicated part of getting jiraworklog up and running, but once it is set up you will usually not need to touch it except to specify new Jira issues.
 
 You can see the full configuration file specification in [Configuration file format](#configuration-file-format). But usually the easiest way to create a new configuration file is by using the `--init` command-line option as shown in the following example. This will run an interactive script that prompts your for the necessary information and then constructs a configuration file for you using that information.
+```
+jiraworklog --init
+```
 
 
 ### Configuration file location
 
-By default the `jiraworklog` application looks for the configuration file at `~/.jwconfig.yaml`. If your configuration file is in a different location then you can specify it by using the `--config-path` command-line option as shown in the following example.
+By default the `jiraworklog` application looks for the configuration file at `~/.jwconfig.yaml`. If you store your configuration file at that location then you need only provide your worklogs when you invoke the `jiraworklog` application.
+```shell
+# Assumes that your configuration file is located at ~/.jwconfig.yaml
+jiraworklog --file worklogs.csv
 ```
-jiraworklog --init
+
+If your configuration file is not located in the default location then you can specify it by using the `--config-path` command-line option.
+```
+# If your configuration file is located at e.g. path/to/jwconfig.yaml
+jiraworklog --config-path path/to/jwconfig.yaml --file worklogs.csv
 ```
 
 
 ### Configuration file format
 
 The jiraworklog configuration file is required to follow a YAML format.
+
+An example of a valid configuration file is shown below. We'll break down the various elements in the following sections.
+``` yaml
+jwconfig_version: 0.1.0
+
+auth_token:
+  server: "https://runway.atlassian.net"
+  user: "daffy@runway.com"
+  api_token: "J6ab6YMa1HVWADNOmO6TC623"
+
+issues_map:
+  p1: "P01"
+  p2: "P02"
+
+# If you are using an Excel file then this field gets replaced by a
+# `parse_excel` stanza
+parse_delimited:
+  dialect:
+    delimiter: ","
+  col_labels:
+    description: "task"
+    start: "start"
+    end: "end"
+    tags: "tags"
+  col_formats:
+    start: "%Y-%m-%d %H:%M"
+    end: "%Y-%m-%d %H:%M"
+  delimiter2: ":"
+  timezone: "US/Eastern"
+```
+
+
+#### Configuration file version specification
+
+The configuration file version specification is used so that the `jiraworklog` application knows how to read a given configuration file. An example version specification key value pair is shown below.
+
+``` yaml
+jwconfig_version: 0.1.0
+```
+
+A description of the version specification key value pair is the following.
+
+* `jwconfig_version`: a string providing the jiraworklog version for which the configuration file was written.
+
+
+#### Configuration file authentication specification
+
+Currently the only form of authentication supported by jiraworklog is basic authentication using an API token. An example basic authentication mapping is shown below.
+
+``` yaml
+basic_auth:
+  server: "https://runway.atlassian.net"
+  user: "daffy@runway.com"
+  api_token: "J6ab6YMa1HVWADNOmO6TC623"
+```
+
+There are three possible keys within the `basic_auth` mapping. If you do not wish to store one or more of these values in the configuration file then you can instead provide a given value by using an environmental variable as described below.
+
+* `server`: a string providing the server URL. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_SERVER` environmental variable.
+* `user`: a string providing the user ID, which is usually an email address. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_USER` environmental variable.
+* `api_token`: a string providing a user's API token. See the [Jira authentication](#-jira-authentication) section for details on how to create an API token. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_SERVER` environmental variable.
+
+
+#### Configuration file issues mapping
+
+TODO
+
+
+
+#### Configuration file worklog parsing
+
+TODO
 
 
 ## Related software
