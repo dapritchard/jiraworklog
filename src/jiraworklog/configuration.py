@@ -319,6 +319,7 @@ def perform_additional_checks(
     # top-level errors without adding dictionary elements
     tl = []
 
+    # TODO: can we use e.g. `'auth_token in raw`?
     # Must have exactly one of `auth_token` or `auth_openauth`
     has_auth_token = raw.get('auth_token') is not None
     has_auth_openauth = raw.get('auth_openauth') is not None
@@ -363,6 +364,7 @@ def perform_additional_checks(
     # TODO: ensure delimiter2 isn't empty if non-None (has exactly one character?)
     # TODO: check that start/end format doesn't exist if column not provided
     # TODO: check that Excel file doesn't read from stdin
+    # TODO: lookup table of valid jwconfig_version values
 
     return tl
 

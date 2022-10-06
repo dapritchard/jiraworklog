@@ -168,13 +168,23 @@ There are three possible keys within the `basic_auth` mapping. If you do not wis
 
 * `server`: a string providing the server URL. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_SERVER` environmental variable.
 * `user`: a string providing the user ID, which is usually an email address. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_USER` environmental variable.
-* `api_token`: a string providing a user's API token. See the [Jira authentication](#-jira-authentication) section for details on how to create an API token. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_SERVER` environmental variable.
+* `api_token`: a string providing a user's API token. See the [Jira authentication](#-jira-authentication) section for details on how to create an API token. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_API_TOKEN` environmental variable.
 
 
 #### Configuration file issues mapping
 
-TODO
+The issues mapping section of the configuration file specifies a mapping of your local worklog tags to the names of the corresponding Jira issues. The names of the local tags and their corresponding Jira issue keys might be the same, but they need not be. You are also allowed to have multiple local tags map to the same Jira issue (thus your worklogs can be finer-grained than the Jira issues).
 
+In the following example there are 3 mappings from local tags to Jira issues. The first entry maps worklogs tagged with `local-p1-1`to the Jira issue with key `P01`, while the second entry maps worklogs tagged with `local-p1-2` to the same Jira issue with key `P01`. The last entry maps entries tagged with `local-p2`to the Jira issue with key `P02`.
+
+``` yaml
+issues_map:
+  local-p1-1: "P01"
+  local-p1-2: "P01"
+  local-p2:   "P02"
+```
+
+There are 0 or more key/value pairs in the `issues_map` mapping. Each value must be a string corresponding to a Jira issue key, and multiple entries are allowed to correspond to the same Jira issue.
 
 
 #### Configuration file worklog parsing
