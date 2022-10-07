@@ -27,7 +27,7 @@ Tuesday January 12, 2021
 
 ## Installation
 
-jiraworklog is a Python application and is distributed through PyPI.
+jiraworklog is a Python application distributed through PyPI.
 If you have Python 3.9 or greater available on your machine then you can install it with a command like the following.
 
 ```
@@ -148,9 +148,7 @@ The configuration file version specification is used so that the `jiraworklog` a
 jwconfig_version: 0.1.0
 ```
 
-A description of the version specification key value pair is the following.
-
-* `jwconfig_version`: a string providing the jiraworklog version for which the configuration file was written.
+`jwconfig_version` is a string providing the jiraworklog version for which the configuration file was written.
 
 
 #### Configuration file authentication specification
@@ -184,12 +182,49 @@ issues_map:
   local-p2:   "P02"
 ```
 
-There are 0 or more key/value pairs in the `issues_map` mapping. Each value must be a string corresponding to a Jira issue key, and multiple entries are allowed to correspond to the same Jira issue.
+There are 0 or more key/value pairs in the `issues_map` mapping (although note that there's nothing for jiraworklog to do when there are 0 entries). Each value must be a string corresponding to a Jira issue key, and multiple entries are allowed to correspond to the same Jira issue.
 
 
 #### Configuration file worklog parsing
 
-TODO
+The worklog parsing section of the configuration file provides the information for jiraworklog to know how to read in the local worklogs. Currently jiraworklog supports either delimiter-separated values formats such as CSV or an Excel format.
+
+In the event that your worklogs are represented using a delimiter-separated values format such as CSV then you will need to provide a `parse_delimited` section in the configuration file as described in the [Delimiter-separated values worklog parsing](#-delimiter-separated-values-worklog-parsing) section.
+
+In the event that your worklogs are represented using an Excel format then you will need to provide a `parse_excel` section in the configuration file as described in the [Excel worklog parsing](#-excel-worklog-parsing) section.
+
+
+#### Delimiter-separated values worklog parsing 
+
+If your local worklogs are provided using a delimiter-separated values format such as CSV then you will need to provide a `parse_delimited` section in the configuration file. An example `parse_delimited` section is shown below.
+
+``` yaml
+parse_delimited:
+  col_labels:
+    description: "task"
+    start: "start"
+    end: "end"
+    duration: null
+    tags: "tags"
+  col_formats:
+    start: "%Y-%m-%d %H:%M"
+    end: "%Y-%m-%d %H:%M"
+  delimiter2: ":"
+  timezone: "US/Eastern"
+  dialect: {}
+```
+
+There are up to 5 allowed entries in the `parse_delimited` mapping. The required fields are `col_labels` and `col_formats`, while the `delimiter2`,  `timezone`,  `dialect` can be omitted or `null`. 
+
+* `col_labels`: a mapping of entries specifying the meaning of the relevant columns in the source data. Only 2 out of 3 of the columns corresponding to the worklogs `start`, `end`, and `duration`s are required (although all three can be provided).
+
+    * `description`: a string specifying the name of the column providing the description of the worklog.
+    * `start`: a string specifying the name of the column providing the start datetime of the worklogs (this can be omitted or `null`).
+    * `end`: a string specifying the name of the column providing the end datetime of the worklogs (this can be omitted or `null`).
+    * `duration`: a string specifying the name of the column providing the duration of the worklogs (this can be omitted or `null`).
+    * `tags`: a string specifying the name of the column providing the tags for the worklogs. Tags are the mechanism that are used to identify which Jira issue, if any, that a given worklog corresponds to. A given worklog is allowed to have multiple tags, although only one tag can correspond to a Jira issue. If there are multiple tags then they are specified using a string that is separated by the `separator2` character.
+
+#### Excel worklog parsing 
 
 
 ## Related software
