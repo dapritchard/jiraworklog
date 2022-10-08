@@ -244,6 +244,8 @@ def read_native_wkls_delimited(
     with smart_open(worklogs_path, mode='r', newline='') as csv_file:
         entries = []
         errors = []
+        # TODO: this can fail if the dialect_args args are invalid. Can it fail
+        # for any other reaon? We whould catch this?
         reader = csv.DictReader(csv_file, **dialect_args)
         try:
             for i, row in enumerate(reader):

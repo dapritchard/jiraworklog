@@ -113,30 +113,29 @@ An example of a valid configuration file is shown below. We'll break down the va
 ``` yaml
 jwconfig_version: 0.1.0
 
-auth_token:
-  server: "https://runway.atlassian.net"
-  user: "daffy@runway.com"
+basic_auth:
+  server:    "https://runway.atlassian.net"
+  user:      "daffy@runway.com"
   api_token: "J6ab6YMa1HVWADNOmO6TC623"
 
 issues_map:
-  p1: "P01"
-  p2: "P02"
+  local-p1-1: "P01"
+  local-p1-2: "P01"
+  local-p2:   "P02"
 
 # If you are using an Excel file then this field gets replaced by a
 # `parse_excel` stanza
 parse_delimited:
-  dialect:
-    delimiter: ","
   col_labels:
     description: "task"
-    start: "start"
-    end: "end"
-    tags: "tags"
+    start:       "start"
+    end:         "end"
+    tags:        "tags"
   col_formats:
-    start: "%Y-%m-%d %H:%M"
-    end: "%Y-%m-%d %H:%M"
-  delimiter2: ":"
-  timezone: "US/Eastern"
+    start:      "%Y-%m-%d %H:%M"
+    end:        "%Y-%m-%d %H:%M"
+    timezone:   "US/Eastern"
+    delimiter2: ":"
 ```
 
 
@@ -157,8 +156,8 @@ Currently the only form of authentication supported by jiraworklog is basic auth
 
 ``` yaml
 basic_auth:
-  server: "https://runway.atlassian.net"
-  user: "daffy@runway.com"
+  server:    "https://runway.atlassian.net"
+  user:      "daffy@runway.com"
   api_token: "J6ab6YMa1HVWADNOmO6TC623"
 ```
 
@@ -194,29 +193,33 @@ In the event that your worklogs are represented using a delimiter-separated valu
 In the event that your worklogs are represented using an Excel format then you will need to provide a `parse_excel` section in the configuration file as described in the [Excel worklog parsing](#-excel-worklog-parsing) section.
 
 
-#### Delimiter-separated values worklog parsing 
+#### Delimiter-separated values worklog parsing
 
-If your local worklogs are provided using a delimiter-separated values format such as CSV then you will need to provide a `parse_delimited` section in the configuration file. An example `parse_delimited` section is shown below.
+If your local worklogs are provided using a delimiter-separated values format such as CSV then you will need to provide a `parse_delimited` section in the configuration file in order to specify how the data is parsed by jiraworklog. An example `parse_delimited` section is shown below.
 
 ``` yaml
 parse_delimited:
   col_labels:
     description: "task"
-    start: "start"
-    end: "end"
-    duration: null
-    tags: "tags"
+    start:       "start"
+    end:         "end"
+    duration:    null
+    tags:        "tags"
   col_formats:
-    start: "%Y-%m-%d %H:%M"
-    end: "%Y-%m-%d %H:%M"
-  delimiter2: ":"
-  timezone: "US/Eastern"
+    start:      "%Y-%m-%d %H:%M"
+    end:        "%Y-%m-%d %H:%M"
+    delimiter2: ":"
+    timezone:   "US/Eastern"
   dialect: {}
 ```
 
-There are up to 5 allowed entries in the `parse_delimited` mapping. The required fields are `col_labels` and `col_formats`, while the `delimiter2`,  `timezone`,  `dialect` can be omitted or `null`. 
+The `parse_delimited` mapping has two required entries: `col_labels` and `col_formats`. An optional third entry `dialect` is allowed to be omitted or `null`.
 
-* `col_labels`: a mapping of entries specifying the meaning of the relevant columns in the source data. Only 2 out of 3 of the columns corresponding to the worklogs `start`, `end`, and `duration`s are required, although all three can be provided.
+<!-- are up to 5 allowed entries in the . The required fields are `col_labels` and `col_formats`, while the `delimiter2`,  `timezone`,  `dialect` can be omitted or `null`.  -->
+
+* `col_labels`: a mapping of entries specifying the meaning of the relevant columns in the source data. For example, if you had a column in your data named `Start Time` corresponding to the worlog entry start datetimes, then you would provide an entry `start: "Start Time"` in the mapping.
+
+    Only 2 out of 3 of the columns corresponding to the worklogs `start`, `end`, and `duration`s are required, although all three can be provided.
 
     * `description`: a string specifying the name of the column providing the description of the worklog.
     * `start`: a string specifying the name of the column providing the start datetime of the worklogs (this can be omitted or `null`).
@@ -224,16 +227,32 @@ There are up to 5 allowed entries in the `parse_delimited` mapping. The required
     * `duration`: a string specifying the name of the column providing the duration of the worklogs (this can be omitted or `null`).
     * `tags`: a string specifying the name of the column providing the tags for the worklogs. Tags are the mechanism that are used to identify which Jira issue, if any, that a given worklog corresponds to. A given worklog is allowed to have multiple tags, although only one tag can correspond to a Jira issue. If there are multiple tags then they are specified using a string that is separated by the `separator2` character.
 
-* `col_formats`: a mapping of entries specifying the formats in which the datetimes are provided. The datetimes are parsed by the Python function `strptime` and which has formatting rules as described in the [strftime() and strptime() Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) section of the datetime Python documentation. For example, a datetime like `2021-01-29 15:45` following a year-month-day hour-minute format would be parsed using the formatting string `%Y-%m-%d %H:%M`. 
+* `col_formats`: a mapping of entries providing various column parsing information.
+
+    The `start` and `end` columns specify the formats in which the datetimes are provided. The datetimes are parsed by the Python function `strptime` and which has formatting rules as described in the [strftime() and strptime() Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) section of the datetime Python documentation. For example, a datetime like `2021-01-29 15:45` following a year-month-day hour-minute format would be parsed using the formatting string `%Y-%m-%d %H:%M`.
 
     * `start`: a string specifying the worklogs start datetime format. This should be omitted or `null` if there is no start datetime column.
     * `end`: a string specifying the worklogs end datetime format. This should be omitted or `null` if there is no end datetime column.
+    * `timezone` If your timezone information is already included within your worklog start and end datetime strings then this should be omitted or `null`. Otherwise, it is a string specifying your timezone.
 
-* `timezone` If your timezone information is already included within your worklog start and end datetime strings then this should be omitted or `null`. Otherwise, it is a string specifying your timezone. The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all of the timezones.
+    The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
+    * `delimiter2` a length-1 string specifying the character upon which to split the tags (this can be omitted or `null`). For example, if the delimiter is specified as `":"` and a given tags entry is `data processing:P9992-3` then the tags would be `data processing` and `P9992-3`. If `delimiter2` is omitted or `null` then no tag splitting is performed.
 
-* `delimiter2` a length-1 string specifying the character upon which to split the tags (this can be omitted or `null`). For example, if the delimiter is specified as `:` and a given tags entry is `data processing:P9992-3` then the tags would be `data processing` and `P9992-3`. If `delimiter2` is omitted or `null` then no tag splitting is performed.
+* `dialect`: a mapping specifying the parsing of the delimiter-separated values data (this can be omitted or `null`).
+    jiraworklog uses Python's csv library, and the parsing options exposed to the user are exactly those provided by the library and which are described in the [Dialects and Formatting Parameters](https://docs.python.org/3/library/csv.html#dialects-and-formatting-parameters) section of the Python csv documentation. Any option can be omitted or `null`, in which case the default value defined by the csv library is used. Note that `Dialect.strict` is always set to `True` by jiraworklog.
+    By default the csv library parses CSV files (i.e. `Dialect.delimiter` is specified as `','`). 
+    The main question when constructing delimiter-separated values data is what to do when the delimiter appears as part of one of the entries. One approach is to escape the delimiter using a predetermined escape character such as `\`. When the escape character itself appears in the data it is itself escaped so that `\\` is interpreted as a literal `\`. Another approach is to quote an entire entry using a predetermined quoting character such as `"` so that for a CSV format an entry like `Me, Myself & Irene` would be presented as `"Me, Myself & Irene"`. The quoting character might itself appear in a given entry, in which case it also needs to be escaped, often by doubling the character so that `""` is interpreted as a literal `"` so that for a CSV format an entry like `The movie "Me, Myself & Irene"` would be presented as `"The movie ""Me, Myself & Irene"""` The `Dialect.quoting`, `Dialect.quotechar`, `Dialect.escapechar`, and `Dialect.doublequote` options in the csv library control the settings related to this consideration.
+    
+    * `delimiter`: a length-1 string (this can be omitted or `null`).
+    * `doublequote`: either `true` or `false` (this can be omitted or `null`). 
+    * `escapechar` a length-1 string (this can be omitted or `null`).
+    * `lineterminator` a string (this can be omitted or `null`). Note that this value currently has no effect on the csv library's parser. 
+    * `quotechar`: a length-1 string (this can be omitted or `null`).
+    * `quoting`: one of `"QUOTE_MINIMAL"`, `"QUOTE_NONNUMERIC"`, or `"QUOTE_NONE"` (this can be omitted or `null`). 
+    * `skipinitialwhitespace`: either `true` or `false` (this can be omitted or `null`). 
 
-#### Excel worklog parsing 
+
+#### Excel worklog parsing
 
 
 ## Related software
