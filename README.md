@@ -216,7 +216,7 @@ parse_delimited:
 
 There are up to 5 allowed entries in the `parse_delimited` mapping. The required fields are `col_labels` and `col_formats`, while the `delimiter2`,  `timezone`,  `dialect` can be omitted or `null`. 
 
-* `col_labels`: a mapping of entries specifying the meaning of the relevant columns in the source data. Only 2 out of 3 of the columns corresponding to the worklogs `start`, `end`, and `duration`s are required (although all three can be provided).
+* `col_labels`: a mapping of entries specifying the meaning of the relevant columns in the source data. Only 2 out of 3 of the columns corresponding to the worklogs `start`, `end`, and `duration`s are required, although all three can be provided.
 
     * `description`: a string specifying the name of the column providing the description of the worklog.
     * `start`: a string specifying the name of the column providing the start datetime of the worklogs (this can be omitted or `null`).
@@ -224,9 +224,19 @@ There are up to 5 allowed entries in the `parse_delimited` mapping. The required
     * `duration`: a string specifying the name of the column providing the duration of the worklogs (this can be omitted or `null`).
     * `tags`: a string specifying the name of the column providing the tags for the worklogs. Tags are the mechanism that are used to identify which Jira issue, if any, that a given worklog corresponds to. A given worklog is allowed to have multiple tags, although only one tag can correspond to a Jira issue. If there are multiple tags then they are specified using a string that is separated by the `separator2` character.
 
+* `col_formats`: a mapping of entries specifying the formats in which the datetimes are provided. The datetimes are parsed by the Python function `strptime` and which has formatting rules as described in the [strftime() and strptime() Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) section of the datetime Python documentation. For example, a datetime like `2021-01-29 15:45` following a year-month-day hour-minute format would be parsed using the formatting string `%Y-%m-%d %H:%M`. 
+
+    * `start`: a string specifying the worklogs start datetime format. This should be omitted or `null` if there is no start datetime column.
+    * `end`: a string specifying the worklogs end datetime format. This should be omitted or `null` if there is no end datetime column.
+
+* `timezone` If your timezone information is already included within your worklog start and end datetime strings then this should be omitted or `null`. Otherwise, it is a string specifying your timezone. The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all of the timezones.
+
+* `delimiter2` a length-1 string specifying the character upon which to split the tags (this can be omitted or `null`). For example, if the delimiter is specified as `:` and a given tags entry is `data processing:P9992-3` then the tags would be `data processing` and `P9992-3`. If `delimiter2` is omitted or `null` then no tag splitting is performed.
+
 #### Excel worklog parsing 
 
 
 ## Related software
 
 TODO
+<!-- https://clockify.me/jira-time-tracking -->
