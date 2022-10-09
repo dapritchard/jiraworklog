@@ -84,7 +84,7 @@ Authentication to Jira via basic authentication requires the use of an API token
 
 jiraworklog requires a configuration file to be set up providing information about how to parse local worklog entries and Jira server authentication, among other things. The configuration file setup is the most complicated part of getting jiraworklog up and running, but once it is set up you will usually not need to touch it except to specify new Jira issues.
 
-You can see the full configuration file specification in [Configuration file format](#configuration-file-format). But usually the easiest way to create a new configuration file is by using the `--init` command-line option as shown in the following example. This will run an interactive script that prompts your for the necessary information and then constructs a configuration file for you using that information.
+You can see the full configuration file specification in [Configuration file format](#configuration-file-format). But usually the easiest way to create a new configuration file is by using the `--init` command-line option as shown in the following example. This will run an interactive script that prompts you for the necessary information and then constructs a configuration file for you using that information.
 ```
 jiraworklog --init
 ```
@@ -99,8 +99,9 @@ jiraworklog --file worklogs.csv
 ```
 
 If your configuration file is not located in the default location then you can specify it by using the `--config-path` command-line option.
-```
-# If your configuration file is located at e.g. path/to/jwconfig.yaml
+```shell
+# If your configuration file is located in a non-default location (in this case
+# at path/to/jwconfig.yaml)
 jiraworklog --config-path path/to/jwconfig.yaml --file worklogs.csv
 ```
 
@@ -124,7 +125,7 @@ issues_map:
   local-p2:   "P02"
 
 # If you are using an Excel file then this field gets replaced by a
-# `parse_excel` stanza
+# `parse_excel` section
 parse_delimited:
   col_labels:
     description: "task"
@@ -134,6 +135,23 @@ parse_delimited:
   col_formats:
     start:      "%Y-%m-%d %H:%M"
     end:        "%Y-%m-%d %H:%M"
+    timezone:   "US/Eastern"
+    delimiter2: ":"
+```
+
+Example `parse_excel` section.
+
+``` yaml
+# If you are using an Excel file then use a `parse_excel` section like
+# the following in the place of the `parse_delimited` section
+parse_excel:
+  col_labels:
+    description: "task"
+    start:       "start"
+    end:         "end"
+    duration:    null
+    tags:        "tags"
+  col_formats:
     timezone:   "US/Eastern"
     delimiter2: ":"
 ```
@@ -208,12 +226,12 @@ parse_delimited:
   col_formats:
     start:      "%Y-%m-%d %H:%M"
     end:        "%Y-%m-%d %H:%M"
-    delimiter2: ":"
     timezone:   "US/Eastern"
+    delimiter2: ":"
   dialect: {}
 ```
 
-The `parse_delimited` mapping has two required entries: `col_labels` and `col_formats`. An optional third entry `dialect` is allowed to be omitted or `null`.
+The `parse_delimited` mapping has two required entries, `col_labels` and `col_formats`, while an optional third entry `dialect` is allowed to be omitted or `null` (or to be an empty mapping, for that matter).
 
 <!-- are up to 5 allowed entries in the . The required fields are `col_labels` and `col_formats`, while the `delimiter2`,  `timezone`,  `dialect` can be omitted or `null`.  -->
 
@@ -224,35 +242,73 @@ The `parse_delimited` mapping has two required entries: `col_labels` and `col_fo
     * `description`: a string specifying the name of the column providing the description of the worklog.
     * `start`: a string specifying the name of the column providing the start datetime of the worklogs (this can be omitted or `null`).
     * `end`: a string specifying the name of the column providing the end datetime of the worklogs (this can be omitted or `null`).
-    * `duration`: a string specifying the name of the column providing the duration of the worklogs (this can be omitted or `null`).
-    * `tags`: a string specifying the name of the column providing the tags for the worklogs. Tags are the mechanism that are used to identify which Jira issue, if any, that a given worklog corresponds to. A given worklog is allowed to have multiple tags, although only one tag can correspond to a Jira issue. If there are multiple tags then they are specified using a string that is separated by the `separator2` character.
+    * `duration`: a string specifying the name of the column providing the duration of the worklogs (this can be omitted or `null`). The duration can be provided in a form like `"2h 30m"`, which would correspond to a duration of 2 hours and 30 minutes (i.e. 150 minutes). The valid units of time are `w` for weeks, `d` for days, `h` for hours, `m` for minutes, and `s` for seconds. Not every unit of time need be included in a given worklog duration entry.
+    * `tags`: a string specifying the name of the column providing the tags for the worklogs. Tags are the mechanism that are used to identify which Jira issue, if any, that a given worklog corresponds to. A worklog is allowed to have multiple tags, although only one tag can correspond to a Jira issue. If there are multiple tags then they are specified using a string that is separated by the `delimiter2` character. For example, if `delimiter2` is specified as `":"` and a given tags entry is `data processing:P9992-3` then the tags would be `data processing` and `P9992-3`.
 
 * `col_formats`: a mapping of entries providing various column parsing information.
 
-    The `start` and `end` columns specify the formats in which the datetimes are provided. The datetimes are parsed by the Python function `strptime` and which has formatting rules as described in the [strftime() and strptime() Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) section of the datetime Python documentation. For example, a datetime like `2021-01-29 15:45` following a year-month-day hour-minute format would be parsed using the formatting string `%Y-%m-%d %H:%M`.
+    The `start` and `end` columns specify the formats in which the datetimes are provided. For example, a datetime like `2021-01-29 15:45` following a year-month-day hour-minute format would be parsed using the formatting string `%Y-%m-%d %H:%M`. The datetimes are parsed by the Python function `strptime` and which has formatting rules as described in the [strftime() and strptime() Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) section of the datetime Python documentation.
 
     * `start`: a string specifying the worklogs start datetime format. This should be omitted or `null` if there is no start datetime column.
     * `end`: a string specifying the worklogs end datetime format. This should be omitted or `null` if there is no end datetime column.
     * `timezone` If your timezone information is already included within your worklog start and end datetime strings then this should be omitted or `null`. Otherwise, it is a string specifying your timezone.
 
-    The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
-    * `delimiter2` a length-1 string specifying the character upon which to split the tags (this can be omitted or `null`). For example, if the delimiter is specified as `":"` and a given tags entry is `data processing:P9992-3` then the tags would be `data processing` and `P9992-3`. If `delimiter2` is omitted or `null` then no tag splitting is performed.
+        The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
+    * `delimiter2` a single-character string specifying the character upon which to split the tags (this can be omitted or `null`). If `delimiter2` is omitted or `null` then no tag splitting is performed.
 
 * `dialect`: a mapping specifying the parsing of the delimiter-separated values data (this can be omitted or `null`).
+
     jiraworklog uses Python's csv library, and the parsing options exposed to the user are exactly those provided by the library and which are described in the [Dialects and Formatting Parameters](https://docs.python.org/3/library/csv.html#dialects-and-formatting-parameters) section of the Python csv documentation. Any option can be omitted or `null`, in which case the default value defined by the csv library is used. Note that `Dialect.strict` is always set to `True` by jiraworklog.
-    By default the csv library parses CSV files (i.e. `Dialect.delimiter` is specified as `','`). 
-    The main question when constructing delimiter-separated values data is what to do when the delimiter appears as part of one of the entries. One approach is to escape the delimiter using a predetermined escape character such as `\`. When the escape character itself appears in the data it is itself escaped so that `\\` is interpreted as a literal `\`. Another approach is to quote an entire entry using a predetermined quoting character such as `"` so that for a CSV format an entry like `Me, Myself & Irene` would be presented as `"Me, Myself & Irene"`. The quoting character might itself appear in a given entry, in which case it also needs to be escaped, often by doubling the character so that `""` is interpreted as a literal `"` so that for a CSV format an entry like `The movie "Me, Myself & Irene"` would be presented as `"The movie ""Me, Myself & Irene"""` The `Dialect.quoting`, `Dialect.quotechar`, `Dialect.escapechar`, and `Dialect.doublequote` options in the csv library control the settings related to this consideration.
-    
-    * `delimiter`: a length-1 string (this can be omitted or `null`).
-    * `doublequote`: either `true` or `false` (this can be omitted or `null`). 
-    * `escapechar` a length-1 string (this can be omitted or `null`).
-    * `lineterminator` a string (this can be omitted or `null`). Note that this value currently has no effect on the csv library's parser. 
-    * `quotechar`: a length-1 string (this can be omitted or `null`).
-    * `quoting`: one of `"QUOTE_MINIMAL"`, `"QUOTE_NONNUMERIC"`, or `"QUOTE_NONE"` (this can be omitted or `null`). 
-    * `skipinitialwhitespace`: either `true` or `false` (this can be omitted or `null`). 
+
+    By default the csv library parses CSV files (i.e. `Dialect.delimiter` is specified as `','`).
+
+    The main compilcation when constructing delimiter-separated values data is what to do when the delimiter appears as part of one of the entries. One approach is to escape the delimiter using a predetermined escape character such as `\`. When the escape character itself appears in the data it is itself escaped so that `\\` is interpreted as a literal `\`. Another approach is to quote an entire entry using a predetermined quoting character such as `"` so that for a CSV format an entry like `Me, Myself & Irene` would be presented as `"Me, Myself & Irene"`. The quoting character might itself appear in a given entry, in which case it also needs to be escaped, often by doubling the character so that `""` is interpreted as a literal `"` so that for a CSV format an entry like `The movie "Me, Myself & Irene"` would be presented as `"The movie ""Me, Myself & Irene"""`. The `Dialect.quoting`, `Dialect.quotechar`, `Dialect.escapechar`, and `Dialect.doublequote` options in the csv library control the settings related to these considerations.
+
+    * `delimiter`: a single-character string (this can be omitted or `null`).
+    * `doublequote`: either `true` or `false` (this can be omitted or `null`).
+    * `escapechar` a single-character string (this can be omitted or `null`).
+    * `lineterminator` a string (this can be omitted or `null`). Note that this value currently has no effect on the csv library's parser.
+    * `quotechar`: a single-character string (this can be omitted or `null`).
+    * `quoting`: one of `"QUOTE_MINIMAL"`, `"QUOTE_NONNUMERIC"`, or `"QUOTE_NONE"` (this can be omitted or `null`).
+    * `skipinitialwhitespace`: either `true` or `false` (this can be omitted or `null`).
 
 
 #### Excel worklog parsing
+
+If your local worklogs are provided using a delimiter-separated values format such as CSV then you will need to provide a `parse_excel` section in the configuration file in order to specify how the data is parsed by jiraworklog. An example `parse_excel` section is shown below.
+
+``` yaml
+parse_excel:
+  col_labels:
+    description: "task"
+    start:       "start"
+    end:         "end"
+    duration:    null
+    tags:        "tags"
+  col_formats:
+    timezone:   "US/Eastern"
+    delimiter2: ":"
+```
+
+The `parse_delimited` mapping has two required entries, `col_labels` and `col_formats`.
+
+* `col_labels`: a mapping of entries specifying the meaning of the relevant columns in the source data. For example, if you had a column in your data named `Start Time` corresponding to the worlog entry start datetimes, then you would provide an entry `start: "Start Time"` in the mapping.
+
+    Only 2 out of 3 of the columns corresponding to the worklogs `start`, `end`, and `duration`s are required, although all three can be provided.
+
+    * `description`: a string specifying the name of the column providing the description of the worklog.
+    * `start`: a string specifying the name of the column providing the start datetime of the worklogs (this can be omitted or `null`).
+    * `end`: a string specifying the name of the column providing the end datetime of the worklogs (this can be omitted or `null`).
+    * `duration`: a string specifying the name of the column providing the duration of the worklogs (this can be omitted or `null`). The duration can be provided in a form like `"2h 30m"`, which would correspond to a duration of 2 hours and 30 minutes (i.e. 150 minutes). The valid units of time are `w` for weeks, `d` for days, `h` for hours, `m` for minutes, and `s` for seconds. Not every unit of time need be included in a given worklog duration entry.
+    * `tags`: a string specifying the name of the column providing the tags for the worklogs. Tags are the mechanism that are used to identify which Jira issue, if any, that a given worklog corresponds to. A worklog is allowed to have multiple tags, although only one tag can correspond to a Jira issue. If there are multiple tags then they are specified using a string that is separated by the `delimiter2` character. For example, if `delimiter2` is specified as `":"` and a given tags entry is `data processing:P9992-3` then the tags would be `data processing` and `P9992-3`.
+
+* `col_formats`: a mapping of entries providing various column parsing information.
+
+    * `timezone` If your timezone information is already included within your worklog start and end datetime strings then this should be omitted or `null`. Otherwise, it is a string specifying your timezone.
+
+        The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
+    * `delimiter2` a single-character string specifying the character upon which to split the tags (this can be omitted or `null`). If `delimiter2` is omitted or `null` then no tag splitting is performed.
+
 
 
 ## Related software
