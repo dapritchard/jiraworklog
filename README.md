@@ -6,7 +6,7 @@ jiraworklog is a command line application that synchronizes worklog entries betw
 * Reading your worklogs on your local machine from either a [delimiter-separated values](https://en.wikipedia.org/wiki/Delimiter-separated_values) format such as CSV or an Excel format.
 * Tracking any additions, modifications, or deletions of worklogs on your local machine and uploading the appropriate changes to your worklogs on the Jira server.
 
-Once you have a configuration file set up then uploading worklogs to the Jira server is as simple as providing the worklogs to the `jiraworklog` application through standard input or via the `--file` argument.
+Once you have a configuration file set up then uploading worklogs to the Jira server is as simple as providing the worklogs to the jiraworklog application through standard input or via the `--file` argument.
 
 ```
 > cat worklogs.csv
@@ -40,7 +40,7 @@ python -m pip install jiraworklog --user
 ### Overview
 
  <!-- See the [Configuration file setup](#configuration-file-setup) Section for further details on this step. -->
-jiraworklog requires a configuration file to be set up providing information about how to parse local worklog entries and Jira server authentication, among other things. Once the configuration file has been set up, provide your worklogs to the `jiraworklog` application either through standard input or via the `--file` argument. The application determines whether there have been any additions, modifications, or deletions of worklogs on your local machine and uploads the appropriate changes to your worklogs on the Jira server. When all of the worklogs that appear in the Jira server have been uploaded via jiraworklog, this amounts to synchronizing the worklogs from your local worklogs with the Jira server.
+jiraworklog requires a configuration file to be set up providing information about how to parse local worklog entries and Jira server authentication, among other things. Once the configuration file has been set up, provide your worklogs to the jiraworklog application either through standard input or via the `--file` argument. The application determines whether there have been any additions, modifications, or deletions of worklogs on your local machine and uploads the appropriate changes to your worklogs on the Jira server. When all of the worklogs that appear in the Jira server have been uploaded via jiraworklog, this amounts to synchronizing the worklogs from your local worklogs with the Jira server.
 
 The other ways that worklogs can appear on the Jira server are through the Jira web application or web API. When worklogs are placed on the Jira server that jiraworklog isn't aware of, it effectively ignores those worklogs with the one exception that if an identical worklog is added to the local worklogs then it is considered to correspond to the appropriate remote worklog. This policy prevents jiraworklog from uploading the worklog a second time and also links the local and remote worklogs so that a future change in the local worklog results in a corresponding change to the remote worklog.
 
@@ -92,7 +92,7 @@ jiraworklog --init
 
 ### Configuration file location
 
-By default the `jiraworklog` application looks for the configuration file at `~/.jwconfig.yaml`. If you store your configuration file at that location then you need only provide your worklogs when you invoke the `jiraworklog` application.
+By default the jiraworklog application looks for the configuration file at `~/.jwconfig.yaml`. If you store your configuration file at that location then you need only provide your worklogs when you invoke the `jiraworklog` application.
 ```shell
 # Assumes that your configuration file is located at ~/.jwconfig.yaml
 jiraworklog --file worklogs.csv
@@ -159,7 +159,7 @@ parse_excel:
 
 #### Configuration file version specification
 
-The configuration file version specification is used so that the `jiraworklog` application knows how to read a given configuration file. An example version specification key value pair is shown below.
+The configuration file version specification is used so that the jiraworklog application knows how to read a given configuration file. An example version specification key value pair is shown below.
 
 ``` yaml
 jwconfig_version: 0.1.0
@@ -181,9 +181,9 @@ basic_auth:
 
 There are three possible keys within the `basic_auth` mapping. If you do not wish to store one or more of these values in the configuration file then you can instead provide a given value by using an environmental variable as described below.
 
-* `server`: a string providing the server URL. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_SERVER` environmental variable.
-* `user`: a string providing the user ID, which is usually an email address. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_USER` environmental variable.
-* `api_token`: a string providing a user's API token. See the [Jira authentication](#-jira-authentication) section for details on how to create an API token. If this value is omitted or `null` then `jiraworklog` reads in the information from the `JW_API_TOKEN` environmental variable.
+* `server`: a string providing the server URL. If this value is omitted or `null` then jiraworklog reads in the information from the `JW_SERVER` environmental variable.
+* `user`: a string providing the user ID, which is usually an email address. If this value is omitted or `null` then jiraworklog reads in the information from the `JW_USER` environmental variable.
+* `api_token`: a string providing a user's API token. See the [Jira authentication](#-jira-authentication) section for details on how to create an API token. If this value is omitted or `null` then jiraworklog reads in the information from the `JW_API_TOKEN` environmental variable.
 
 
 #### Configuration file issues mapping
@@ -310,8 +310,9 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
     * `delimiter2` a single-character string specifying the character upon which to split the tags (this can be omitted or `null`). If `delimiter2` is omitted or `null` then no tag splitting is performed.
 
 
-
 ## Related software
 
-TODO
-<!-- https://clockify.me/jira-time-tracking -->
+This section is still under construction. Please feel free to post an issue or pull request suggesting any software that can be used to record worklog entries or interoperate with Jira worklogs.
+
+* Excel is a spreadsheet application that doesn't have specific support for worklogs but is perfectly amenable to manual entry of worklog integration. The Excel data format is supported by jiraworklog. 
+* [clockify](https://clockify.me/) is a web/desktop/mobile application that allows you to record worklog entries and create reports, among many other features. You can export your worklogs to CSV format which can then be uploaded to Jira via jiraworklog. Also note that there is a [Clockify Jira plugin](https://clockify.me/jira-time-tracking) that allows you to click a button from the Jira website to clock in and clock out to have the resulting worklog entry registered both for Jira and for Clockify.
