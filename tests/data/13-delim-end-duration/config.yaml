@@ -1,6 +1,6 @@
 jwconfig_version: 0.1.0
 
-auth_token:
+basic_auth:
   server: "https://runway.atlassian.net"
   user: "daffy@runway.com"
   api_token: "J6ab6YMa1HVWADNOmO6TC623"
@@ -12,8 +12,6 @@ issues_map:
 checked_in_path: null
 
 parse_delimited:
-  dialect:
-    delimiter: ","
   col_labels:
     description: "task"
     start: null
@@ -23,5 +21,5 @@ parse_delimited:
   col_formats:
     start: null
     end: "%Y-%m-%d %H:%M"
-  delimiter2: ":"
-  timezone: "US/Eastern"
+    delimiter2: ":"
+    timezone: "US/Eastern"

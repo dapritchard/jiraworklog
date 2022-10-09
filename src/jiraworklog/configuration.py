@@ -36,7 +36,7 @@ class Configuration:
             raise ConfigParseError(create_conferrmsg(conferr_msgs), validator)
 
         self.auth_type = 'token' # TODO: should be an enum (and change type)
-        self.auth_token = raw.get('auth_token')
+        self.auth_token = raw.get('basic_auth')
         self.auth_oath = None
         self.issues_map = raw['issues_map']
         self.issue_nms = list(self.issues_map.values())
@@ -131,7 +131,7 @@ class ConfigParseError(RuntimeError):
 def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
     schema = {
         'jwconfig_version': {'type': 'string'},
-        'auth_token': {
+        'basic_auth': {
             # 'nullable': True,
             # 'required': False,
             'type': 'dict',
@@ -168,6 +168,55 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
             'required': False,
             'type': 'dict',
             'schema': {
+                'col_labels': {
+                    'type': 'dict',
+                    'schema': {
+                        'description': {
+                            'type': 'string'
+                        },
+                        'start': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'end': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'duration': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'tags': {'type': 'string'}
+                    }
+                },
+                'col_formats': {
+                    'type': 'dict',
+                    'schema': {
+                        'start': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'end': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'timezone': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        },
+                        'delimiter2': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        }
+                    }
+                },
                 'dialect': {
                     'nullable': True,
                     'required': False,
@@ -209,55 +258,6 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                             'type': 'boolean'
                         },
                     }
-                },
-                'col_labels': {
-                    'type': 'dict',
-                    'schema': {
-                        'description': {
-                            'type': 'string'
-                        },
-                        'start': {
-                            'nullable': True,
-                            'required': False,
-                            'type': 'string'
-                        },
-                        'end': {
-                            'nullable': True,
-                            'required': False,
-                            'type': 'string'
-                        },
-                        'duration': {
-                            'nullable': True,
-                            'required': False,
-                            'type': 'string'
-                        },
-                        'tags': {'type': 'string'}
-                    }
-                },
-                'col_formats': {
-                    'type': 'dict',
-                    'schema': {
-                        'start': {
-                            'nullable': True,
-                            'required': False,
-                            'type': 'string'
-                        },
-                        'end': {
-                            'nullable': True,
-                            'required': False,
-                            'type': 'string'
-                        }
-                    }
-                },
-                'delimiter2': {
-                    'nullable': True,
-                    'required': False,
-                    'type': 'string'
-                },
-                'timezone': {
-                    'nullable': True,
-                    'required': False,
-                    'type': 'string'
                 }
             }
         },
@@ -290,10 +290,16 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                         'tags': {'type': 'string'}
                     }
                 },
-                'timezone': {
-                    'nullable': True,
-                    'required': False,
-                    'type': 'string'
+                'col_formats': {
+                    'type': 'dict',
+                    'schema': {
+                        'timezone': {'type': 'string'},
+                        'delimiter2': {
+                            'nullable': True,
+                            'required': False,
+                            'type': 'string'
+                        }
+                    }
                 }
             }
         }
@@ -321,7 +327,7 @@ def perform_additional_checks(
 
     # TODO: can we use e.g. `'auth_token in raw`?
     # Must have exactly one of `auth_token` or `auth_openauth`
-    has_auth_token = raw.get('auth_token') is not None
+    has_auth_token = raw.get('basic_auth') is not None
     has_auth_openauth = raw.get('auth_openauth') is not None
     if not (has_auth_token or has_auth_openauth):
         tl.append("must have either 'auth_token' or 'auth_openauth'")

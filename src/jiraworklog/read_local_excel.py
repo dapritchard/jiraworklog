@@ -338,13 +338,14 @@ def create_canon_wkls_excel(worklogs_native, conf, errors):
         raise RuntimeError('Internal logic error. Please file a bug report')
     pe = conf.parse_excel
     cl = pe['col_labels']
-    maybe_tz = pe.get('timezone')
+    cf = pe['col_formats']
+    tz = cf['timezone']
     parse_entry = make_parse_entry(
         parse_description=make_parse_string_excel(cl['description']),
-        parse_start=make_parse_dt_excel(cl.get('start'), maybe_tz),
-        parse_end=make_parse_dt_excel(cl.get('end'), maybe_tz),
+        parse_start=make_parse_dt_excel(cl.get('start'), tz),
+        parse_end=make_parse_dt_excel(cl.get('end'), tz),
         parse_duration=make_parse_duration_excel(cl.get('duration')),
-        parse_tags=make_parse_tags_excel(cl['tags'], pe.get('delimiter2'))
+        parse_tags=make_parse_tags_excel(cl['tags'], cf.get('delimiter2'))
     )
     canon_wkls = create_canon_wkls(
         worklogs_native=worklogs_native,

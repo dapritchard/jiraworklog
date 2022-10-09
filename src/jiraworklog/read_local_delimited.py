@@ -155,7 +155,7 @@ class DelimitedInvalidInconsistentStartEndDuration(DelimitedInvalid):
 
 
 # TODO: use this for all invalid entries?
-class DelimitedInvalidBasic(NativeInvalidElement):
+class DelimitedInvalidBasic(DelimitedInvalid):
 
     def __init__(self, index: int, msg: str):
         self.index = index
@@ -312,13 +312,13 @@ def create_canon_wkls_delimited(
     pd = conf.parse_delimited
     cl = pd['col_labels']
     cf = pd['col_formats']
-    maybe_tz = pd.get('timezone')
+    maybe_tz = cf.get('timezone')
     parse_entry = make_parse_entry(
         parse_description=make_parse_string_delim(cl['description']),
         parse_start=make_parse_dt_delim(cl.get('start'), cf.get('start'), maybe_tz, conf),
         parse_end=make_parse_dt_delim(cl.get('end'), cf.get('end'), maybe_tz, conf),
         parse_duration=make_parse_duration_delim(cl.get('duration'), conf),
-        parse_tags=make_parse_tags_delim(cl['tags'], pd.get('delimiter2'))
+        parse_tags=make_parse_tags_delim(cl['tags'], cf.get('delimiter2'))
     )
     canon_wkls = create_canon_wkls(
         worklogs_native=worklogs_native,

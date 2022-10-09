@@ -75,7 +75,7 @@ jiraworklog --file worklogs.xlsx
 
 <!-- https://developer.atlassian.com/server/jira/platform/rest-apis/#authentication-and-authorization -->
 <!-- https://developer.atlassian.com/server/jira/platform/basic-authentication/ -->
-Jira supports two forms of authentication for it's API: basic authentication and OAuth. Currently only basic authentication is supported by jiraworklog.
+Jira supports two forms of authentication for its API: basic authentication and OAuth. Currently only basic authentication is supported by jiraworklog.
 
 Authentication to Jira via basic authentication requires the use of an API token. You can create a token if you do not have one by following the instructions found in the [Manage API tokens for your Atlassian account](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) page in the Atlassian Support website.
 
@@ -100,15 +100,15 @@ jiraworklog --file worklogs.csv
 
 If your configuration file is not located in the default location then you can specify it by using the `--config-path` command-line option.
 ```shell
-# If your configuration file is located in a non-default location (in this case
-# at path/to/jwconfig.yaml)
+# Use the --config-path option if your configuration file is located in a
+# non-default location (in this example at path/to/jwconfig.yaml)
 jiraworklog --config-path path/to/jwconfig.yaml --file worklogs.csv
 ```
 
 
 ### Configuration file format
 
-The jiraworklog configuration file is required to follow a YAML format.
+The jiraworklog configuration file is expected to follow a YAML format.
 
 An example of a valid configuration file is shown below. We'll break down the various elements in the following sections.
 ``` yaml
@@ -125,7 +125,7 @@ issues_map:
   local-p2:   "P02"
 
 # If you are using an Excel file then this field gets replaced by a
-# `parse_excel` section
+# `parse_excel` section (see below)
 parse_delimited:
   col_labels:
     description: "task"
@@ -143,7 +143,7 @@ Example `parse_excel` section.
 
 ``` yaml
 # If you are using an Excel file then use a `parse_excel` section like
-# the following in the place of the `parse_delimited` section
+# the following in place of the `parse_delimited` section
 parse_excel:
   col_labels:
     description: "task"
@@ -170,7 +170,7 @@ jwconfig_version: 0.1.0
 
 #### Configuration file authentication specification
 
-Currently the only form of authentication supported by jiraworklog is basic authentication using an API token. An example basic authentication mapping is shown below.
+Currently the only form of authentication supported by jiraworklog is basic authentication using an API token. An example basic authentication mapping is shown below. See the [Jira authentication](#-jira-authentication) section for details on how to create an API token.
 
 ``` yaml
 basic_auth:
@@ -179,11 +179,11 @@ basic_auth:
   api_token: "J6ab6YMa1HVWADNOmO6TC623"
 ```
 
-There are three possible keys within the `basic_auth` mapping. If you do not wish to store one or more of these values in the configuration file then you can instead provide a given value by using an environmental variable as described below.
+There are three possible keys within the `basic_auth` mapping. If you do not wish to store one or more of these values in the configuration file then you can instead provide a given value by using the corresponding environmental variable as described below.
 
 * `server`: a string providing the server URL. If this value is omitted or `null` then jiraworklog reads in the information from the `JW_SERVER` environmental variable.
 * `user`: a string providing the user ID, which is usually an email address. If this value is omitted or `null` then jiraworklog reads in the information from the `JW_USER` environmental variable.
-* `api_token`: a string providing a user's API token. See the [Jira authentication](#-jira-authentication) section for details on how to create an API token. If this value is omitted or `null` then jiraworklog reads in the information from the `JW_API_TOKEN` environmental variable.
+* `api_token`: a string providing a user's API token. If this value is omitted or `null` then jiraworklog reads in the information from the `JW_API_TOKEN` environmental variable.
 
 
 #### Configuration file issues mapping
@@ -231,9 +231,7 @@ parse_delimited:
   dialect: {}
 ```
 
-The `parse_delimited` mapping has two required entries, `col_labels` and `col_formats`, while an optional third entry `dialect` is allowed to be omitted or `null` (or to be an empty mapping, for that matter).
-
-<!-- are up to 5 allowed entries in the . The required fields are `col_labels` and `col_formats`, while the `delimiter2`,  `timezone`,  `dialect` can be omitted or `null`.  -->
+The `parse_delimited` mapping has two required entries, `col_labels` and `col_formats`, while an optional third entry `dialect` is allowed to be omitted or `null` (or to be an empty mapping for that matter, as shown in the preceding example).
 
 * `col_labels`: a mapping of entries specifying the meaning of the relevant columns in the source data. For example, if you had a column in your data named `Start Time` corresponding to the worlog entry start datetimes, then you would provide an entry `start: "Start Time"` in the mapping.
 
@@ -247,7 +245,7 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
 
 * `col_formats`: a mapping of entries providing various column parsing information.
 
-    The `start` and `end` columns specify the formats in which the datetimes are provided. For example, a datetime like `2021-01-29 15:45` following a year-month-day hour-minute format would be parsed using the formatting string `%Y-%m-%d %H:%M`. The datetimes are parsed by the Python function `strptime` and which has formatting rules as described in the [strftime() and strptime() Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) section of the datetime Python documentation.
+    The `start` and `end` columns specify the formats in which the datetimes are provided. As an example, consider the datetime format `2021-01-29 15:45` representing the datetime of January 29th, 2021 at 15 hours and 45 minutes after midnight. The formatting string for this datetime format would be `%Y-%m-%d %H:%M`. The datetime entries are parsed by the Python function `strptime` which has formatting rules as described in the [strftime() and strptime() Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) section of the datetime Python documentation.
 
     * `start`: a string specifying the worklogs start datetime format. This should be omitted or `null` if there is no start datetime column.
     * `end`: a string specifying the worklogs end datetime format. This should be omitted or `null` if there is no end datetime column.
@@ -262,7 +260,7 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
 
     By default the csv library parses CSV files (i.e. `Dialect.delimiter` is specified as `','`).
 
-    The main compilcation when constructing delimiter-separated values data is what to do when the delimiter appears as part of one of the entries. One approach is to escape the delimiter using a predetermined escape character such as `\`. When the escape character itself appears in the data it is itself escaped so that `\\` is interpreted as a literal `\`. Another approach is to quote an entire entry using a predetermined quoting character such as `"` so that for a CSV format an entry like `Me, Myself & Irene` would be presented as `"Me, Myself & Irene"`. The quoting character might itself appear in a given entry, in which case it also needs to be escaped, often by doubling the character so that `""` is interpreted as a literal `"` so that for a CSV format an entry like `The movie "Me, Myself & Irene"` would be presented as `"The movie ""Me, Myself & Irene"""`. The `Dialect.quoting`, `Dialect.quotechar`, `Dialect.escapechar`, and `Dialect.doublequote` options in the csv library control the settings related to these considerations.
+    The main complication when constructing delimiter-separated values data is what to do when the delimiter appears as part of one of the entries. One approach is to escape the delimiter using a predetermined escape character such as `\`. When the escape character itself appears in the data it is itself escaped so that `\\` is interpreted as a literal `\`. Another approach is to quote an entire entry using a predetermined quoting character such as `"` so that for a CSV format an entry like `Me, Myself & Irene` would be presented as `"Me, Myself & Irene"`. The quoting character might itself appear in a given entry, in which case it also needs to be escaped, often by doubling the character so that `""` is interpreted as a literal `"` so that for a CSV format an entry like `The movie "Me, Myself & Irene"` would be presented as `"The movie ""Me, Myself & Irene"""`. The `Dialect.quoting`, `Dialect.quotechar`, `Dialect.escapechar`, and `Dialect.doublequote` options in the csv library control the settings related to these considerations.
 
     * `delimiter`: a single-character string (this can be omitted or `null`).
     * `doublequote`: either `true` or `false` (this can be omitted or `null`).
@@ -304,7 +302,7 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
 
 * `col_formats`: a mapping of entries providing various column parsing information.
 
-    * `timezone` If your timezone information is already included within your worklog start and end datetime strings then this should be omitted or `null`. Otherwise, it is a string specifying your timezone.
+    * `timezone` a string specifying your timezone.
 
         The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
     * `delimiter2` a single-character string specifying the character upon which to split the tags (this can be omitted or `null`). If `delimiter2` is omitted or `null` then no tag splitting is performed.
@@ -314,5 +312,5 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
 
 This section is still under construction. Please feel free to post an issue or pull request suggesting any software that can be used to record worklog entries or interoperate with Jira worklogs.
 
-* Excel is a spreadsheet application that doesn't have specific support for worklogs but is perfectly amenable to manual entry of worklog integration. The Excel data format is supported by jiraworklog. 
+* [Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet application that doesn't have specific support for worklogs but is perfectly amenable to manual entry of worklog integration. The Excel data format is supported by jiraworklog.
 * [clockify](https://clockify.me/) is a web/desktop/mobile application that allows you to record worklog entries and create reports, among many other features. You can export your worklogs to CSV format which can then be uploaded to Jira via jiraworklog. Also note that there is a [Clockify Jira plugin](https://clockify.me/jira-time-tracking) that allows you to click a button from the Jira website to clock in and clock out to have the resulting worklog entry registered both for Jira and for Clockify.

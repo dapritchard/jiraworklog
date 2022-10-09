@@ -1,6 +1,6 @@
 jwconfig_version: 0.1.0
 
-auth_token:
+basic_auth:
   server: "https://runway.atlassian.net"
   user: "daffy@runway.com"
   api_token: "J6ab6YMa1HVWADNOmO6TC623"
@@ -18,4 +18,5 @@ parse_excel:
     end: "end"
     duration: null
     tags: "tags"
-  timezone: "US/Eastern"
+  col_formats:
+    timezone: "US/Eastern"
