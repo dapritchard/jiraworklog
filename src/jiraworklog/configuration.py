@@ -250,7 +250,13 @@ def validate_config(raw: dict[str, Any]) -> tuple[Validator, bool]:
                         'quoting': {
                             'nullable': True,
                             'required': False,
-                            'type': 'integer'
+                            'type': 'string',
+                            'allowed': [
+                                "QUOTE_ALL",
+                                "QUOTE_MINIMAL",
+                                "QUOTE_NONNUMERIC",
+                                "QUOTE_NONE"
+                            ]
                         },
                         'skipinitialwhitespace': {
                             'nullable': True,

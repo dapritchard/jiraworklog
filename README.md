@@ -251,7 +251,7 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
     * `end`: a string specifying the worklogs end datetime format. This should be omitted or `null` if there is no end datetime column.
     * `timezone` If your timezone information is already included within your worklog start and end datetime strings then this should be omitted or `null`. Otherwise, it is a string specifying your timezone.
 
-        The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
+        The list of allowed timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
     * `delimiter2` a single-character string specifying the character upon which to split the tags (this can be omitted or `null`). If `delimiter2` is omitted or `null` then no tag splitting is performed.
 
 * `dialect`: a mapping specifying the parsing of the delimiter-separated values data (this can be omitted or `null`).
@@ -267,7 +267,7 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
     * `escapechar` a single-character string (this can be omitted or `null`).
     * `lineterminator` a string (this can be omitted or `null`). Note that this value currently has no effect on the csv library's parser.
     * `quotechar`: a single-character string (this can be omitted or `null`).
-    * `quoting`: one of `"QUOTE_MINIMAL"`, `"QUOTE_NONNUMERIC"`, or `"QUOTE_NONE"` (this can be omitted or `null`).
+    * `quoting`: one of `"QUOTE_ALL"`, `"QUOTE_MINIMAL"`, `"QUOTE_NONNUMERIC"`, or `"QUOTE_NONE"` (this can be omitted or `null`).
     * `skipinitialwhitespace`: either `true` or `false` (this can be omitted or `null`).
 
 
@@ -304,7 +304,7 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
 
     * `timezone` a string specifying your timezone.
 
-        The list of known timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
+        The list of allowed timezone strings can be found by running either `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see the most common timezones or `python -c 'import pytz, prettyprinter; prettyprinter.pprint(pytz.common_timezones)'` to see all available timezones.
     * `delimiter2` a single-character string specifying the character upon which to split the tags (this can be omitted or `null`). If `delimiter2` is omitted or `null` then no tag splitting is performed.
 
 
@@ -312,5 +312,5 @@ The `parse_delimited` mapping has two required entries, `col_labels` and `col_fo
 
 This section is still under construction. Please feel free to post an issue or pull request suggesting any software that can be used to record worklog entries or interoperate with Jira worklogs.
 
-* [Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet application that doesn't have specific support for worklogs but is perfectly amenable to manual entry of worklog integration. The Excel data format is supported by jiraworklog.
-* [clockify](https://clockify.me/) is a web/desktop/mobile application that allows you to record worklog entries and create reports, among many other features. You can export your worklogs to CSV format which can then be uploaded to Jira via jiraworklog. Also note that there is a [Clockify Jira plugin](https://clockify.me/jira-time-tracking) that allows you to click a button from the Jira website to clock in and clock out to have the resulting worklog entry registered both for Jira and for Clockify.
+* [Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet application that doesn't have specific support for worklogs but is perfectly amenable to manual entry of worklogs. The Excel data format is supported by jiraworklog.
+* [clockify](https://clockify.me/) is a web/desktop/mobile application that allows you to record worklog entries and create reports, among many other features. You can export your worklogs to CSV format which can then be uploaded to Jira via jiraworklog. Also note that there is a [Clockify Jira plugin](https://clockify.me/jira-time-tracking) that integrates a clock in / clock out button into the Jira website such that when used the resulting worklog entry is registered both for Jira and for Clockify.

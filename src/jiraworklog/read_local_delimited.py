@@ -280,9 +280,16 @@ def construct_dialect_args(conf: Configuration) -> dict[str, Any]:
     # `escapechar` option the semantics are aligned, but if that were to change
     # we would need to change the use of `None` to correspond to the default
     # value (for that field, at least).
+    quoting_map = {
+        'QUOTE_ALL': csv.QUOTE_ALL,
+        'QUOTE_MINIMAL': csv.QUOTE_MINIMAL,
+        'QUOTE_NONNUMERIC': csv.QUOTE_NONNUMERIC,
+        'QUOTE_NONE': csv.QUOTE_NONE
+    }
     if conf.parse_delimited is None:
         raise RuntimeError('Internal logic error. Please file a bug report')
-    dialect_args = {'strict': True}
+    dialect_args = {}
+    dialect_args['strict'] = True
     dialect = conf.parse_delimited.get('dialect')
     if dialect:
         # We are assuming that 'strict' is not a valid field in the
@@ -291,7 +298,10 @@ def construct_dialect_args(conf: Configuration) -> dict[str, Any]:
         assert 'strict' not in dialect
         for k, v in dialect.items():
             if v:
-                dialect_args[k] = v
+                if k == 'quoting':
+                    dialect_args[k] = quoting_map[v]
+                else:
+                    dialect_args[k] = v
     return dialect_args
 
 
