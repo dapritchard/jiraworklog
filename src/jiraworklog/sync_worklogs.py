@@ -15,6 +15,7 @@ from jiraworklog.update_instructions import UpdateInstructions
 from jiraworklog.utils import map_worklogs
 from jiraworklog.worklogs import WorklogCanon, WorklogCheckedin, WorklogJira
 import json
+import os
 from typing import Any, Callable, Tuple, TypeVar
 
 JiraSubcl = TypeVar('JiraSubcl', bound='JIRA')
@@ -43,7 +44,9 @@ def sync_worklogs(
     finally:
         checkedin_full = map_worklogs(lambda x: x.full, checkedin_wkls)
         if not cmdline_args.dry_run and write_checkedin:
-            with open(resolve_checkedin_path(conf), "w") as file:
+            path=resolve_checkedin_path(conf)
+            os.makedirs(name=os.path.dirname(path), exist_ok=True)
+            with open(path, "w") as file:
                 json.dump(obj=checkedin_full, fp=file, indent=4)
     return (jira, checkedin_full, update_instrs)
 

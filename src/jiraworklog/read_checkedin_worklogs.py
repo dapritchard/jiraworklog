@@ -70,13 +70,12 @@ def confirm_new_checkedin(
     checkedin_path: str,
     conf: Configuration,
     cmdline_args: argparse.Namespace
-# ) -> dict[str, dict[str, str]]:
-) -> None:
+) -> dict[str, Any]:
 
     # FIXME: for --dry-run this adds a file to the filesystem. Should we try to
     # remove it afterwards or just refuse to do it in the first place?
     if cmdline_args.auto_confirm or cmdline_args.dry_run:
-        return
+        return {}
 
     # TODO: see https://docs.python.org/3/library/textwrap.html for a way to
     # properly wrap these paragraphs
@@ -87,7 +86,7 @@ def confirm_new_checkedin(
             'jiraworklog stores a file on disk to track which worklogs that '
             'it is aware of, however it is unable to find the checked-in '
             'worklogs file in the default location of '
-            "'~/.config/jira-worklog/checked-in-worklogs.json'. "
+            "'~/.config/jiraworklog/checked-in-worklogs.json'. "
             'If this is your first time running this application then '
             'you can ask jiraworklog to create a new file in the default '
             'location, otherwise you should exit and ensure that the correct '
@@ -111,7 +110,7 @@ def confirm_new_checkedin(
     while True:
         response = input()
         if response == 'y':
-            return
+            return {}
         elif response == 'n':
             raise RuntimeError('User specified exit')
         msg = (

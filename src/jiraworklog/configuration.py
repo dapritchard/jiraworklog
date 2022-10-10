@@ -434,7 +434,7 @@ def get_parse_type(raw: dict[str, Any]) -> ParseType:
 
 def resolve_checkedin_path(conf: Configuration) -> str:
     path = conf.checked_in_path
-    default = '~/.config/jira-worklog/checked-in-worklogs.json'
+    default = '~/.config/jiraworklog/checked-in-worklogs.json'
     checkedin_path = os.path.expanduser(path if path else default)
     return checkedin_path
 
