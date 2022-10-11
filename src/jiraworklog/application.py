@@ -3,6 +3,7 @@
 from jiraworklog.auth_jira import auth_jira
 from jiraworklog.cmdline_args import parser
 from jiraworklog.configuration import read_conf
+from jiraworklog.init_config import init_config
 from jiraworklog.sync_worklogs import sync_worklogs
 import sys
 from typing import Optional
@@ -20,6 +21,10 @@ from typing import Optional
 def main() -> Optional[str]:
 
     cmdline_args = parser.parse_args()
+
+    if cmdline_args.init_config:
+        init_config()
+        return None
 
     is_need_response = not (cmdline_args.auto_confirm or cmdline_args.dry_run)
     if not cmdline_args.file and is_need_response:
