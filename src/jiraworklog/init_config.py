@@ -47,7 +47,7 @@ def init_config():
         file.write('\n'.join(yaml_stanzas))
 
 
-def query_config(textwrapper: TextWrapper):
+def query_config(textwrapper: TextWrapper) -> dict[str, Any]:
 
     # msg = (
     #     "What kind of authentication will you use to access the Jira server?"
@@ -64,7 +64,7 @@ def query_config(textwrapper: TextWrapper):
     auth_type = "token"
 
     if auth_type == "token":
-        auth_token = query_auth_token(textwrapper)
+        basic_auth = query_basic_auth(textwrapper)
         open_auth = None
     else:
         raise RuntimeError("Haven't implemented OAuth yet")
@@ -74,7 +74,8 @@ def query_config(textwrapper: TextWrapper):
     msg = (
         "What should the filepath be for the file that jiraworklog uses to "
         "store its worklog records? (You can leave this blank if you intend to "
-        "supply the location via the '--config-file' command-line argument.) "
+        "use the default location of "
+        "~/.config/jiraworklog/checked-in-worklogs.json.) "
     )
     print_para(msg, textwrapper)
     checked_in_path = input()
@@ -102,10 +103,11 @@ def query_config(textwrapper: TextWrapper):
         raise RuntimeError("not implemented yet")
 
     config = OrderedDict()
-    if auth_token is None:
-        config['open_auth'] = open_auth
+    config['jwconfig_version'] = "0.1.1"
+    if basic_auth:
+        config['basic_auth'] = basic_auth
     else:
-        config['auth_token'] = auth_token
+        config['open_auth'] = open_auth
     config['issues_map'] = issues_map
     config['checked_in_path'] = checked_in_path
     if parse_delimited is None:
@@ -115,7 +117,7 @@ def query_config(textwrapper: TextWrapper):
     return config
 
 
-def query_auth_token(textwrapper: TextWrapper) -> dict[str, Any]:
+def query_basic_auth(textwrapper: TextWrapper) -> dict[str, Any]:
 
     msg = (
         "What is the Jira server's URL? (You can leave this blank if you "
@@ -146,12 +148,12 @@ def query_auth_token(textwrapper: TextWrapper) -> dict[str, Any]:
     if api_token == "":
         api_token = None
 
-    auth_token = OrderedDict(
+    basic_auth = OrderedDict(
         server=server,
         user=user,
         api_token=api_token
     )
-    return auth_token
+    return basic_auth
 
 
 def query_issue_map(textwrapper: TextWrapper) -> dict[str, Any]:
@@ -203,25 +205,19 @@ def query_issue_map(textwrapper: TextWrapper) -> dict[str, Any]:
 
 def query_parse_delimited(textwrapper: TextWrapper) -> dict[str, Any]:
 
-    msg = (
-        "What is the delimiter that you use to separate tags in your worklog "
-        "records entries? (You can leave this blank if you don't use a tag "
-        "delimiter.)"
-    )
-    print_para(msg, textwrapper)
-    delimiter2 = input()
-    if delimiter2 == "":
-        delimiter2 = None
-
     col_labels = query_col_labels(textwrapper)
 
     col_formats = query_col_formats(textwrapper)
 
+    dialect = query_dialect(textwrapper)
+
     parse_delimited = OrderedDict(
-        delimiter2=delimiter2,
         col_labels=col_labels,
         col_formats=col_formats
     )
+    if len(dialect) >= 1:
+        parse_delimited['dialect'] = dialect
+
     return parse_delimited
 
 
@@ -312,24 +308,68 @@ def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
     if end == "":
         end = None
 
+    # TODO: provide an option to show the timezones
     msg = (
-        "What is the format used to represent the worklog \"duration\" column "
-        "datetime? See https://docs.python.org/3/library/datetime.html"
-        "#strftime-and-strptime-format-codes for a definition of the format "
-        "specification. (You can leave this blank if your worklogs don't "
-        "include an duration time, but rather a start time and an end time.) "
+        "What is the timezone that you are in? (You can leave this blank if "
+        "your worklogs already include timezone information.)"
     )
     print_para(msg, textwrapper)
-    duration = input()
-    if duration == "":
-        duration = None
+    tz = input()
+    if tz == "":
+        tz = None
+
+    # msg = (
+    #     "What is the format used to represent the worklog \"duration\" column "
+    #     "datetime? See https://docs.python.org/3/library/datetime.html"
+    #     "#strftime-and-strptime-format-codes for a definition of the format "
+    #     "specification. (You can leave this blank if your worklogs don't "
+    #     "include an duration time, but rather a start time and an end time.) "
+    # )
+    # print_para(msg, textwrapper)
+    # duration = input()
+    # if duration == "":
+    #     duration = None
+
+    msg = (
+        "What is the delimiter that you use to separate tags in your worklog "
+        "records entries? (You can leave this blank if you don't use a tag "
+        "delimiter.)"
+    )
+    print_para(msg, textwrapper)
+    delimiter2 = input()
+    if delimiter2 == "":
+        delimiter2 = None
 
     col_formats = OrderedDict(
         start=start,
         end=end,
-        duration=duration,
+        delimiter2=delimiter2
     )
     return col_formats
+
+
+def query_dialect(textwrapper: TextWrapper) -> dict[str, Any]:
+
+    dialect = OrderedDict()
+
+    msg = (
+        "What is the delimiter that you use to separate your worklog entries? "
+        "(Leave this blank to use the default delimiter of ','.)"
+    )
+    print_para(msg, textwrapper)
+    delimiter = input()
+    if delimiter != "":
+        dialect['delimiter'] = delimiter
+
+    # FIXME: add the remaining
+    msg = (
+        'The remaining dialect options haven\'t been added to the '
+        'initialization script yet. Please add them directly to the '
+        'configuration file.\n'
+    )
+    print_para(msg, textwrapper)
+
+    return dialect
 
 
 def print_para(msg, textwrapper):
