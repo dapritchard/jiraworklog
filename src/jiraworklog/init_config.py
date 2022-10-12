@@ -51,19 +51,19 @@ def query_config(textwrapper: TextWrapper) -> dict[str, Any]:
 
     # msg = (
     #     "What kind of authentication will you use to access the Jira server?"
-    #     "(You must enter one of either 'token' or 'oauth'.)"
+    #     "(You must enter one of either 'basic_auth' or 'oauth'.)"
     # )
     # print_para(msg, textwrapper)
     # auth_type = input()
-    # while not auth_type in ['token', 'oauth']:
+    # while not auth_type in ['basic_auth', 'oauth']:
     #     msg = (
     #         "Invalid authentication type response. Please enter one of either "
-    #         "'token' or 'oauth': "
+    #         "'basic_auth' or 'oauth': "
     #     )
     #     auth_type = input()
-    auth_type = "token"
+    auth_type = "basic_auth"
 
-    if auth_type == "token":
+    if auth_type == "basic_auth":
         basic_auth = query_basic_auth(textwrapper)
         open_auth = None
     else:
@@ -84,23 +84,24 @@ def query_config(textwrapper: TextWrapper) -> dict[str, Any]:
 
     msg = (
         "What kind of filetype will you use to provide your worklog records "
-        "with? (You must enter one of either 'csv' or 'excel'.)"
+        "with? (You must enter one of either 'delimited' or 'excel'.)"
     )
     print_para(msg, textwrapper)
     parse_type = input()
-    while not parse_type in ["csv", "excel"]:
+    while not parse_type in ["delimited", "excel"]:
         msg = (
-            "Invalid filetype response. Please enter one of either 'csv' or "
-            "'excel': "
+            "Invalid filetype response. Please enter one of either 'delimited' "
+            "or 'excel': "
         )
         print_para(msg, textwrapper)
         parse_type = input()
 
-    if parse_type == "csv":
+    if parse_type == "delimited":
         parse_delimited = query_parse_delimited(textwrapper)
         parse_excel = None
     else:
-        raise RuntimeError("not implemented yet")
+        parse_delimited = None
+        parse_excel = query_parse_excel(textwrapper)
 
     config = OrderedDict()
     config['jwconfig_version'] = "0.1.1"
@@ -110,10 +111,10 @@ def query_config(textwrapper: TextWrapper) -> dict[str, Any]:
         config['open_auth'] = open_auth
     config['issues_map'] = issues_map
     config['checked_in_path'] = checked_in_path
-    if parse_delimited is None:
-        config['parse_excel'] = parse_excel
-    else:
+    if parse_delimited:
         config['parse_delimited'] = parse_delimited
+    else:
+        config['parse_excel'] = parse_excel
     return config
 
 
@@ -207,18 +208,32 @@ def query_parse_delimited(textwrapper: TextWrapper) -> dict[str, Any]:
 
     col_labels = query_col_labels(textwrapper)
 
-    col_formats = query_col_formats(textwrapper)
+    col_formats_delimited = query_col_formats_delimited(textwrapper)
 
     dialect = query_dialect(textwrapper)
 
     parse_delimited = OrderedDict(
         col_labels=col_labels,
-        col_formats=col_formats
+        col_formats=col_formats_delimited
     )
     if len(dialect) >= 1:
         parse_delimited['dialect'] = dialect
 
     return parse_delimited
+
+
+def query_parse_excel(textwrapper: TextWrapper) -> dict[str, Any]:
+
+    col_labels = query_col_labels(textwrapper)
+
+    col_formats_excel = query_col_formats_excel(textwrapper)
+
+    parse_excel = OrderedDict(
+        col_labels=col_labels,
+        col_formats=col_formats_excel
+    )
+
+    return parse_excel
 
 
 def query_col_labels(textwrapper: TextWrapper) -> dict[str, Any]:
@@ -282,7 +297,7 @@ def query_col_labels(textwrapper: TextWrapper) -> dict[str, Any]:
 
 # TODO: we can assertain which columns to query and based on which are non-null
 # when asking for names ask only for those
-def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
+def query_col_formats_delimited(textwrapper: TextWrapper) -> dict[str, Any]:
 
     msg = (
         "What is the format used to represent the worklog \"start\" column "
@@ -314,9 +329,9 @@ def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
         "your worklogs already include timezone information.)"
     )
     print_para(msg, textwrapper)
-    tz = input()
-    if tz == "":
-        tz = None
+    timezone = input()
+    if timezone == "":
+        timezone = None
 
     # msg = (
     #     "What is the format used to represent the worklog \"duration\" column "
@@ -343,6 +358,50 @@ def query_col_formats(textwrapper: TextWrapper) -> dict[str, Any]:
     col_formats = OrderedDict(
         start=start,
         end=end,
+        timezone=timezone,
+        delimiter2=delimiter2
+    )
+    return col_formats
+
+
+# TODO: we can assertain which columns to query and based on which are non-null
+# when asking for names ask only for those
+def query_col_formats_excel(textwrapper: TextWrapper) -> dict[str, Any]:
+
+    # TODO: provide an option to show the timezones
+    msg = (
+        "What is the timezone that you are in? (You can leave this blank if "
+        "your worklogs already include timezone information.)"
+    )
+    print_para(msg, textwrapper)
+    timezone = input()
+    if timezone == "":
+        timezone = None
+
+    # msg = (
+    #     "What is the format used to represent the worklog \"duration\" column "
+    #     "datetime? See https://docs.python.org/3/library/datetime.html"
+    #     "#strftime-and-strptime-format-codes for a definition of the format "
+    #     "specification. (You can leave this blank if your worklogs don't "
+    #     "include an duration time, but rather a start time and an end time.) "
+    # )
+    # print_para(msg, textwrapper)
+    # duration = input()
+    # if duration == "":
+    #     duration = None
+
+    msg = (
+        "What is the delimiter that you use to separate tags in your worklog "
+        "records entries? (You can leave this blank if you don't use a tag "
+        "delimiter.)"
+    )
+    print_para(msg, textwrapper)
+    delimiter2 = input()
+    if delimiter2 == "":
+        delimiter2 = None
+
+    col_formats = OrderedDict(
+        timezone=timezone,
         delimiter2=delimiter2
     )
     return col_formats
