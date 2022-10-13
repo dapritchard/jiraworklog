@@ -85,6 +85,16 @@ def exercise_system(
     return out
 
 
+def catch_exercise_system(
+    input_dir: str,
+    args: Optional[list[str]] = None
+) -> Any:
+    try:
+        return exercise_system(input_dir, args)
+    except Exception as exc:
+        return exc
+
+
 def resolve_inpaths(input_dir: str) -> dict[str, str]:
     def find_remote_path(dir_path):
         for s in os.listdir(dir_path):

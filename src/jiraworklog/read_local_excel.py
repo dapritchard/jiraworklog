@@ -130,7 +130,7 @@ class ExcelInvalidCellType(ExcelInvalid):
     def __init__(
         self,
         cell: openpyxl.cell.cell.Cell,
-        req_type: Union[Type[int], Type[float], Type[bool], Type[str], Type[datetime], None]
+        req_type: Union[Type[int], Type[float], Type[bool], Type[str], Type[datetime], Type[None]]
     ):
         self.sheet = cell.parent
         self.cell = cell
@@ -146,7 +146,7 @@ class ExcelInvalidCellType(ExcelInvalid):
             str: 'a string',
             datetime: 'a datetime',
             # FIXME: currency?
-            None: 'empty'
+            type(None): 'an empty cell'
         }
         stringify[self.req_type]
         msg = (
