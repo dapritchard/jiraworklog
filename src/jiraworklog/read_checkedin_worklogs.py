@@ -3,22 +3,27 @@
 class CheckedinOSError(Exception):
 
     def __init__(self, checkedin_path: str) -> None:
+        self.checkedin_path = checkedin_path
+
+    def __str__(self):
         msg = (
             "Error reading the checked-in worklogs file at "
-            f"'{checkedin_path}'\n\n{self.__cause__}"
+            f"'{self.checkedin_path}'\n\n{self.__cause__}"
         )
-        super().__init__(msg)
+        return msg
 
 
 class CheckedinJSONDecodeError(Exception):
 
-    # FIXME: str(self.__cause__) is returning None
     def __init__(self, checkedin_path: str) -> None:
+        self.checkedin_path = checkedin_path
+
+    def __str__(self):
         msg = (
             "Invalid JSON form of the checked-in worklogs file at "
-            f"'{checkedin_path}'\n\n{self.__cause__}"
+            f"'{self.checkedin_path}'\n\n{self.__cause__}"
         )
-        super().__init__(msg)
+        return msg
 
 
 import argparse

@@ -18,5 +18,7 @@ def run_application(
     parsed_args = parser.parse_args(args)
     conf = read_conf(parsed_args.config_path)
     conf.checked_in_path = checkedin_inpath
+    # FIXME: if we're testing an error in the checked-in worklogs file then
+    # init_jira fails. Need to catch and place a dummy value for that case?
     jiramock = init_jira(mockremote_inpath)
     return sync_worklogs(jiramock, conf, parsed_args, parsed_args.file, False)

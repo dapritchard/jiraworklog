@@ -85,6 +85,7 @@ def exercise_system(
     return out
 
 
+# TODO: added this for interactive debugging, is there a better way to do this?
 def catch_exercise_system(
     input_dir: str,
     args: Optional[list[str]] = None
