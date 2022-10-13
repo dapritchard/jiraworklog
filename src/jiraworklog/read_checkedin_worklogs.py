@@ -10,6 +10,16 @@ class CheckedinOSError(Exception):
         super().__init__(msg)
 
 
+class CheckedinJSONDecodeError(Exception):
+
+    # FIXME: str(self.__cause__) is returning None
+    def __init__(self, checkedin_path: str) -> None:
+        msg = (
+            "Invalid JSON form of the checked-in worklogs file at "
+            f"'{checkedin_path}'\n\n{self.__cause__}"
+        )
+        super().__init__(msg)
+
 
 import argparse
 import json
@@ -32,6 +42,8 @@ def read_checkedin_worklogs(
         worklogs_raw = confirm_new_checkedin(checkedin_path, conf, cmdline_args)
     except OSError as exc:
         raise CheckedinOSError(checkedin_path) from exc
+    except json.decoder.JSONDecodeError as exc:
+        raise CheckedinJSONDecodeError(checkedin_path) from exc
     # TODO: validate contents (i.e. the form of the checkedin worklogs)
     align_checkedin_with_conf(worklogs_raw, conf)
     worklogs = map_worklogs_key(WorklogCheckedin, worklogs_raw)

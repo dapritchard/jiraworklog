@@ -36,5 +36,7 @@ def main() -> Optional[str]:
         jira = auth_jira(conf)
         sync_worklogs(jira, conf, cmdline_args, cmdline_args.file, True)
     except Exception as exc:
+        if None:
+            raise RuntimeError('Error running jiraworklog') from exc
         return(str(exc))
     return None
