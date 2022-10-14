@@ -104,7 +104,7 @@ def query_config(textwrapper: TextWrapper) -> dict[str, Any]:
         parse_excel = query_parse_excel(textwrapper)
 
     config = OrderedDict()
-    config['jwconfig_version'] = "0.1.1"
+    config['jwconfig_version'] = "0.1.2"
     if basic_auth:
         config['basic_auth'] = basic_auth
     else:

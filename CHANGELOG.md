@@ -1,5 +1,13 @@
 # jiraworklog change log
 
+## v0.1.2
+
+* Add a `--verbose` command-line option.
+* Fix Excel empty cell error message reporting that was throwing an undesired error.
+* Fix checked-in worklogs JSON error message that wasn't reporting the parse error.
+* Add a more informative error message for invalid checked-in JSON worklogs.
+
+
 ## v0.1.1
 
 * Fix an issue when creating a new checked-in worklogs file.

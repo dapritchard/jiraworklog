@@ -21,6 +21,14 @@ from typing import Optional
 def main() -> Optional[str]:
 
     cmdline_args = parser.parse_args()
+    # TODO: let's extract this into a routine somewhere that encapsulates the
+    # above call
+    if not (0 <= cmdline_args.verbose and cmdline_args.verbose <= 2):
+        msg = (
+            "Error: the --verbose argument must be an integer between 0 and 2, "
+            f"but the input value was '{cmdline_args.verbose}'"
+        )
+        return msg
 
     if cmdline_args.init_config:
         init_config()
@@ -36,7 +44,7 @@ def main() -> Optional[str]:
         jira = auth_jira(conf)
         sync_worklogs(jira, conf, cmdline_args, cmdline_args.file, True)
     except Exception as exc:
-        if None:
+        if cmdline_args.verbose >= 2:
             raise RuntimeError('Error running jiraworklog') from exc
         return(str(exc))
     return None

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "jiraworklog"
-version = "0.1.1"
+version = "0.1.2"
 description = "Command-line application to synchronize local worklog records with a Jira server"
 authors = ["David Pritchard <david.al.pritchard@gmail.com>"]
 readme = "README.md"
